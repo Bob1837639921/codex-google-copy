@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "AI Agent Browser Control",
+  "version": "1.0",
+  "description": "允许本地 AI 助手通过你的浏览器登录态进行自动化操作（可见标签组+虚拟鼠标模式）。",
+  "permissions": [
+    "debugger",
+    "tabs",
+    "tabGroups"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AI Agent Control"
+  }
+}
