@@ -21,7 +21,7 @@ async def run_live_demo():
     print("==================================================================")
     
     # Initialize the high-level Browser SDK
-    agent = BrowserAgent("ws://localhost:8765")
+    agent = BrowserAgent()
     
     try:
         # 1. Connect to the WebSocket Bridge Server
