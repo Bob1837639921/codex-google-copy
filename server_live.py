@@ -18,7 +18,11 @@ responses = {}
 async def handler(websocket, path=None):
     global connected_extension
     # Auto-detect path for routing (extension on root /, clients on /client)
-    req_path = path or getattr(websocket, "path", "/")
+    req_path = "/"
+    if hasattr(websocket, "request") and hasattr(websocket.request, "path"):
+        req_path = websocket.request.path
+    elif path:
+        req_path = path
     
     if "client" in req_path:
         print("[Server] Python controller client connected!")
