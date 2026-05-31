@@ -23,7 +23,7 @@ class BrowserAgent:
     Highly recommended for AI agents seeking precise DOM manipulation, visual micro-animations,
     and automatic login barrier detection.
     """
-    def __init__(self, ws_url: str = "ws://localhost:8765"):
+    def __init__(self, ws_url: str = "ws://localhost:8765/client"):
         self.ws_url = ws_url
         self.websocket = None
         self._loop = None
