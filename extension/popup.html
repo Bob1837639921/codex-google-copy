@@ -3,15 +3,111 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body { width: 250px; padding: 15px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    h3 { margin-top: 0; color: #333; }
-    #status { font-weight: bold; color: #28a745; }
-    .note { font-size: 12px; color: #666; margin-top: 10px; }
+    body {
+      width: 280px;
+      padding: 16px;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border: 1px solid #334155;
+    }
+    h3 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 12px 0;
+      padding: 10px 12px;
+      background: #0f172a;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+    }
+    .indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #64748b;
+      position: relative;
+    }
+    .indicator.connected {
+      background-color: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .indicator.connecting {
+      background-color: #f59e0b;
+      animation: pulse 1.5s infinite;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+    .indicator.paused {
+      background-color: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+    #status-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .btn-reconnect {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      margin-top: 12px;
+      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+    }
+    .btn-reconnect:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+    }
+    .btn-reconnect:active {
+      transform: translateY(0);
+    }
+    .note {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.6; }
+      100% { transform: scale(1); opacity: 1; }
+    }
   </style>
 </head>
 <body>
-  <h3>🧠 AI 浏览器控制中枢</h3>
-  <p>服务状态: <span id="status">运行中 (后台静默)</span></p>
-  <p class="note">此插件允许本地 AI 助手在不打扰你的情况下，通过最小化的后台窗口为你自动执行网页任务。</p>
+  <div class="card">
+    <h3>🧠 AI 浏览器控制中枢</h3>
+    <div class="status-container">
+      <div id="indicator" class="indicator"></div>
+      <span id="status-text">正在获取状态...</span>
+    </div>
+    <button id="btn-reconnect" class="btn-reconnect" style="display: none;">立即连接服务</button>
+    <p class="note"><b>智能静音连接开启</b>：插件仅在您打开或激活常规网页（http/https）时才会连接本地后台服务，以防您在调试/整理插件时产生报错干扰。</p>
+  </div>
+  <script src="popup.js"></script>
 </body>
 </html>

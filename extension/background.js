@@ -2,17 +2,72 @@ let socket = null;
 let agentTabId = null;
 let currentGroupId = null;
 
+let retryCount = 0;
+const MAX_RETRIES = 5;
+let isExplicitlyPaused = false;
+let connectTimeout = null;
+
+// 每20秒发一次心跳，防止 Chrome 休眠
 let keepAliveInterval = setInterval(() => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (socket && socket.readyState === 1 /* WebSocket.OPEN */) {
         socket.send(JSON.stringify({ type: 'ping' }));
     }
-}, 20000); // 每20秒发一次心跳，防止 Chrome 休眠
+}, 20000);
+
+async function hasHttpOrHttpsTab() {
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (let tab of tabs) {
+      if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+        return true;
+      }
+    }
+  } catch (e) {
+    console.log('Error querying tabs:', e);
+  }
+  return false;
+}
+
+async function triggerConnect(force = false) {
+  if (socket && socket.readyState === 1 /* WebSocket.OPEN */) {
+    return;
+  }
+  
+  if (force) {
+    retryCount = 0;
+    isExplicitlyPaused = false;
+    if (connectTimeout) {
+      clearTimeout(connectTimeout);
+      connectTimeout = null;
+    }
+  }
+  
+  const hasTab = await hasHttpOrHttpsTab();
+  if (!hasTab && !force) {
+    console.log('[Connection] No active HTTP/HTTPS tabs. Staying silent to avoid error logs.');
+    return;
+  }
+  
+  if (isExplicitlyPaused && !force) {
+    console.log('[Connection] Paused due to max retries. Open a website or click popup to retry.');
+    return;
+  }
+  
+  connectWebSocket();
+}
 
 function connectWebSocket() {
+  if (socket && (socket.readyState === 0 || socket.readyState === 1)) {
+    return; // Already connecting or connected
+  }
+
+  console.log('[Connection] Attempting to connect to bridge server...');
   socket = new WebSocket('ws://localhost:8765');
 
   socket.onopen = () => {
     console.log('Connected to AI Agent Server');
+    retryCount = 0;
+    isExplicitlyPaused = false;
     socket.send(JSON.stringify({ type: 'status', message: 'Extension connected' }));
   };
 
@@ -47,14 +102,72 @@ function connectWebSocket() {
   };
 
   socket.onclose = () => {
-    console.log('Disconnected, retrying in 3s...');
-    setTimeout(connectWebSocket, 3000);
+    console.log('WebSocket closed.');
+    socket = null;
+    handleReconnect();
   };
   
   socket.onerror = (error) => {
     console.log('WebSocket Error:', error);
   };
 }
+
+function handleReconnect() {
+  if (isExplicitlyPaused) return;
+
+  retryCount++;
+  if (retryCount > MAX_RETRIES) {
+    isExplicitlyPaused = true;
+    console.log('[Connection] Maximum retry limit reached. Connection attempts paused.');
+    return;
+  }
+
+  // 指数退避：3s, 6s, 12s, 24s, 30s
+  const delay = Math.min(3000 * Math.pow(2, retryCount - 1), 30000);
+  console.log(`[Connection] Reconnecting in ${delay / 1000}s (Attempt ${retryCount}/${MAX_RETRIES})...`);
+  
+  if (connectTimeout) clearTimeout(connectTimeout);
+  connectTimeout = setTimeout(() => {
+    triggerConnect();
+  }, delay);
+}
+
+// 监听标签页更新与激活事件，随时自动唤醒连接
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+    console.log('[Event] HTTP/HTTPS tab updated, triggering reconnect check...');
+    triggerConnect();
+  }
+});
+
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    const tab = await chrome.tabs.get(activeInfo.tabId);
+    if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+      console.log('[Event] HTTP/HTTPS tab activated, triggering reconnect check...');
+      triggerConnect();
+    }
+  } catch (e) {}
+});
+
+// 处理来自 Popup 的状态查询和重连指令
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'getStatus') {
+    const isConnected = socket && socket.readyState === 1;
+    const isConnecting = socket && socket.readyState === 0;
+    sendResponse({
+      connected: isConnected,
+      connecting: isConnecting,
+      retryCount: retryCount,
+      isExplicitlyPaused: isExplicitlyPaused
+    });
+  } else if (request.action === 'reconnect') {
+    triggerConnect(true);
+    sendResponse({ status: 'connecting' });
+  }
+  return true; // Keep message channel open for async response
+});
+
 
 async function initAgentTab(taskName, msgId) {
     if (agentTabId) {
@@ -327,4 +440,4 @@ async function executeSnapshot(msgId) {
     }));
 }
 
-connectWebSocket();
+triggerConnect();
