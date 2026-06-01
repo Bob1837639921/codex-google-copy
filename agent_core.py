@@ -1,5 +1,5 @@
 """
-Codex Browser Agent Core SDK - WebSocket-based Premium Browser Controller
+NodeX Browser Agent Core SDK - WebSocket-based Premium Browser Controller
 ========================================================================
 This SDK enables seamless in-memory control of the Chrome browser via the WebSocket bridge.
 Optimized for AI Agents and automated LLM loops. No temporary scripts or file IPC needed.

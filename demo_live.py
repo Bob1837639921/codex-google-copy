@@ -1,5 +1,5 @@
 """
-Codex Live Active Demo - Pure In-Memory WebSocket Automation
+NodeX Live Active Demo - Pure In-Memory WebSocket Automation
 ============================================================
 An elegant, production-ready demonstrator exhibiting zero-file IPC browser control.
 Perfect for showcasing automated navigation, DOM scraping, and smart login blockades.

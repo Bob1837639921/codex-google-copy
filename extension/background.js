@@ -376,7 +376,8 @@ async function executeType(selector, text, msgId) {
                     el.focus();
                     el.click();
                     // 为了触发 React 的状态更新，直接修改其底层 value tracker
-                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                    const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, "value").set;
                     if (nativeInputValueSetter) {
                         nativeInputValueSetter.call(el, '');
                     } else {

@@ -1,4 +1,4 @@
-# Codex Browser Agent (仿 Google Codex 浏览器控制体)
+# NodeX Browser Agent (仿 Google Codex 浏览器控制体)
 
 An elegant, pure-memory, real-time browser automation framework bridging a local Python Client/SDK to Chrome via high-speed WebSockets and the Chrome DevTools Protocol (CDP).
 
@@ -120,7 +120,7 @@ async def main():
         return
         
     # 5. Emulate typing and search
-    await agent.type("input[name='q']", "AI Agent Codex")
+    await agent.type("input[name='q']", "AI Agent NodeX")
     await asyncio.sleep(2)
     
     # 6. Click search button
