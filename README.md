@@ -57,7 +57,9 @@ codex-google-copy/
 │   ├── manifest.json          # Manifest v3 metadata
 │   ├── background.js          # Core WebSocket client & CDP dispatch library (Hot-reloaded with guardrails)
 │   ├── popup.html             # Diagnostic popup
-│   └── popup.js               # Diagnostics and reconnection trigger controller
+│   ├── popup.js               # Diagnostics and reconnection trigger controller
+│   ├── icon.png               # High-resolution premium logo (AI Brain digital network design)
+│   └── icon{16,32,48,128}.png # Resized multi-resolution icons for Chrome runtime
 ├── agent_core.py              # Main Python Client SDK (websockets-based class BrowserAgent)
 ├── server_live.py             # Permanent Local WebSocket Bridge Server (Redirects stdin/websockets)
 ├── demo_live.py               # Out-of-the-box live memory demonstrator (Taobao search + block detection)
