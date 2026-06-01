@@ -103,6 +103,16 @@ function connectWebSocket() {
 
   socket.onclose = () => {
     console.log('WebSocket closed.');
+    if (agentTabId) {
+        sendCommand(agentTabId, 'Runtime.evaluate', {
+            expression: `
+                const cursor = document.getElementById('ai-fake-cursor');
+                if (cursor) {
+                    cursor.style.opacity = '0';
+                }
+            `
+        }).catch(() => {});
+    }
     socket = null;
     handleReconnect();
   };
@@ -132,11 +142,22 @@ function handleReconnect() {
   }, delay);
 }
 
-// 监听标签页更新与激活事件，随时自动唤醒连接
+// 监听标签页更新与激活事件，随时自动唤醒连接并管理鼠标隐藏
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
     console.log('[Event] HTTP/HTTPS tab updated, triggering reconnect check...');
     triggerConnect();
+  }
+  // 核心：若接管的代理标签页发生了重载、刷新或单页应用（SPA）历史路由变更，强制瞬间隐藏鼠标！
+  if (tabId === agentTabId && (changeInfo.status === 'complete' || changeInfo.url)) {
+    chrome.debugger.sendCommand({ tabId: agentTabId }, 'Runtime.evaluate', {
+      expression: `
+        const cursor = document.getElementById('ai-fake-cursor');
+        if (cursor) {
+            cursor.style.opacity = '0';
+        }
+      `
+    }).catch(() => {});
   }
 });
 
@@ -281,7 +302,8 @@ async function ensureFakeCursor() {
             cursor.style.height = '28px';
             cursor.style.background = 'url("data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'28\\' height=\\'28\\' viewBox=\\'0 0 24 24\\' fill=\\'%23FF3366\\' stroke=\\'white\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolygon points=\\'3 3 10 21 14 14 21 10 3 3\\'%3E%3C/polygon%3E%3C/svg%3E") no-repeat';
             cursor.style.backgroundSize = 'contain';
-            cursor.style.transition = 'top 0.6s ease-out, left 0.6s ease-out';
+            cursor.style.transition = 'top 0.6s ease-out, left 0.6s ease-out, opacity 0.4s ease-in-out, transform 0.15s ease-out';
+            cursor.style.opacity = '0';
             cursor.style.top = '10px';
             cursor.style.left = '10px';
             cursor.style.filter = 'drop-shadow(2px 4px 6px rgba(0,0,0,0.3))';
@@ -326,8 +348,23 @@ async function executeHover(selector, msgId) {
                 const rect = el.getBoundingClientRect();
                 const cursor = document.getElementById('ai-fake-cursor');
                 if (cursor) {
+                    // 1. 清理之前的隐藏定时器
+                    if (window.__ai_cursor_hide_timeout) {
+                        clearTimeout(window.__ai_cursor_hide_timeout);
+                    }
+                    
+                    // 2. 显式设为可见并移动位置
+                    cursor.style.opacity = '1';
                     cursor.style.left = (rect.left + rect.width / 2) + 'px';
                     cursor.style.top = (rect.top + rect.height / 2) + 'px';
+                    
+                    // 3. 注册新的延迟隐藏定时器，在 2.5 秒无操作后淡出消失
+                    window.__ai_cursor_hide_timeout = setTimeout(() => {
+                        const cur = document.getElementById('ai-fake-cursor');
+                        if (cur) {
+                            cur.style.opacity = '0';
+                        }
+                    }, 2500);
                 }
             }, 300);
             return true;
