@@ -7,6 +7,8 @@ description: Use the local NodeX Browser Agent Chrome automation bridge when a t
 
 Use this skill when the user wants to control Chrome through this repository's local bridge.
 
+When the plugin's MCP server is installed, prefer its `nodex_*` tools over writing one-off scripts.
+
 ## Requirements
 
 - The Chrome extension in `extension/` must be loaded as an unpacked extension.
@@ -21,6 +23,20 @@ python server_live.py
 ```bash
 pip install -r requirements.txt
 ```
+
+## MCP Tools
+
+The plugin exposes these tools through `scripts/nodex_mcp_server.py`:
+
+- `nodex_status`: check local bridge and extension connectivity.
+- `nodex_init`: create or attach the controlled Chrome tab group.
+- `nodex_navigate`: navigate the controlled tab to a URL.
+- `nodex_snapshot`: inspect visible DOM elements and login-wall state.
+- `nodex_hover`: move the visible cursor to a selector.
+- `nodex_click`: click a selector after the safety snapshot check.
+- `nodex_type`: type text after the safety snapshot check.
+- `nodex_evaluate`: run trusted JavaScript in the controlled tab.
+- `nodex_run_action_plan`: execute a sequential JSON action plan.
 
 ## Workflow
 

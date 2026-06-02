@@ -87,6 +87,8 @@ function connectWebSocket() {
 
         if (data.action === 'init') {
             await initAgentTab(data.taskName || 'AI 正在执行', data.id);
+        } else if (data.action === 'ping') {
+            socket.send(JSON.stringify({ id: data.id, status: 'success', message: 'Extension connected' }));
         } else if (data.action === 'navigate') {
             await executeNavigate(data.url, data.id);
         } else if (data.action === 'evaluate') {
@@ -450,9 +452,36 @@ async function executeSnapshot(msgId) {
     await ensureAgentTab();
     const code = `
         (() => {
-            const hasLogin = !!document.querySelector('.login-box, #login-box, .suplogin, [class*="login"], [id*="login"]') || 
-                            document.body.innerText.includes('密码登录') || 
-                            document.body.innerText.includes('短信登录') || 
+            const bodyText = document.body.innerText || '';
+            const loginSelectors = [
+                '.login-box',
+                '#login-box',
+                '.suplogin',
+                'input[type="password"]',
+                'form[action*="login"]',
+                '[class*="passport"]',
+                '[id*="passport"]',
+                '[class*="captcha"]',
+                '[id*="captcha"]'
+            ];
+            const loginKeywords = [
+                '密码登录',
+                '短信登录',
+                '扫码登录',
+                '安全验证',
+                '滑块验证',
+                '验证码',
+                'captcha',
+                'security verification'
+            ];
+            const hasLogin = loginSelectors.some((selector) => {
+                                const el = document.querySelector(selector);
+                                if (!el) return false;
+                                const rect = el.getBoundingClientRect();
+                                const style = window.getComputedStyle(el);
+                                return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+                            }) ||
+                            loginKeywords.some((keyword) => bodyText.toLowerCase().includes(keyword.toLowerCase())) ||
                             window.location.href.includes('login.taobao.com') ||
                             window.location.href.includes('passport');
             

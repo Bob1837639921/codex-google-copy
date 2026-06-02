@@ -16,6 +16,7 @@
     "codex"
   ],
   "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Codex Google Copy",
     "shortDescription": "Control Chrome from Codex through a local WebSocket bridge.",
@@ -26,7 +27,8 @@
       "Chrome automation",
       "Local WebSocket bridge",
       "DOM snapshots",
-      "Page interaction"
+      "Page interaction",
+      "MCP tools"
     ],
     "defaultPrompt": "Use the NodeX Browser Agent bridge in this repository to control my local Chrome browser safely."
   }

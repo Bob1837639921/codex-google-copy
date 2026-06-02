@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "nodex-chrome-agent": {
+      "command": "python",
+      "args": [
+        "scripts/nodex_mcp_server.py"
+      ]
+    }
+  }
+}
