@@ -143,6 +143,13 @@ class BrowserAgent:
         logging.info(f"Triggering extension download from {url} to {filename}...")
         return await self._send_command("download", url=url, filename=filename)
 
+    async def search_downloads(self, query: dict = None):
+        """
+        Queries the history of downloads using the chrome.downloads.search API.
+        """
+        logging.info(f"Searching downloads with query: {query}...")
+        return await self._send_command("searchDownloads", query=query or {})
+
     async def close(self):
         """
         Closes the WebSocket connection gracefully.

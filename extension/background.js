@@ -103,6 +103,8 @@ function connectWebSocket() {
             await executeSnapshot(data.id);
         } else if (data.action === 'download') {
             await executeDownload(data.url, data.filename, data.id);
+        } else if (data.action === 'searchDownloads') {
+            await executeSearchDownloads(data.query, data.id);
         }
     } catch (e) {
         socket.send(JSON.stringify({ id: data.id, status: 'error', error: e.toString() }));
@@ -542,6 +544,16 @@ async function executeDownload(url, filename, msgId) {
             socket.send(JSON.stringify({ id: msgId, status: 'error', error: chrome.runtime.lastError.message }));
         } else {
             socket.send(JSON.stringify({ id: msgId, status: 'success', downloadId: downloadId }));
+        }
+    });
+}
+
+async function executeSearchDownloads(query, msgId) {
+    chrome.downloads.search(query || {}, (results) => {
+        if (chrome.runtime.lastError) {
+            socket.send(JSON.stringify({ id: msgId, status: 'error', error: chrome.runtime.lastError.message }));
+        } else {
+            socket.send(JSON.stringify({ id: msgId, status: 'success', results: results }));
         }
     });
 }
