@@ -155,6 +155,9 @@ cython_debug/
 # Local test outputs and logs
 *.json
 !extension/manifest.json
+!.codex-plugin/
+!.codex-plugin/plugin.json
 *.txt
+!requirements.txt
 !extension/popup.html
 *.log

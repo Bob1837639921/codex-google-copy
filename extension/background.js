@@ -7,6 +7,10 @@ const MAX_RETRIES = 5;
 let isExplicitlyPaused = false;
 let connectTimeout = null;
 
+function jsString(value) {
+  return JSON.stringify(String(value));
+}
+
 // 每20秒发一次心跳，防止 Chrome 休眠
 let keepAliveInterval = setInterval(() => {
     if (socket && socket.readyState === 1 /* WebSocket.OPEN */) {
@@ -337,9 +341,10 @@ async function executeEvaluate(code, msgId) {
 
 async function executeHover(selector, msgId) {
     await ensureFakeCursor();
+    const selectorLiteral = jsString(selector);
     const codeMove = `
         (() => {
-            const el = document.querySelector('${selector}');
+            const el = document.querySelector(${selectorLiteral});
             if (!el) return false;
             
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -379,11 +384,12 @@ async function executeHover(selector, msgId) {
 
 async function executeClick(selector, msgId) {
     await executeHover(selector, null); 
+    const selectorLiteral = jsString(selector);
     
     setTimeout(async () => {
         const codeClick = `
             (() => {
-                const el = document.querySelector('${selector}');
+                const el = document.querySelector(${selectorLiteral});
                 if (el) { 
                     const cursor = document.getElementById('ai-fake-cursor');
                     if (cursor) {
@@ -403,12 +409,13 @@ async function executeClick(selector, msgId) {
 
 async function executeType(selector, text, msgId) {
     await executeHover(selector, null);
+    const selectorLiteral = jsString(selector);
     
     setTimeout(async () => {
         // 关键1：先真正触发一次 DOM 级别的 click，确保框架内部的聚焦状态
         const codeClick = `
             (() => {
-                const el = document.querySelector('${selector}');
+                const el = document.querySelector(${selectorLiteral});
                 if (el) { 
                     el.focus();
                     el.click();
