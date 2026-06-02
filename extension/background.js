@@ -216,6 +216,21 @@ async function initAgentTab(taskName, msgId) {
         }
     }
 
+    try {
+        const tabs = await chrome.tabs.query({});
+        const chatgptTab = tabs.find(tab => tab.url && tab.url.includes('chatgpt.com'));
+        if (chatgptTab) {
+            agentTabId = chatgptTab.id;
+            await attachDebugger(agentTabId);
+            if (msgId) {
+                socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Attached to existing ChatGPT tab' }));
+            }
+            return;
+        }
+    } catch (e) {
+        console.log('Error searching for existing ChatGPT tab:', e);
+    }
+
     const tab = await chrome.tabs.create({ url: 'about:blank', active: false });
     agentTabId = tab.id;
     
