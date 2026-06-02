@@ -380,6 +380,22 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
     js_poll = f"""
     (() => {{
         const bodyText = document.body ? document.body.innerText : "";
+        
+        // 1. 检测 ChatGPT 官方生图额度/使用频率上限，秒级拦截
+        if (bodyText.includes("You've reached your limit") || 
+            bodyText.includes("reached your limit") || 
+            bodyText.includes("reached the limit") ||
+            bodyText.includes("Please try again") ||
+            bodyText.includes("You have reached your message limit") ||
+            bodyText.includes("额度已达上限") ||
+            bodyText.includes("达到生图额度极限") ||
+            bodyText.includes("生图额度") ||
+            bodyText.includes("生图限制") ||
+            bodyText.includes("使用上限")) {{
+            return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达今日上限（Rate Limit / Quota Exceeded）" }};
+        }}
+
+        // 2. 检测 DALL-E 临时服务错误
         if (bodyText.includes("wasn't able to generate") || 
             bodyText.includes("encountered an error") || 
             bodyText.includes("generation tool encountered") || 
@@ -414,6 +430,9 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
             if status == "done":
                 logging.info("检测到图片已彻底生成并渲染完毕！")
                 return res.get("src")
+            elif status == "quota_limit":
+                logging.error(f"⚠️ [生图限额拦截] 检测到 ChatGPT 官方生图限额已满：{res.get('error')}")
+                return "quota_limit"
             elif status == "error":
                 logging.error(f"检测到 OpenAI 官方后台发生暂时性生成错误: {res.get('error')}")
                 return "error"
@@ -471,6 +490,16 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     logging.info("-" * 60)
     logging.info(f"【生成启动】角色: {char_name} | 类型: {TYPE_LABEL.get(img_type, img_type)}")
     
+    # 0. 智能跳过已存在资产，避免重复生成
+    safe_char_name = re.sub(r'[\\/:*?"<>|]', '-', char_name).strip() or "未命名角色"
+    sub_folder_name = TYPE_FOLDER.get(img_type, "其他")
+    target_dir = os.path.join(OUTPUT_ROOT, safe_char_name, sub_folder_name)
+    target_path = os.path.join(target_dir, f"{char_id}_{img_type}.png")
+    if os.path.exists(target_path) and os.path.getsize(target_path) > 1024:
+        display_path = target_path.replace("\\", "/")
+        logging.info(f"✨ [智能跳过] 资产文件已存在于: {display_path}，直接跳过生成进入下一项！")
+        return True
+
     # 1. 载入历史专属会话 URL
     sessions = load_sessions()
     saved_url = sessions.get(char_id)
@@ -505,6 +534,9 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
                 
     # 5. 等待完成
     new_src = await poll_until_image_ready(agent, pre_srcs)
+    if new_src == "quota_limit":
+        logging.error(f"⚠️ [限额拦截] 检测到生图限额已满，停止当前角色的流水线生成以避免无谓重试。")
+        return "quota_limit"
     if new_src == "error" or not new_src:
         logging.error(f"绘图执行出现错误或超时，本次生成失败。")
         return False
@@ -681,8 +713,109 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "prompt": "Now, draw a full-body cinematic splash art of the exact same Neon Shadow Hacker character from our conversation. She stands in her signature raincoat, arm extended, visor glowing, in a cool stealth pose. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
         }
     ]
+    astrolabe_plan = [
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "main",
+            "prompt": "A masterfully crafted epic fantasy concept art of the Astrolabe Archivist. A slender, handsome young East Asian male scholar with short, messy silver-gray hair. His eyes are elegantly covered with a fine, star-embroidered silk white blindfold. He is wearing elaborate, layered midnight-blue scholar robes adorned with intricate gold-threaded celestial constellations and constellations embroidery. He stands inside a soaring, dark gothic archives library, holding a highly detailed, glowing mechanical gold and silver astrolabe floating above his open palms. Shimmering, ethereal blue-and-gold stardust and glowing cosmic charts float gently around him, passing through hovering crystal magnification lenses. Masterpiece, unreal engine 5 render, highly detailed, 8k resolution."
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Astrolabe Archivist character from our conversation. Focus on his face and shoulders, capturing his star-embroidered white blindfold, silver-gray hair, and handsome refined features. The soft ethereal blue and gold micro-lights from his floating astrolabe cast gentle stellar glimmers onto his cheeks, highlighting realistic skin details. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Astrolabe Archivist character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one serene and calm, one with a subtle focused frown as if deep in observation, and one showing a faint, gentle and warm smile. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Astrolabe Archivist character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his midnight-blue scholar robes and star-embroidered white blindfold. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Astrolabe Archivist character from our conversation, but wearing an alternative mystical high-priest outfit: a majestic white and gold ceremonial robe with flowing stardust silk sleeves, holding a silver celestial sceptre, without his dark scholar robes. Full-body view, standing dynamically on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed artifact design sheet of the Astrolabe Archivist's floating mechanical gold and silver astrolabe. Show it from two angles, highlighting the intricate rotating celestial gears, glowing crystal runes, and metallic textures. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed gothic grand archive library scene concept art. A soaring cathedral-like chamber with massive towering dark-wood bookshelves, mystical glowing blue celestial stardust charts and constellations projecting in mid-air, casting a dramatic, glorious rim light over ancient scrolls. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Astrolabe Archivist character from our conversation. He stands in his signature midnight-blue scholar robes, holding the glowing floating astrolabe, looking serene and powerful. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        }
+    ]
     
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan
+    rust_mechanic_plan = [
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "main",
+            "prompt": "A masterfully crafted epic wasteland action concept art of the Rustland Reconstructor. An energetic young East Asian tomboy mechanic with messy short coffee-brown hair and a patch of black motor grease playfully smudged on her left cheek. She wears protective dusty work goggles pushed up on her forehead and a rugged, sleeveless grease-stained khaki work jumpsuit. She is sitting dynamically inside a cluttered desert scrap-iron workshop, operating a massive, heavily customized rusted scrap-iron exopower mechanical claw that glows with intense, bright orange fiery engine exhaust and white steam. Scrap-metal gears, wrenches, and engine parts lie scattered all around her. The background features a dramatic orange dusty sunset casting rich, glowing rim light over the desert ruins. Masterpiece, unreal engine 5 render, photorealistic, 8k resolution."
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up high-fidelity portrait of the exact same Rustland Reconstructor character from our conversation. Focus on her face and shoulders, capturing her messy short brown hair, grease-smudged cheek, and bright amber eyes. Pushed up on her forehead are her work goggles. Soft orange glowing highlights from her workshop engines reflect onto her skin, showing highly realistic skin details. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Rustland Reconstructor character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one bright and energetic with an open-mouthed laugh, one intensely focused and alert, and one showing a cute, playful smirk with a wink. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Rustland Reconstructor character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her work goggles, sleeveless khaki jumpsuit, and tactical gloves. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Rustland Reconstructor character from our conversation, but wearing an alternative heavy scavenger power armor: a bulkier iron-plated exoskeleton suit with bright glowing copper tubes, and protective heavy steel boots, with her goggles pulled down over her eyes. Full-body view, standing dynamically on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Rustland Reconstructor's heavy exopower bionic claw. Show the giant rusted scrap-iron claw from two angles, highlighting the complex hydraulic gears, exposed copper wiring, and bright orange engine exhaust venting. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "scene",
+            "prompt": "Now, draw a breathtaking post-apocalyptic desert scrap-iron workshop scene concept art. A cluttered workshop filled with mountains of rusted metal plates, scattered gears, steam pipes venting, and a giant scrap engine in the center. Heavy sun rays piercing through the dusty air, casting intense warm rim light over the chaotic workspace. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Rustland Reconstructor character from our conversation. She stands dynamically in her work jumpsuit next to her giant mechanical claw, smiling confidently with amber eyes. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        }
+    ]
+    
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan
     
     # 动态过滤条件
     if char_id:
@@ -726,6 +859,9 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
                         task["img_type"],
                         task["prompt"]
                     )
+                    if res == "quota_limit":
+                        logging.critical("🚨 [额度已达上限] 触发 OpenAI 生图频率或额度限制，系统将直接强行终止并退出整个绘图流水线！")
+                        return
                     if res:
                         success = True
                         break
