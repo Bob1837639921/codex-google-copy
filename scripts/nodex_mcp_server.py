@@ -158,6 +158,18 @@ async def tool_evaluate(args: dict[str, Any]) -> dict[str, Any]:
     return ok(await with_agent(run))
 
 
+async def tool_download(args: dict[str, Any]) -> dict[str, Any]:
+    url = require_str(args, "url")
+    filename = args.get("filename")
+    if filename is not None and (not isinstance(filename, str) or not filename):
+        raise ValueError("`filename` must be a non-empty string when provided")
+
+    async def run(agent: BrowserAgent) -> Any:
+        return await agent.download(url, filename)
+
+    return ok(await with_agent(run))
+
+
 async def tool_run_action_plan(args: dict[str, Any]) -> dict[str, Any]:
     steps = require_plan_steps(args)
     group_name = args.get("group_name", "NodeX Action Plan")
@@ -192,6 +204,7 @@ TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
     "nodex_click": tool_click,
     "nodex_type": tool_type,
     "nodex_evaluate": tool_evaluate,
+    "nodex_download": tool_download,
     "nodex_run_action_plan": tool_run_action_plan,
 }
 
@@ -269,6 +282,19 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "type": "object",
             "properties": {"code": {"type": "string"}},
             "required": ["code"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_download",
+        "description": "Download a URL through Chrome's downloads manager without relying on a foreground page click.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string"},
+                "filename": {"type": "string"},
+            },
+            "required": ["url"],
             "additionalProperties": False,
         },
     },

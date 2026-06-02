@@ -36,6 +36,7 @@ The plugin exposes these tools through `scripts/nodex_mcp_server.py`:
 - `nodex_click`: click a selector after the safety snapshot check.
 - `nodex_type`: type text after the safety snapshot check.
 - `nodex_evaluate`: run trusted JavaScript in the controlled tab.
+- `nodex_download`: download a URL through Chrome's downloads manager.
 - `nodex_run_action_plan`: execute a sequential JSON action plan.
 
 ## Workflow
@@ -46,6 +47,16 @@ The plugin exposes these tools through `scripts/nodex_mcp_server.py`:
 4. Before clicking or typing on shopping, login, payment, or verification pages, call `await agent.snapshot()`.
 5. If `snapshot()["blocked_by_login"]` is true, stop automation and ask the user to handle login or verification manually.
 6. Prefer high-level methods in `agent_core.py`: `navigate`, `snapshot`, `hover`, `click`, `type`, and `evaluate`.
+
+## Pipeline Error Policy
+
+For long-running generation workflows, use the shared pipeline helpers instead of ad hoc string checks:
+
+- `pipeline_errors.py`: shared state objects and abort/retry/recoverable exceptions.
+- `state_detector.py`: page-state classification for ChatGPT generation flows.
+- `pipeline_runner.py`: consistent retry and abort handling for each task step.
+
+Fatal states such as quota limits, login requirements, CAPTCHA, and account/session blocks should raise `PipelineAbort`. Temporary generation, network, or rendering issues should raise `StepRetry` and let the runner decide whether to retry or skip.
 
 ## Safety Notes
 

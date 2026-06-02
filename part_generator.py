@@ -815,7 +815,34 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
         }
     ]
     
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan
+    rust_sniper_plan = [
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "main",
+            "prompt": "A masterfully crafted epic post-apocalyptic cinematic concept art of the Rustland Silent Scout. A tall, handsome young East Asian marksman with highly refined sharp facial features and wind-blown short black hair. His right eye is replaced by an intricate, glowing mechanical cybernetic gear assembly glowing with cool cyan light, custom-built from scrap brass by the Reconstructor. He wears a rugged, dust-swept tactical black hooded cape over worn combat plates. He is lying alertly on a decaying, rusted scrap-iron railway bridge above a scenic desert canyon. In his hands, he grips a massive two-meter long heavy futuristic electromagnetic scanning device meticulously welded from scrap steel pipes and copper coils that hums with faint blue electric arcs. The background features a sweeping, cinematic yellow sandstorm engulfing towering metal ruins under a dramatic amber-red dusty sunset. Rich rim lighting, masterpiece, photorealistic textures, octane render, 8k resolution."
+        }
+    ]
+    
+    rust_apprentice_plan = [
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "main",
+            "prompt": "A breathtaking masterfully crafted post-apocalyptic cinematic concept art of the young Rustland Workshop Apprentice. A cheerful, slightly clumsy teenage East Asian boy with short messy black hair and a dirt smudge on his nose. He wears an oversized, loose-fitting khaki mechanic jumpsuit with one shoulder strap hanging down, heavy brown leather work gloves, and steel-toed boots. He carries a heavy canvas bag filled with various rusted metal wrenches and gears on his back. He is standing dynamically in a cluttered scrap yard, holding a giant copper gear, looking proud and energetic. Heavy sun rays piercing through the dusty air, casting intense warm rim light, unreal engine 5 render, highly detailed, photorealistic textures, 8k resolution."
+        }
+    ]
+    
+    rust_nomad_plan = [
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "main",
+            "prompt": "A desolate, highly detailed character concept art in a photorealistic cinematic style showing a silent Wasteland Nomad. A thin, weary Middle Eastern man covered in heavily patched dusty gray and brown linen rags and sandproof face wrappings. He carries an old, dented brass water jar in both hands, walking wearily through a toxic yellow desert sandstorm. Behind him are scattered ruins of half-buried rusted steel containers, heavy dust atmosphere, dramatic setting sunset casting majestic rim lighting, unreal engine 5 render, highly detailed, masterpiece, 8k resolution."
+        }
+    ]
+    
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan
     
     # 动态过滤条件
     if char_id:

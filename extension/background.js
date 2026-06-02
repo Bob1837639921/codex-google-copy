@@ -257,9 +257,26 @@ async function attachDebugger(tabId) {
 
 async function sendCommand(tabId, method, params = {}) {
   return new Promise((resolve, reject) => {
-    chrome.debugger.sendCommand({ tabId: tabId }, method, params, (result) => {
+    chrome.debugger.sendCommand({ tabId: tabId }, method, params, async (result) => {
       if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError.message);
+        const errMsg = chrome.runtime.lastError.message;
+        if (errMsg && (errMsg.includes("Debugger is not attached") || errMsg.includes("not attached to the tab"))) {
+          console.warn(`[Debugger] Detached detected. Attempting to auto re-attach to tab ${tabId}...`);
+          try {
+            await attachDebugger(tabId);
+            chrome.debugger.sendCommand({ tabId: tabId }, method, params, (retryResult) => {
+              if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError.message);
+              } else {
+                resolve(retryResult);
+              }
+            });
+          } catch (attachErr) {
+            reject(`Failed to re-attach debugger: ${attachErr}. Original error: ${errMsg}`);
+          }
+        } else {
+          reject(errMsg);
+        }
       } else {
         resolve(result);
       }

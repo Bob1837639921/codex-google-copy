@@ -133,6 +133,17 @@ class BrowserAgent:
         response = await self._send_command("evaluate", code=js_code)
         return response.get("result")
 
+    async def download(self, url: str, filename: str | None = None):
+        """
+        Downloads a URL through Chrome's downloads manager instead of the page runtime.
+        This is more reliable when the controlled tab is backgrounded or the window is minimized.
+        """
+        logging.info(f"Requesting Chrome-managed download: {url}")
+        payload = {"url": url}
+        if filename:
+            payload["filename"] = filename
+        return await self._send_command("download", **payload)
+
     async def close(self):
         """
         Closes the WebSocket connection gracefully.
