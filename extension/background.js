@@ -354,7 +354,8 @@ async function executeEvaluate(code, msgId) {
 
   const result = await sendCommand(agentTabId, 'Runtime.evaluate', {
     expression: code,
-    returnByValue: true
+    returnByValue: true,
+    awaitPromise: true
   });
   
   socket.send(JSON.stringify({ id: msgId, status: 'success', result: result.result?.value }));
