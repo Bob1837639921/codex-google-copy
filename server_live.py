@@ -125,7 +125,7 @@ async def stdin_loop():
 async def main():
     print("Starting Live Bridge server on port 8765...")
     try:
-        server = await websockets.serve(handler, "localhost", 8765)
+        server = await websockets.serve(handler, "localhost", 8765, max_size=50 * 1024 * 1024)
         # 启动常驻标准输入监听循环
         asyncio.create_task(stdin_loop())
         await server.wait_closed()

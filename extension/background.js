@@ -105,6 +105,8 @@ function connectWebSocket() {
             await executeDownload(data.url, data.filename, data.id);
         } else if (data.action === 'searchDownloads') {
             await executeSearchDownloads(data.query, data.id);
+        } else if (data.action === 'fetchAsBase64') {
+            await executeFetchAsBase64(data.url, data.id);
         }
     } catch (e) {
         socket.send(JSON.stringify({ id: data.id, status: 'error', error: e.toString() }));
@@ -557,6 +559,43 @@ async function executeSearchDownloads(query, msgId) {
             socket.send(JSON.stringify({ id: msgId, status: 'success', results: results }));
         }
     });
+}
+
+// Fetch a URL using the extension's authenticated cookie context and return it as base64.
+// This bypasses chrome.downloads entirely so no download manager (FDM etc.) can intercept it.
+async function executeFetchAsBase64(url, msgId) {
+    try {
+        const response = await fetch(url, {
+            credentials: 'include',   // carry all cookies for chatgpt.com
+            cache: 'no-store'
+        });
+        if (!response.ok) {
+            socket.send(JSON.stringify({
+                id: msgId,
+                status: 'error',
+                error: `HTTP ${response.status}: ${response.statusText}`
+            }));
+            return;
+        }
+        const buffer = await response.arrayBuffer();
+        const uint8 = new Uint8Array(buffer);
+        // Convert to base64 in chunks to avoid call-stack overflow on large files
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8.length; i += chunkSize) {
+            binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+        }
+        const base64 = btoa(binary);
+        socket.send(JSON.stringify({
+            id: msgId,
+            status: 'success',
+            base64: base64,
+            mime: response.headers.get('content-type') || 'image/png',
+            size: uint8.length
+        }));
+    } catch (e) {
+        socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
+    }
 }
 
 triggerConnect();

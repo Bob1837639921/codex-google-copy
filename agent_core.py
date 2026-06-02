@@ -34,7 +34,7 @@ class BrowserAgent:
         """
         logging.info(f"Connecting to Browser Agent Bridge at {self.ws_url}...")
         try:
-            self.websocket = await websockets.connect(self.ws_url)
+            self.websocket = await websockets.connect(self.ws_url, max_size=50 * 1024 * 1024)
             logging.info("Successfully connected to the Browser Agent Bridge!")
             return True
         except Exception as e:
@@ -149,6 +149,33 @@ class BrowserAgent:
         """
         logging.info(f"Searching downloads with query: {query}...")
         return await self._send_command("searchDownloads", query=query or {})
+
+    async def fetch_as_file(self, url: str, dest_path: str) -> dict:
+        """
+        Fetches a URL using the extension's authenticated cookie context (credentials: include),
+        bypassing chrome.downloads entirely. No download manager (FDM etc.) will intercept this.
+        The file is written directly to dest_path on the local filesystem by Python.
+
+        :param url:       Full HTTP/HTTPS URL to fetch (e.g. a ChatGPT estuary/content URL).
+        :param dest_path: Absolute local path to write the result to (e.g. 'C:/Ai/.../cover.png').
+        :return:          dict with keys: status ('success'|'error'), size (bytes), mime, path.
+        """
+        import base64, os
+        logging.info(f"Fetching {url} as file via extension context → {dest_path}")
+        response = await self._send_command("fetchAsBase64", url=url)
+        if not response or response.get("status") != "success":
+            error = response.get("error", "Unknown error") if response else "No response"
+            logging.error(f"fetchAsBase64 failed: {error}")
+            return {"status": "error", "error": error}
+        b64_data = response.get("base64", "")
+        raw_bytes = base64.b64decode(b64_data)
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        with open(dest_path, "wb") as f:
+            f.write(raw_bytes)
+        size = len(raw_bytes)
+        logging.info(f"Saved {size:,} bytes → {dest_path}")
+        return {"status": "success", "path": dest_path, "size": size, "mime": response.get("mime", "")}
+
 
     async def close(self):
         """
