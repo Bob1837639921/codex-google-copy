@@ -2,7 +2,7 @@
 
 An elegant, pure-memory, real-time browser automation framework bridging a local Python Client/SDK to Chrome via high-speed WebSockets and the Chrome DevTools Protocol (CDP).
 
-这是一个基于高带宽 **WebSocket** 与 **Chrome DevTools Protocol (CDP)** 的高品质浏览器实时自动化控制框架。废弃了任何繁琐的文件 IPC 链路，完美实现全流程“无脚本、纯内存”智能交互与视觉微光标动效，内置**自动化登录墙/验证码阻断检测安全屏障**。
+这是一个基于高带宽 **WebSocket** 与 **Chrome DevTools Protocol (CDP)** 的高品质浏览器实时自动化控制框架。废弃了任何繁琐的文件 IPC 链路，完美实现全流程“无脚本、纯内存”智能交互与视觉微光标动效，内置**自动化登录墙/验证码阻断检测安全屏障**，并支持通过扩展上下文直接将任意已认证 URL 的资源写入本地任意路径，完全绕过第三方下载管理器（如 FDM）。
 
 ---
 
