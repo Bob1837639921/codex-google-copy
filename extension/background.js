@@ -516,8 +516,6 @@ async function executeSnapshot(msgId) {
     }));
 }
 
-async def_executeDownload_placeholder_dummy() {}
-
 async function executeDownload(url, filename, msgId) {
     chrome.downloads.download({
         url: url,
