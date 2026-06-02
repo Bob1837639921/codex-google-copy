@@ -103,35 +103,70 @@ import asyncio
 from agent_core import BrowserAgent
 
 async def main():
-    # 1. Initialize client
+    # 1. 初始化客户端
     agent = BrowserAgent("ws://localhost:8765")
     await agent.connect()
-    
-    # 2. Open / attach to group tab
+
+    # 2. 打开 / 附着到标签组
     await agent.init("AI Core Workspace")
-    
-    # 3. Perform automated navigation
+
+    # 3. 自动化导航
     await agent.navigate("https://www.google.com")
-    
-    # 4. Viewport snapshot with login-wall alert guardrail
+
+    # 4. DOM 快照 + 登录墙检测
     snapshot = await agent.snapshot()
     if snapshot["blocked_by_login"]:
-        print("🚨 Blocked by Login Modal! Pausing execution.")
+        print("🚨 登录墙检测！暂停执行。")
         return
-        
-    # 5. Emulate typing and search
+
+    # 5. 模拟输入
     await agent.type("input[name='q']", "AI Agent NodeX")
     await asyncio.sleep(2)
-    
-    # 6. Click search button
+
+    # 6. 点击按钮
     await agent.click("input[type='submit']")
-    
-    # 7. Disconnect gracefully
+
+    # 7. 智能保存文件（自动路由：图片直存 / 大文件 Blob 回退）
+    result = await agent.smart_save(
+        "https://chatgpt.com/backend-api/estuary/content?id=...",
+        "C:/Ai/assets/cover.png"
+    )
+    print(result)  # {'status': 'success', 'path': '...', 'size': 2663442}
+
+    # 8. 断开连接
     await agent.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+### 📥 SDK 完整方法速查
+
+| 方法 | 说明 |
+|------|------|
+| `connect()` | 建立 WebSocket 连接（max_size=50MB）|
+| `init(task_name)` | 附着到或创建受控 Chrome 标签组 |
+| `navigate(url)` | 导航受控标签到指定 URL |
+| `snapshot()` | 获取 DOM 快照和登录墙检测结果 |
+| `hover(selector)` | 移动虚拟光标到 CSS 选择器 |
+| `click(selector)` | 点击 CSS 选择器对应元素 |
+| `type(selector, text)` | 向输入元素输入文本 |
+| `evaluate(js_code)` | 在受控页面执行 JS 并返回结果 |
+| `download(url, filename)` | chrome.downloads 原生下载（可能被 FDM 拦截）|
+| `search_downloads(query)` | 查询 Chrome 下载历史 |
+| `fetch_as_file(url, dest_path)` | 图片直存：带 Cookie fetch → base64 → 直写任意路径（< 30MB）|
+| `download_via_blob(url, filename)` | Blob 下载：fetch → blob: URL → chrome.downloads，FDM 安全 |
+| `smart_save(url, dest_path)` | ⭐ **推荐**：自动路由，图片走直存，其他走 Blob 回退 |
+| `close()` | 优雅关闭 WebSocket 连接 |
+
+### 🔀 下载方式对比
+
+| 方法 | 后台安全 | 需要窗口唤醒 | FDM 拦截 | 目标路径 |
+|------|---------|------------|---------|---------|
+| `download()` | ✅ | ❌ | ⚠️ 可能弹框 | Downloads 文件夹 |
+| `fetch_as_file()` | ✅ | ❌ | ✅ 完全绕过 | **任意本地路径** |
+| `download_via_blob()` | ✅ | ❌ | ✅ 完全绕过 | Downloads 文件夹 |
+| `smart_save()` ⭐ | ✅ | ❌ | ✅ 完全绕过 | 图片→任意路径；其他→Downloads |
 
 ---
 
