@@ -101,6 +101,8 @@ function connectWebSocket() {
             await executeType(data.selector, data.text, data.id);
         } else if (data.action === 'snapshot') {
             await executeSnapshot(data.id);
+        } else if (data.action === 'download') {
+            await executeDownload(data.url, data.filename, data.id);
         }
     } catch (e) {
         socket.send(JSON.stringify({ id: data.id, status: 'error', error: e.toString() }));
@@ -512,6 +514,23 @@ async function executeSnapshot(msgId) {
         blockedByLogin: data.blockedByLogin,
         dom: data.dom 
     }));
+}
+
+async def_executeDownload_placeholder_dummy() {}
+
+async function executeDownload(url, filename, msgId) {
+    chrome.downloads.download({
+        url: url,
+        filename: filename,
+        conflictAction: 'overwrite',
+        saveAs: false
+    }, (downloadId) => {
+        if (chrome.runtime.lastError) {
+            socket.send(JSON.stringify({ id: msgId, status: 'error', error: chrome.runtime.lastError.message }));
+        } else {
+            socket.send(JSON.stringify({ id: msgId, status: 'success', downloadId: downloadId }));
+        }
+    });
 }
 
 triggerConnect();

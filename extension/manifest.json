@@ -12,7 +12,8 @@
   "permissions": [
     "debugger",
     "tabs",
-    "tabGroups"
+    "tabGroups",
+    "downloads"
   ],
   "host_permissions": [
     "http://*/*",

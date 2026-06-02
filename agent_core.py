@@ -133,6 +133,16 @@ class BrowserAgent:
         response = await self._send_command("evaluate", code=js_code)
         return response.get("result")
 
+    async def download(self, url: str, filename: str):
+        """
+        Triggers a download of the given URL inside Chrome, saving it under the specified filename.
+        Uses chrome.downloads API in the background.js extension.
+        :param url: Complete HTTP/HTTPS URL of the target file.
+        :param filename: Desired relative path/name in the downloads directory (e.g. 'cover.png').
+        """
+        logging.info(f"Triggering extension download from {url} to {filename}...")
+        return await self._send_command("download", url=url, filename=filename)
+
     async def close(self):
         """
         Closes the WebSocket connection gracefully.
