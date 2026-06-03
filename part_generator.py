@@ -419,86 +419,245 @@ async def scan_existing_web_images(agent: BrowserAgent):
     js_get = """
     (() => {
         const imgs = Array.from(document.querySelectorAll('img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'));
-        return imgs.map(img => img.src);
+        const srcs = imgs.map(img => img.src);
+        return Array.from(new Set(srcs));
     })()
     """
     res = await agent.evaluate(js_get)
     if isinstance(res, list):
-        return set(res)
-    return set()
+        return res
+    return []
 
 async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, timeout_sec: int = 300):
     logging.info("开始监测 DOM 生成进度...")
     start_time = time.time()
     pre_srcs_json = json.dumps(list(pre_existing_srcs))
     
-    js_poll = f"""
-    (() => {{
-        const bodyText = document.body ? document.body.innerText : "";
-        
-        // 1. 检测 ChatGPT 官方生图额度/使用频率上限，秒级拦截
-        if (bodyText.includes("You've reached your limit") || 
-            bodyText.includes("reached your limit") || 
-            bodyText.includes("reached the limit") ||
-            bodyText.includes("Please try again") ||
-            bodyText.includes("You have reached your message limit") ||
-            bodyText.includes("额度已达上限") ||
-            bodyText.includes("达到生图额度极限") ||
-            bodyText.includes("生图额度") ||
-            bodyText.includes("生图限制") ||
-            bodyText.includes("使用上限")) {{
-            return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达今日上限（Rate Limit / Quota Exceeded）" }};
-        }}
-
-        // 2. 检测 DALL-E 临时服务错误
-        if (bodyText.includes("wasn't able to generate") || 
-            bodyText.includes("encountered an error") || 
-            bodyText.includes("generation tool encountered") || 
-            bodyText.includes("Error generating image")) {{
-            return {{ "status": "error", "error": "OpenAI DALL-E 官方绘图服务发生临时错误" }};
-        }}
-
-        const preSrcs = new Set({pre_srcs_json});
-        const imgs = Array.from(document.querySelectorAll('img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'));
-        if (imgs.length === 0) return {{ "status": "waiting" }};
-        
-        const newImgs = imgs.filter(img => !preSrcs.has(img.src));
-        if (newImgs.length === 0) return {{ "status": "waiting" }};
-        
-        const latestImg = newImgs[newImgs.length - 1];
-        
-        if (latestImg.complete && latestImg.naturalWidth > 0) {{
-            const isGenerating = document.querySelector('svg[class*="animate-spin"], div[class*="generating"], .streaming-loader') !== null;
-            if (isGenerating) {{
-                return {{ "status": "generating" }};
-            }}
-            return {{ "status": "done", "src": latestImg.src }};
-        }}
-        return {{ "status": "rendering" }};
-    }})()
-    """
+    generation_started = False
     
     while time.time() - start_time < timeout_sec:
+        js_poll = f"""
+        (() => {{
+            const bodyText = document.body ? document.body.innerText : "";
+            
+            // 1. 检测 ChatGPT 官方生图额度/使用频率上限，秒级拦截
+            if (bodyText.includes("You've reached your limit") || 
+                bodyText.includes("reached your limit") || 
+                bodyText.includes("reached the limit") ||
+                bodyText.includes("Please try again") ||
+                bodyText.includes("You have reached your message limit") ||
+                bodyText.includes("额度已达上限") ||
+                bodyText.includes("达到生图额度极限") ||
+                bodyText.includes("生图额度") ||
+                bodyText.includes("生图限制") ||
+                bodyText.includes("使用上限")) {{
+                return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达今日上限（Rate Limit / Quota Exceeded）" }};
+            }}
+
+            // 2. 检测 DALL-E 临时服务错误
+            if (bodyText.includes("wasn't able to generate") || 
+                bodyText.includes("encountered an error") || 
+                bodyText.includes("generation tool encountered") || 
+                bodyText.includes("Error generating image")) {{
+                return {{ "status": "error", "error": "OpenAI DALL-E 官方绘图服务发生临时错误" }};
+            }}
+
+            // 3. 检查是否有生图指示或停止按钮，代表生图已经在运行了
+            const hasStopButton = document.querySelector('button[data-testid="stop-button"]') !== null ||
+                                  document.querySelector('#composer-submit-button[data-testid="stop-button"]') !== null;
+            
+            const latestAssistantTurn = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]')).pop();
+            let isThinkingCurrently = false;
+            if (latestAssistantTurn) {{
+                const thinkBtn = Array.from(latestAssistantTurn.querySelectorAll('button')).find(b => b.innerText.includes("Thinking"));
+                if (thinkBtn) isThinkingCurrently = true;
+            }}
+            const hasThinking = isThinkingCurrently || 
+                                document.querySelector('svg[class*="animate-spin"]') !== null ||
+                                document.querySelector('.streaming-loader') !== null;
+            
+            const isGeneratingCurrently = hasStopButton || hasThinking;
+
+            const preSrcs = new Set({pre_srcs_json});
+            const imgs = Array.from(document.querySelectorAll('img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'));
+            
+            if (imgs.length === 0) {{
+                return {{ "status": "waiting", "isGenerating": isGeneratingCurrently }};
+            }}
+            
+            const newImgs = imgs.filter(img => !preSrcs.has(img.src));
+            if (newImgs.length === 0) {{
+                return {{ "status": "waiting", "isGenerating": isGeneratingCurrently }};
+            }}
+            
+            const latestImg = newImgs[newImgs.length - 1];
+            
+            if (latestImg.complete && latestImg.naturalWidth > 0) {{
+                if (isGeneratingCurrently) {{
+                    return {{ "status": "generating", "isGenerating": true }};
+                }}
+                return {{ "status": "done", "src": latestImg.src, "isGenerating": false }};
+            }}
+            return {{ "status": "rendering", "isGenerating": true }};
+        }})()
+        """
+        
         res = await agent.evaluate(js_poll)
         if isinstance(res, dict):
             status = res.get("status")
+            is_generating = res.get("isGenerating", False)
+            
+            # 如果确认了生成已经启动（即页面处于 isGenerating 状态，或者我们已经在页面等待了超过 15 秒）
+            if is_generating or (time.time() - start_time > 15):
+                if not generation_started:
+                    logging.info("🔥 检测到 ChatGPT 已成功启动生图流程（Thinking / Loading / StopButton 激活）")
+                    generation_started = True
+            
             if status == "done":
-                logging.info("检测到图片已彻底生成并渲染完毕！")
-                return res.get("src")
+                if generation_started:
+                    logging.info("检测到图片已彻底生成并渲染完毕！")
+                    return res.get("src")
+                else:
+                    logging.warning("⚠️ 警告：检测到图片 done，但生图流程未见启动，疑似旧缓存图片，继续等待新图...")
             elif status == "quota_limit":
                 logging.error(f"⚠️ [生图限额拦截] 检测到 ChatGPT 官方生图限额已满：{res.get('error')}")
                 return "quota_limit"
             elif status == "error":
                 logging.error(f"检测到 OpenAI 官方后台发生暂时性生成错误: {res.get('error')}")
                 return "error"
-            elif status == "generating" or status == "rendering":
-                logging.info("图片生成中 / 页面排版中，继续监控...")
+            elif status == "generating" or status == "rendering" or is_generating:
+                logging.info("图片生成中 / 页面排版中 / AI思考中，继续监控...")
             else:
-                logging.info("正在等待 ChatGPT 绘制排班流...")
+                logging.info("正在等待 ChatGPT 绘制图片流...")
         await asyncio.sleep(3)
         
     logging.error("等待图片生成超时！")
     return None
+
+def get_prompt_similarity(p1: str, p2: str) -> float:
+    """
+    计算两个 Prompt 的 Jaccard 相似度（基于英文单词）
+    """
+    w1 = set(re.findall(r'\w+', p1.lower()))
+    w2 = set(re.findall(r'\w+', p2.lower()))
+    if not w1 or not w2:
+        return 0.0
+    return len(w1 & w2) / len(w1 | w2)
+
+async def scan_conversation_history(agent: BrowserAgent):
+    """
+    通过模拟滚动的方式，绕过 ChatGPT 消息列表虚拟化(Virtualization)限制，
+    完整抓取页面中所有的 (UserPrompt -> AssistantImages) 配对。
+    在 JS 层面对每一个 assistant 消息在其上方查找最近的 user 消息进行局部配对，
+    彻底解决滚动过程中由于部分 Turn 被虚拟化移除导致的全局配对错位问题。
+    """
+    js_scroll_collect = """
+    (async () => {
+        let container = document.querySelector('#main') || document.querySelector('main');
+        while (container && container !== document.body) {
+            const style = window.getComputedStyle(container);
+            if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+                break;
+            }
+            container = container.parentElement;
+        }
+        if (!container || container === document.body) {
+            container = document.querySelector('.overflow-y-auto') || document.body;
+        }
+        
+        const originalScrollTop = container.scrollTop;
+        const userPrompts = new Map();
+        const assistantImages = new Map();
+        
+        // Helper to collect user turns and assistant images currently in view
+        const collectTurns = () => {
+            const userTurns = document.querySelectorAll('section[data-turn="user"]');
+            userTurns.forEach(turn => {
+                const testId = turn.getAttribute('data-testid') || "";
+                const m = testId.match(/conversation-turn-(\\d+)/);
+                if (m) {
+                    const num = parseInt(m[1], 10);
+                    const text = turn.innerText || "";
+                    if (text.trim().length > 0) {
+                        userPrompts.set(num, text.trim());
+                    }
+                }
+            });
+            
+            const assistantTurns = document.querySelectorAll('section[data-turn="assistant"]');
+            assistantTurns.forEach(turn => {
+                const testId = turn.getAttribute('data-testid') || "";
+                const m = testId.match(/conversation-turn-(\\d+)/);
+                if (m) {
+                    const num = parseInt(m[1], 10);
+                    const imgs = turn.querySelectorAll('img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]');
+                    const imageSrcs = Array.from(imgs).map(img => img.src).filter(src => !!src);
+                    if (imageSrcs.length > 0) {
+                        assistantImages.set(num, imageSrcs);
+                    }
+                }
+            });
+        };
+        
+        // Collect initial state
+        collectTurns();
+        
+        // 1. Smooth scroll UP to the top in steps of 200px to trigger virtualization loads
+        let currentScroll = container.scrollTop;
+        while (currentScroll > 0) {
+            currentScroll = Math.max(0, currentScroll - 200);
+            container.scrollTop = currentScroll;
+            container.dispatchEvent(new Event('scroll', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 40));
+            collectTurns();
+        }
+        
+        // Wait at the top for additional loading
+        await new Promise(r => setTimeout(r, 2000));
+        collectTurns();
+        
+        // 2. Smooth scroll DOWN to the bottom to collect everything
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        while (currentScroll < maxScroll) {
+            currentScroll = Math.min(maxScroll, currentScroll + 200);
+            container.scrollTop = currentScroll;
+            container.dispatchEvent(new Event('scroll', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 40));
+            collectTurns();
+        }
+        
+        // Wait at the bottom
+        await new Promise(r => setTimeout(r, 1000));
+        collectTurns();
+        
+        // Restore original scroll
+        container.scrollTop = originalScrollTop;
+        
+        // Pair prompts and images: user turn N (odd) corresponds to assistant turn N + 1 (even)
+        const result = [];
+        for (let [num, images] of assistantImages.entries()) {
+            const prompt = userPrompts.get(num - 1);
+            if (prompt) {
+                images.forEach(img => {
+                    result.push({ prompt: prompt, image: img });
+                });
+            }
+        }
+        return result;
+    })()
+    """
+    try:
+        logging.info("⏳ 正在运行防虚拟化滚动收集器，抓取历史对话...")
+        history_pairs = await agent.evaluate(js_scroll_collect)
+        if not isinstance(history_pairs, list):
+            logging.warning("⚠️ 滚动历史收集器未返回有效数组，降级使用空历史列表")
+            return []
+        
+        logging.info(f"✨ 历史对话解析完毕，共分析到 {len(history_pairs)} 个 (Prompt -> Image) 配对关系")
+        return history_pairs
+    except Exception as ex:
+        logging.error(f"❌ 滚动收集历史失败: {ex}")
+        return []
 
 async def trigger_browser_download(agent: BrowserAgent, img_src: str):
     logging.info(f"正在通过 Fetch 同源机制为图片发起安全下载...")
@@ -541,9 +700,9 @@ async def capture_current_session_url(agent: BrowserAgent, char_id: str):
 # ======================================================
 # 7. 主执行管道 (Pipeline Core)
 # ======================================================
-async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: str, img_type: str, prompt: str):
+async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: str, img_type: str, prompt: str, absolute_idx: int):
     logging.info("-" * 60)
-    logging.info(f"【生成启动】角色: {char_name} | 类型: {TYPE_LABEL.get(img_type, img_type)}")
+    logging.info(f"【生成启动】角色: {char_name} | 类型: {TYPE_LABEL.get(img_type, img_type)} | 绝对序号: {absolute_idx}")
     
     # 0. 智能跳过已存在资产，避免重复生成
     safe_char_name = re.sub(r'[\\/:*?"<>|]', '-', char_name).strip() or "未命名角色"
@@ -569,11 +728,36 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     # 增加等待时间至 10.0 秒以令 ChatGPT 的 React 历史状态和 DOM 彻底加载和沉淀，100% 避免 race condition
     await asyncio.sleep(10.0)
     
-    # 2. 扫描已有大图缓存，用以差集判定
+    # 2. 扫描已有大图缓存（做为后面触发 DALL-E 之后寻找新生成图片的基准）
     pre_srcs = await scan_existing_web_images(agent)
     logging.info(f"页面当前大图缓存量: {len(pre_srcs)} 张")
     
-    # 3. 提交绘图
+    # 3. 运行防虚拟化滚动收集，提取已生成的历史图与 prompt 的对应关系，并进行 Prompt 相似度精准匹配
+    history_pairs = await scan_conversation_history(agent)
+    matched_image_src = None
+    max_sim = 0.0
+    
+    for pair in history_pairs:
+        sim = get_prompt_similarity(prompt, pair["prompt"])
+        if sim > 0.65 and sim >= max_sim: # 使用 >= 保证存在重生成时选取最新一张
+            max_sim = sim
+            matched_image_src = pair["image"]
+            
+    if matched_image_src:
+        logging.info(f"✨ [历史图智能拾取] 相似度匹配成功 (similarity={max_sim:.2f})！")
+        logging.info(f"直接跳过 DALL-E 生图，直存并同步该历史大图: {matched_image_src[:80]}...")
+        
+        os.makedirs(target_dir, exist_ok=True)
+        res = await agent.smart_save(matched_image_src, target_path)
+        if res and res.get("status") == "success":
+            local_path = target_path.replace("\\", "/")
+            sync_new_image_to_json(char_id, img_type, TYPE_LABEL.get(img_type, img_type), local_path, prompt)
+            logging.info(f"【成功同步】角色「{char_name}」的「{TYPE_LABEL.get(img_type, img_type)}」（通过匹配拾取）已就绪！")
+            return True
+        else:
+            logging.error(f"历史图直存失败: {res.get('error') if res else '无响应'}，将回退到重新生图流程。")
+
+    # 4. 提交绘图
     await trigger_dalle_generation(agent, prompt)
     
     # 4. 如果是新开启的会话，首次发送 Prompt 后立即轮询捕获会话 URL，确保即便后边绘图超时也能完美锁定本角色的专属会话！
@@ -868,6 +1052,48 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_name": "尘沙潜行卫",
             "img_type": "main",
             "prompt": "A masterfully crafted epic post-apocalyptic cinematic concept art of the Rustland Silent Scout. A tall, handsome young East Asian marksman with highly refined sharp facial features and wind-blown short black hair. His right eye is replaced by an intricate, glowing mechanical cybernetic gear assembly glowing with cool cyan light, custom-built from scrap brass by the Reconstructor. He wears a rugged, dust-swept tactical black hooded cape over worn combat plates. He is lying alertly on a decaying, rusted scrap-iron railway bridge above a scenic desert canyon. In his hands, he grips a massive two-meter long heavy futuristic electromagnetic scanning device meticulously welded from scrap steel pipes and copper coils that hums with faint blue electric arcs. The background features a sweeping, cinematic yellow sandstorm engulfing towering metal ruins under a dramatic amber-red dusty sunset. Rich rim lighting, masterpiece, photorealistic textures, octane render, 8k resolution."
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up high-fidelity portrait of the exact same Rustland Silent Scout character from our conversation. Focus on his face and shoulders, capturing his left cold dark eye and the intricate glowing cyan cybernetic gear assembly replacing his right eye. Dust on his cheek and wind-blown short black hair. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Rustland Silent Scout character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one cold and expressionless, one with eyes narrowed in sharp focus, and one showing a subtle, tired half-smile. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Rustland Silent Scout character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his rugged black hooded cape, worn combat plates, and tactical boots. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Rustland Silent Scout character from our conversation, but wearing an alternative survival outfit: a dust-shielding sand-colored ghillie poncho, lightweight combat harness, and protective tactical mask hanging around his neck. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed artifact design sheet of the Rustland Silent Scout's gear: his massive electromagnetic scanning sniper rifle welded from scrap steel pipes and copper coils. Show it from two angles, highlighting the copper wiring and faint blue electric arcs. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic cinematic scene concept art. A decaying, rusted scrap-iron railway bridge spanning across a deep scenic desert canyon under a sweeping yellow sandstorm and dramatic sunset. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Rustland Silent Scout character from our conversation. He stands alertly in his black hooded cape, holding his massive electromagnetic sniper rifle, with his cyan cybernetic eye glowing softly. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
         }
     ]
     
@@ -877,6 +1103,48 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_name": "重工坊学徒",
             "img_type": "main",
             "prompt": "A breathtaking masterfully crafted post-apocalyptic cinematic concept art of the young Rustland Workshop Apprentice. A cheerful, slightly clumsy teenage East Asian boy with short messy black hair and a dirt smudge on his nose. He wears an oversized, loose-fitting khaki mechanic jumpsuit with one shoulder strap hanging down, heavy brown leather work gloves, and steel-toed boots. He carries a heavy canvas bag filled with various rusted metal wrenches and gears on his back. He is standing dynamically in a cluttered scrap yard, holding a giant copper gear, looking proud and energetic. Heavy sun rays piercing through the dusty air, casting intense warm rim light, unreal engine 5 render, highly detailed, photorealistic textures, 8k resolution."
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up high-fidelity portrait of the exact same young Rustland Workshop Apprentice character from our conversation. Focus on his face and shoulders, capturing his cheerful expression, short messy black hair, and a dirt smudge on his nose. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same young Rustland Workshop Apprentice character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one bright and smiling, one with a confused look scratching his head, and one determined and shouting with grit. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same young Rustland Workshop Apprentice character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his oversized khaki jumpsuit with one strap hanging down and heavy leather gloves. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same young Rustland Workshop Apprentice character from our conversation, but wearing an alternative work outfit: grease-stained denim overalls over a bright orange t-shirt, thick safety welding goggles on his forehead, and utility tool belt. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed prop design sheet of the young Rustland Workshop Apprentice's canvas tool bag and his oversized copper gear. Show them from two angles, highlighting the rusted metallic textures. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic scrap yard scene concept art. Mountains of rusted metal plates, old engines, scattered gears, and dust floating in dramatic sun rays. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same young Rustland Workshop Apprentice character from our conversation. He stands proudly in his oversized khaki jumpsuit, carrying his canvas tool bag and holding a giant copper gear, smiling confidently. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
         }
     ]
     
@@ -886,11 +1154,61 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_name": "荒原流民",
             "img_type": "main",
             "prompt": "A desolate, highly detailed character concept art in a photorealistic cinematic style showing a silent Wasteland Nomad. A thin, weary Middle Eastern man covered in heavily patched dusty gray and brown linen rags and sandproof face wrappings. He carries an old, dented brass water jar in both hands, walking wearily through a toxic yellow desert sandstorm. Behind him are scattered ruins of half-buried rusted steel containers, heavy dust atmosphere, dramatic setting sunset casting majestic rim lighting, unreal engine 5 render, highly detailed, masterpiece, 8k resolution."
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up high-fidelity portrait of the exact same Wasteland Nomad character from our conversation. Focus on his face and shoulders, capturing his weary Middle Eastern features, dark alert eyes, and sandproof face wrappings. Dust and dirt smudged on his face. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Wasteland Nomad character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one alert and watchful, one weary with half-closed eyes, and one displaying a rare, subtle peaceful gaze. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Wasteland Nomad character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his heavily patched dusty gray and brown linen rags and sandproof face wrappings. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Wasteland Nomad character from our conversation, but wearing an alternative scavenger outfit: a hooded sand-cloak reinforced with scrap metal plates, thick survival wraps around his limbs, and a worn tactical satchel. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed artifact design sheet of the Wasteland Nomad's gear: his old dented brass water jar and a walking staff wrapped in linen. Show them from two angles, highlighting the weathered textures and dents. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic desert landscape scene concept art. Desolate sand dunes, ruins of half-buried rusted steel containers under a toxic yellow sandstorm and majestic setting sunset. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Wasteland Nomad character from our conversation. He stands wearily in his patched linen rags, holding his dented brass water jar, looking forward with resilient dark eyes. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
         }
     ]
     
     full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan
     
+    # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
+    char_counters = {}
+    for t_item in full_plan:
+        c_id = t_item["char_id"]
+        char_counters.setdefault(c_id, 0)
+        t_item["absolute_idx"] = char_counters[c_id]
+        char_counters[c_id] += 1
+        
     # 动态过滤条件
     if char_id:
         full_plan = [task for task in full_plan if task["char_id"] == char_id]
@@ -931,7 +1249,8 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
                         task["char_id"],
                         task["char_name"],
                         task["img_type"],
-                        task["prompt"]
+                        task["prompt"],
+                        task["absolute_idx"]
                     )
                     if res == "quota_limit":
                         logging.critical("🚨 [额度已达上限] 触发 OpenAI 生图频率或额度限制，系统将直接强行终止并退出整个绘图流水线！")

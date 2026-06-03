@@ -365,8 +365,14 @@ async function executeNavigate(url, msgId) {
   await chrome.tabs.update(agentTabId, { url: url });
   
   setTimeout(async () => {
-      await ensureFakeCursor();
-      socket.send(JSON.stringify({ id: msgId, status: 'success' }));
+      try {
+          await ensureFakeCursor();
+          socket.send(JSON.stringify({ id: msgId, status: 'success' }));
+      } catch (e) {
+          console.error("Error in executeNavigate timeout:", e);
+          // Even if cursor decoration fails, navigation succeeded
+          socket.send(JSON.stringify({ id: msgId, status: 'success', warning: e.toString() }));
+      }
   }, 3000);
 }
 
@@ -430,23 +436,28 @@ async function executeClick(selector, msgId) {
     const selectorLiteral = jsString(selector);
     
     setTimeout(async () => {
-        const codeClick = `
-            (() => {
-                const el = document.querySelector(${selectorLiteral});
-                if (el) { 
-                    const cursor = document.getElementById('ai-fake-cursor');
-                    if (cursor) {
-                        cursor.style.transform = 'scale(0.8)';
-                        setTimeout(() => cursor.style.transform = 'scale(1)', 150);
+        try {
+            const codeClick = `
+                (() => {
+                    const el = document.querySelector(${selectorLiteral});
+                    if (el) { 
+                        const cursor = document.getElementById('ai-fake-cursor');
+                        if (cursor) {
+                            cursor.style.transform = 'scale(0.8)';
+                            setTimeout(() => cursor.style.transform = 'scale(1)', 150);
+                        }
+                        el.click(); 
+                        return true; 
                     }
-                    el.click(); 
-                    return true; 
-                }
-                return false;
-            })();
-        `;
-        await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
-        if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
+                    return false;
+                })();
+            `;
+            await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
+            if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
+        } catch (e) {
+            console.error("Error in executeClick timeout:", e);
+            if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
+        }
     }, 1200); 
 }
 
@@ -456,46 +467,51 @@ async function executeType(selector, text, msgId) {
     const textLiteral = jsString(text);
     
     setTimeout(async () => {
-        // 关键1：先真正触发一次 DOM 级别的 focus 和 click，并在 JS 中尝试使用 execCommand（以抗衡富文本编辑器在后台标签页时 CDP 输入失效的限制）
-        const codeClick = `
-            (() => {
-                const el = document.querySelector(${selectorLiteral});
-                if (el) { 
-                    el.focus();
-                    el.click();
-                    if (el.tagName === 'DIV' || el.contentEditable === 'true') {
-                        el.innerHTML = '';
-                        document.execCommand('insertText', false, ${textLiteral});
+        try {
+            // 关键1：先真正触发一次 DOM 级别的 focus 和 click，并在 JS 中尝试使用 execCommand（以抗衡富文本编辑器在后台标签页时 CDP 输入失效的限制）
+            const codeClick = `
+                (() => {
+                    const el = document.querySelector(${selectorLiteral});
+                    if (el) { 
+                        el.focus();
+                        el.click();
+                        if (el.tagName === 'DIV' || el.contentEditable === 'true') {
+                            el.innerHTML = '';
+                            document.execCommand('insertText', false, ${textLiteral});
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            return "exec_success";
+                        }
+                        // 为了触发 React 的状态更新，直接修改其底层 value tracker
+                        const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+                        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, "value").set;
+                        if (nativeInputValueSetter) {
+                            nativeInputValueSetter.call(el, '');
+                        } else {
+                            el.value = '';
+                        }
                         el.dispatchEvent(new Event('input', { bubbles: true }));
-                        return "exec_success";
+                        return "standard_input";
                     }
-                    // 为了触发 React 的状态更新，直接修改其底层 value tracker
-                    const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
-                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, "value").set;
-                    if (nativeInputValueSetter) {
-                        nativeInputValueSetter.call(el, '');
-                    } else {
-                        el.value = '';
-                    }
-                    el.dispatchEvent(new Event('input', { bubbles: true }));
-                    return "standard_input";
-                }
-                return "not_found";
-            })();
-        `;
-        const res = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
-        const typeMode = res.result?.value;
-        
-        // 关键2：如果是标准文本框/区域，使用 CDP 的 insertText 强行输入，保障最大物理真度
-        if (typeMode !== "exec_success") {
-            await sendCommand(agentTabId, 'Input.insertText', { text: text });
-        }
-        
-        // 关键3：为了保险，有些网站需要回车键触发
-        await sendCommand(agentTabId, 'Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
-        await sendCommand(agentTabId, 'Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+                    return "not_found";
+                })();
+            `;
+            const res = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
+            const typeMode = res.result?.value;
+            
+            // 关键2：如果是标准文本框/区域，使用 CDP 的 insertText 强行输入，保障最大物理真度
+            if (typeMode !== "exec_success") {
+                await sendCommand(agentTabId, 'Input.insertText', { text: text });
+            }
+            
+            // 关键3：为了保险，有些网站需要回车键触发
+            await sendCommand(agentTabId, 'Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+            await sendCommand(agentTabId, 'Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
 
-        if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
+            if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
+        } catch (e) {
+            console.error("Error in executeType timeout:", e);
+            if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
+        }
     }, 1200);
 }
 
