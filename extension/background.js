@@ -101,6 +101,14 @@ function connectWebSocket() {
             await executeType(data.selector, data.text, data.id);
         } else if (data.action === 'snapshot') {
             await executeSnapshot(data.id);
+        } else if (data.action === 'download') {
+            await executeDownload(data.url, data.filename, data.id);
+        } else if (data.action === 'searchDownloads') {
+            await executeSearchDownloads(data.query, data.id);
+        } else if (data.action === 'fetchAsBase64') {
+            await executeFetchAsBase64(data.url, data.id);
+        } else if (data.action === 'downloadViaBlob') {
+            await executeDownloadViaBlob(data.url, data.filename, data.id);
         }
     } catch (e) {
         socket.send(JSON.stringify({ id: data.id, status: 'error', error: e.toString() }));
@@ -212,6 +220,21 @@ async function initAgentTab(taskName, msgId) {
             agentTabId = null;
             currentGroupId = null;
         }
+    }
+
+    try {
+        const tabs = await chrome.tabs.query({});
+        const chatgptTab = tabs.find(tab => tab.url && tab.url.includes('chatgpt.com'));
+        if (chatgptTab) {
+            agentTabId = chatgptTab.id;
+            await attachDebugger(agentTabId);
+            if (msgId) {
+                socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Attached to existing ChatGPT tab' }));
+            }
+            return;
+        }
+    } catch (e) {
+        console.log('Error searching for existing ChatGPT tab:', e);
     }
 
     const tab = await chrome.tabs.create({ url: 'about:blank', active: false });
@@ -352,7 +375,8 @@ async function executeEvaluate(code, msgId) {
 
   const result = await sendCommand(agentTabId, 'Runtime.evaluate', {
     expression: code,
-    returnByValue: true
+    returnByValue: true,
+    awaitPromise: true
   });
   
   socket.send(JSON.stringify({ id: msgId, status: 'success', result: result.result?.value }));
@@ -529,6 +553,174 @@ async function executeSnapshot(msgId) {
         blockedByLogin: data.blockedByLogin,
         dom: data.dom 
     }));
+}
+
+async function executeDownload(url, filename, msgId) {
+    chrome.downloads.download({
+        url: url,
+        filename: filename,
+        conflictAction: 'overwrite',
+        saveAs: false
+    }, (downloadId) => {
+        if (chrome.runtime.lastError) {
+            socket.send(JSON.stringify({ id: msgId, status: 'error', error: chrome.runtime.lastError.message }));
+        } else {
+            socket.send(JSON.stringify({ id: msgId, status: 'success', downloadId: downloadId }));
+        }
+    });
+}
+
+async function executeSearchDownloads(query, msgId) {
+    chrome.downloads.search(query || {}, (results) => {
+        if (chrome.runtime.lastError) {
+            socket.send(JSON.stringify({ id: msgId, status: 'error', error: chrome.runtime.lastError.message }));
+        } else {
+            socket.send(JSON.stringify({ id: msgId, status: 'success', results: results }));
+        }
+    });
+}
+
+// Fetch a URL using the extension's authenticated cookie context and return it as base64.
+// Only suitable for IMAGE files under 30MB. For other file types or larger files,
+// use chrome.downloads.download() instead.
+async function executeFetchAsBase64(url, msgId) {
+    const MAX_SIZE_BYTES = 30 * 1024 * 1024; // 30MB 上限
+    const ALLOWED_MIME_PREFIXES = ['image/'];  // 仅允许图片类型
+
+    try {
+        // 先发 HEAD 请求检查文件类型和大小，避免下载大文件后再拒绝
+        let mime = null;
+        let contentLength = null;
+        try {
+            const headRes = await fetch(url, {
+                method: 'HEAD',
+                credentials: 'include',
+                cache: 'no-store'
+            });
+            mime = headRes.headers.get('content-type') || '';
+            contentLength = parseInt(headRes.headers.get('content-length') || '0', 10);
+        } catch (_) {
+            // 部分服务器不支持 HEAD，跳过预检，继续尝试 GET
+        }
+
+        // 文件类型检查（仅在 HEAD 成功拿到 MIME 时校验）
+        if (mime && !ALLOWED_MIME_PREFIXES.some(prefix => mime.startsWith(prefix))) {
+            socket.send(JSON.stringify({
+                id: msgId,
+                status: 'error',
+                reason: 'unsupported_mime',
+                error: `fetchAsBase64 仅支持图片文件（image/*），当前类型为 "${mime}"。请改用 chrome.downloads.download() 下载此类型文件。`
+            }));
+            return;
+        }
+
+        // 文件大小检查（仅在 HEAD 成功拿到 Content-Length 时校验）
+        if (contentLength && contentLength > MAX_SIZE_BYTES) {
+            socket.send(JSON.stringify({
+                id: msgId,
+                status: 'error',
+                reason: 'file_too_large',
+                error: `fetchAsBase64 仅支持 30MB 以内的文件，当前文件约 ${(contentLength / 1024 / 1024).toFixed(1)}MB。请改用 chrome.downloads.download() 下载大文件。`
+            }));
+            return;
+        }
+
+        // 正式 GET 请求
+        const response = await fetch(url, {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        if (!response.ok) {
+            socket.send(JSON.stringify({
+                id: msgId,
+                status: 'error',
+                error: `HTTP ${response.status}: ${response.statusText}`
+            }));
+            return;
+        }
+
+        const buffer = await response.arrayBuffer();
+        const uint8 = new Uint8Array(buffer);
+
+        // 双重大小兜底（HEAD 可能拿不到 Content-Length）
+        if (uint8.length > MAX_SIZE_BYTES) {
+            socket.send(JSON.stringify({
+                id: msgId,
+                status: 'error',
+                reason: 'file_too_large',
+                error: `fetchAsBase64 仅支持 30MB 以内的文件，实际大小 ${(uint8.length / 1024 / 1024).toFixed(1)}MB。请改用 chrome.downloads.download() 下载大文件。`
+            }));
+            return;
+        }
+
+        // 转 base64（分块处理，避免大文件栈溢出）
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8.length; i += chunkSize) {
+            binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+        }
+        const base64 = btoa(binary);
+        const actualMime = response.headers.get('content-type') || mime || 'image/png';
+
+        socket.send(JSON.stringify({
+            id: msgId,
+            status: 'success',
+            base64: base64,
+            mime: actualMime,
+            size: uint8.length
+        }));
+    } catch (e) {
+        socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
+    }
+}
+
+
+// 通过 Service Worker 带 Cookie fetch 任意 URL → 转成 blob: URL → chrome.downloads 下载。
+// blob: URL 不会被第三方下载管理器（FDM 等）拦截，适用于非图片/大文件场景。
+// 文件最终保存在系统 Downloads 目录下（filename 指定文件名）。
+async function executeDownloadViaBlob(url, filename, msgId) {
+    try {
+        const response = await fetch(url, {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        if (!response.ok) {
+            socket.send(JSON.stringify({
+                id: msgId,
+                status: 'error',
+                error: `HTTP ${response.status}: ${response.statusText}`
+            }));
+            return;
+        }
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        chrome.downloads.download({
+            url: blobUrl,
+            filename: filename || 'download',
+            conflictAction: 'uniquify',
+            saveAs: false
+        }, (downloadId) => {
+            // blob URL 在 download 回调里才能安全释放
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            if (chrome.runtime.lastError) {
+                socket.send(JSON.stringify({
+                    id: msgId,
+                    status: 'error',
+                    error: chrome.runtime.lastError.message
+                }));
+            } else {
+                socket.send(JSON.stringify({
+                    id: msgId,
+                    status: 'success',
+                    downloadId: downloadId,
+                    mime: blob.type
+                }));
+            }
+        });
+    } catch (e) {
+        socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
+    }
 }
 
 triggerConnect();

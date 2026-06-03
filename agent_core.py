@@ -34,7 +34,7 @@ class BrowserAgent:
         """
         logging.info(f"Connecting to Browser Agent Bridge at {self.ws_url}...")
         try:
-            self.websocket = await websockets.connect(self.ws_url)
+            self.websocket = await websockets.connect(self.ws_url, max_size=50 * 1024 * 1024)
             logging.info("Successfully connected to the Browser Agent Bridge!")
             return True
         except Exception as e:
@@ -133,16 +133,95 @@ class BrowserAgent:
         response = await self._send_command("evaluate", code=js_code)
         return response.get("result")
 
-    async def download(self, url: str, filename: str | None = None):
+    async def download(self, url: str, filename: str):
         """
-        Downloads a URL through Chrome's downloads manager instead of the page runtime.
-        This is more reliable when the controlled tab is backgrounded or the window is minimized.
+        Triggers a download of the given URL inside Chrome, saving it under the specified filename.
+        Uses chrome.downloads API in the background.js extension.
+        :param url: Complete HTTP/HTTPS URL of the target file.
+        :param filename: Desired relative path/name in the downloads directory (e.g. 'cover.png').
         """
-        logging.info(f"Requesting Chrome-managed download: {url}")
-        payload = {"url": url}
-        if filename:
-            payload["filename"] = filename
-        return await self._send_command("download", **payload)
+        logging.info(f"Triggering extension download from {url} to {filename}...")
+        return await self._send_command("download", url=url, filename=filename)
+
+    async def search_downloads(self, query: dict = None):
+        """
+        Queries the history of downloads using the chrome.downloads.search API.
+        """
+        logging.info(f"Searching downloads with query: {query}...")
+        return await self._send_command("searchDownloads", query=query or {})
+
+    async def fetch_as_file(self, url: str, dest_path: str) -> dict:
+        """
+        【仅适用于图片文件，< 30MB】
+        扩展后台带 Cookie fetch URL → base64 → Python 直接写入 dest_path。
+        完全绕过 chrome.downloads，FDM 等下载管理器无感知。
+        不需要中转 Downloads 文件夹，支持写入任意本地路径。
+        """
+        import base64, os
+        logging.info(f"fetch_as_file: {url[:60]}... → {dest_path}")
+        response = await self._send_command("fetchAsBase64", url=url)
+        if not response or response.get("status") != "success":
+            error = response.get("error", "Unknown error") if response else "No response"
+            reason = response.get("reason", "") if response else ""
+            logging.error(f"fetchAsBase64 failed [{reason}]: {error}")
+            return {"status": "error", "error": error, "reason": reason}
+        b64_data = response.get("base64", "")
+        raw_bytes = base64.b64decode(b64_data)
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        with open(dest_path, "wb") as f:
+            f.write(raw_bytes)
+        size = len(raw_bytes)
+        logging.info(f"Saved {size:,} bytes → {dest_path}")
+        return {"status": "success", "path": dest_path, "size": size, "mime": response.get("mime", "")}
+
+    async def download_via_blob(self, url: str, filename: str) -> dict:
+        """
+        【适用于非图片文件或大文件】
+        扩展 Service Worker 带 Cookie fetch URL → 生成 blob: URL → chrome.downloads 下载。
+        blob: URL 不会被 FDM 等第三方下载管理器拦截，后台安全，无需窗口唤醒。
+        文件保存在系统 Downloads 目录，filename 指定文件名。
+
+        :param url:      要下载的 HTTP/HTTPS URL。
+        :param filename: 保存的文件名（如 'report.pdf'），落在系统 Downloads 文件夹下。
+        :return:         dict: {status, downloadId, mime}
+        """
+        logging.info(f"download_via_blob: {url[:60]}... → Downloads/{filename}")
+        return await self._send_command("downloadViaBlob", url=url, filename=filename)
+
+    async def smart_save(self, url: str, dest_path: str) -> dict:
+        """
+        智能路由下载方法，自动选择最优下载方式：
+
+        - 图片文件（image/*，< 30MB）→ fetch_as_file()
+            · 直接写入 dest_path（任意本地路径）
+            · 完全绕过 chrome.downloads，FDM 无感知
+
+        - 其他文件 / 大文件 → download_via_blob()
+            · 扩展 fetch → blob: URL → chrome.downloads
+            · FDM 不拦截 blob: URL，文件保存到系统 Downloads 目录
+            · 注意：dest_path 此时仅用于提取文件名，最终落在 Downloads 文件夹
+
+        :param url:       完整 HTTP/HTTPS URL。
+        :param dest_path: 目标路径（图片时直接写入；非图片时仅取文件名）。
+        :return:          下载结果 dict。
+        """
+        import os
+        # 先尝试 fetch_as_file（图片路径）
+        logging.info(f"smart_save: 尝试 fetch_as_file → {dest_path}")
+        result = await self.fetch_as_file(url, dest_path)
+        if result.get("status") == "success":
+            return result
+
+        reason = result.get("reason", "")
+        # 如果是不支持的文件类型或文件过大，自动回退到 download_via_blob
+        if reason in ("unsupported_mime", "file_too_large"):
+            filename = os.path.basename(dest_path)
+            logging.info(f"smart_save: 回退到 download_via_blob，filename={filename}（原因：{reason}）")
+            return await self.download_via_blob(url, filename)
+
+        # 其他错误直接返回
+        return result
+
 
     async def close(self):
         """
