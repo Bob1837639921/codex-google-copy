@@ -453,15 +453,22 @@ async function executeClick(selector, msgId) {
 async function executeType(selector, text, msgId) {
     await executeHover(selector, null);
     const selectorLiteral = jsString(selector);
+    const textLiteral = jsString(text);
     
     setTimeout(async () => {
-        // 关键1：先真正触发一次 DOM 级别的 click，确保框架内部的聚焦状态
+        // 关键1：先真正触发一次 DOM 级别的 focus 和 click，并在 JS 中尝试使用 execCommand（以抗衡富文本编辑器在后台标签页时 CDP 输入失效的限制）
         const codeClick = `
             (() => {
                 const el = document.querySelector(${selectorLiteral});
                 if (el) { 
                     el.focus();
                     el.click();
+                    if (el.tagName === 'DIV' || el.contentEditable === 'true') {
+                        el.innerHTML = '';
+                        document.execCommand('insertText', false, ${textLiteral});
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        return "exec_success";
+                    }
                     // 为了触发 React 的状态更新，直接修改其底层 value tracker
                     const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
                     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, "value").set;
@@ -471,15 +478,18 @@ async function executeType(selector, text, msgId) {
                         el.value = '';
                     }
                     el.dispatchEvent(new Event('input', { bubbles: true }));
-                    return true; 
+                    return "standard_input";
                 }
-                return false;
+                return "not_found";
             })();
         `;
-        await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
+        const res = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
+        const typeMode = res.result?.value;
         
-        // 关键2：使用 CDP 的 insertText 强行插入文本（这等同于用户 Ctrl+V 粘贴或者输入法的直接上屏，最难被拦截）
-        await sendCommand(agentTabId, 'Input.insertText', { text: text });
+        // 关键2：如果是标准文本框/区域，使用 CDP 的 insertText 强行输入，保障最大物理真度
+        if (typeMode !== "exec_success") {
+            await sendCommand(agentTabId, 'Input.insertText', { text: text });
+        }
         
         // 关键3：为了保险，有些网站需要回车键触发
         await sendCommand(agentTabId, 'Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });

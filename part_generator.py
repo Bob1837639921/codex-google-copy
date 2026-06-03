@@ -105,7 +105,8 @@ class BrowserAgent:
             self.websocket = await websockets.connect(
                 self.ws_url,
                 ping_interval=None,
-                ping_timeout=None
+                ping_timeout=None,
+                max_size=50 * 1024 * 1024
             )
             logging.info("WebSocket 桥接连接成功！")
             return True
@@ -163,6 +164,60 @@ class BrowserAgent:
     async def hover(self, selector: str):
         logging.info(f"👉 [模拟真人悬停] 正在移动并悬停至: {selector}")
         return await self._send_command("hover", selector=selector)
+
+    async def fetch_as_file(self, url: str, dest_path: str) -> dict:
+        """
+        【仅适用于图片文件，< 30MB】
+        扩展后台带 Cookie fetch URL → base64 → Python 直接写入 dest_path。
+        完全绕过 chrome.downloads，FDM 等下载管理器无感知。
+        不需要中转 Downloads 文件夹，支持写入任意本地路径。
+        """
+        import base64, os
+        logging.info(f"fetch_as_file: {url[:60]}... → {dest_path}")
+        response = await self._send_command("fetchAsBase64", url=url)
+        if not response or response.get("status") != "success":
+            error = response.get("error", "Unknown error") if response else "No response"
+            reason = response.get("reason", "") if response else ""
+            logging.error(f"fetchAsBase64 failed [{reason}]: {error}")
+            return {"status": "error", "error": error, "reason": reason}
+        b64_data = response.get("base64", "")
+        raw_bytes = base64.b64decode(b64_data)
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        with open(dest_path, "wb") as f:
+            f.write(raw_bytes)
+        size = len(raw_bytes)
+        logging.info(f"Saved {size:,} bytes → {dest_path}")
+        return {"status": "success", "path": dest_path, "size": size, "mime": response.get("mime", "")}
+
+    async def download_via_blob(self, url: str, filename: str) -> dict:
+        """
+        【适用于非图片文件或大文件】
+        扩展 Service Worker 带 Cookie fetch URL → 生成 blob: URL → chrome.downloads 下载。
+        blob: URL 不会被 FDM 等第三方下载管理器拦截，后台安全，无需窗口唤醒。
+        文件保存在系统 Downloads 目录，filename 指定文件名。
+        """
+        logging.info(f"download_via_blob: {url[:60]}... → Downloads/{filename}")
+        return await self._send_command("downloadViaBlob", url=url, filename=filename)
+
+    async def smart_save(self, url: str, dest_path: str) -> dict:
+        """
+        智能路由下载方法，自动选择最优下载方式：
+        - 图片文件（image/*，< 30MB）→ fetch_as_file()
+        - 其他文件 / 大文件 → download_via_blob()
+        """
+        import os
+        logging.info(f"smart_save: 尝试 fetch_as_file → {dest_path}")
+        result = await self.fetch_as_file(url, dest_path)
+        if result.get("status") == "success":
+            return result
+
+        reason = result.get("reason", "")
+        if reason in ("unsupported_mime", "file_too_large"):
+            filename = os.path.basename(dest_path)
+            logging.info(f"smart_save: 回退到 download_via_blob，filename={filename}（原因：{reason}）")
+            return await self.download_via_blob(url, filename)
+
+        return result
 
     async def close(self):
         if self.websocket:
@@ -541,25 +596,17 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
         logging.error(f"绘图执行出现错误或超时，本次生成失败。")
         return False
         
-    # 6. 下载并拦截归档
-    if not os.path.exists(DOWNLOAD_DIR):
-        os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    existing_downloads = set(os.listdir(DOWNLOAD_DIR))
-    
-    await trigger_browser_download(agent, new_src)
-    
-    downloaded_file = wait_for_new_download(DOWNLOAD_DIR, existing_downloads)
-    if not downloaded_file:
-        logging.error(f"捕获新下载文件超时！")
+    # 6. 智能保存大图，绕过 FDM 拦截，直接存入目标文件夹
+    logging.info(f"正在通过 smart_save 智能直存图片至: {target_path}")
+    os.makedirs(target_dir, exist_ok=True)
+    res = await agent.smart_save(new_src, target_path)
+    if not res or res.get("status") != "success":
+        logging.error(f"图片直存失败: {res.get('error') if res else '无响应'}")
         return False
         
-    # 7. 搬迁至 jiaose
-    local_path = archive_image(downloaded_file, char_name, char_id, img_type)
-    if not local_path:
-        logging.error(f"资产归档移动出错！")
-        return False
-        
-    # 8. 同步回写 JSON 数据库
+    local_path = target_path.replace("\\", "/")
+    
+    # 7. 同步回写 JSON 数据库
     sync_new_image_to_json(char_id, img_type, TYPE_LABEL.get(img_type, img_type), local_path, prompt)
     
     logging.info(f"【成功同步】角色「{char_name}」的「{TYPE_LABEL.get(img_type, img_type)}」已全部就绪！")
