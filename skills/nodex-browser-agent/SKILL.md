@@ -9,20 +9,57 @@ description: 使用本地 NodeX Browser Agent Chrome 自动化桥，通过 serve
 
 如果已安装插件的 MCP Server，优先使用 `nodex_*` 工具，无需另写脚本。
 
-## 环境要求
+## 环境要求与启动桥接服务 (两种方式)
 
-- `extension/` 目录中的 Chrome 扩展必须以开发者模式加载（加载后需刷新才能生效新 background.js）。
+### 方式一：使用编译好的双击程序（推荐，免装 Python 依赖）
+- 开发者已经将桥接服务器编译打包为了独立的可执行程序：[server_live.exe](file:///f:/codex-google-copy/dist/server_live.exe)
+- **启动方法**：直接双击运行 [server_live.exe](file:///f:/codex-google-copy/dist/server_live.exe)（或在终端中运行 `dist\\server_live.exe`）。
+
+### 方式二：使用 Python 源码运行
 - 在仓库根目录启动桥接服务：
-
 ```bash
 python server_live.py
 ```
-
 - 安装 Python 依赖：
-
 ```bash
 pip install -r requirements.txt
 ```
+
+---
+
+## 🤖 AI / Agent 自主操控桥接指南
+
+作为 AI Agent，当你在自动化流水线中发现 `WebSocket connection refused` 或插件无法连接时，你可以**自主检测并拉起桥接服务**，无需打扰人类用户：
+
+### 1. 检测 8765 端口是否已被占用
+在终端中执行以下命令检测端口：
+- **Windows (CMD/PowerShell)**:
+  ```powershell
+  netstat -ano | findstr 8765
+  ```
+- **Linux/macOS**:
+  ```bash
+  lsof -i :8765
+  ```
+- **判定逻辑**：如果命令无输出，说明桥接服务未启动；如果有输出，说明服务已在运行，可以直接连接。
+
+### 2. 自主拉起桥接服务
+如果端口未被占用，你可以使用以下命令在后台启动服务：
+- **使用 EXE 程序拉起（Windows 推荐，防止命令行挂起阻碍任务）**:
+  ```powershell
+  # 在后台开启新窗口运行 EXE 程序，避免当前终端被进程阻塞
+  start dist\\server_live.exe
+  ```
+- **使用 Python 源码拉起（作为后台 Task 运行）**:
+  ```powershell
+  python -u server_live.py
+  ```
+  *(注：在 Agent 环境下，建议使用后台 Task 执行模式，指定足够长的超时时间，启动后直接进行下一步，不要等待其结束)*
+
+### 3. 等待并建立连接
+拉起服务后，等待约 1.5 - 2.0 秒（确保服务器就绪且 Chrome 插件完成重连），然后通过 SDK/WebSocket 客户端连接 `ws://localhost:8765/client` 进行通信。
+
+---
 
 ## SDK 方法一览
 
