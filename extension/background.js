@@ -99,7 +99,7 @@ function connectWebSocket() {
         } else if (data.action === 'hover') {
             await executeHover(data.selector, data.id);
         } else if (data.action === 'click') {
-            await executeClick(data.selector, data.id);
+            await executeClick(data.selector, data.mode, data.id);
         } else if (data.action === 'type') {
             await executeType(data.selector, data.text, data.id);
         } else if (data.action === 'snapshot') {
@@ -496,13 +496,22 @@ async function executeHover(selector, msgId) {
     return true;
 }
 
-async function executeClick(selector, msgId) {
+async function executeClick(selector, modeOrMsgId, msgId) {
+    let mode = 'smart';
+    let actualMsgId = msgId;
+    if (typeof modeOrMsgId === 'string' && modeOrMsgId !== 'null' && modeOrMsgId.length < 10) {
+        mode = modeOrMsgId;
+    } else {
+        actualMsgId = modeOrMsgId;
+    }
+
     const moved = await executeHover(selector, null); 
     if (!moved) {
-        if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
+        if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'error', error: `Element not found for selector: ${selector}` }));
         return;
     }
     const selectorLiteral = jsString(selector);
+    const modeLiteral = jsString(mode);
     
     setTimeout(async () => {
         try {
@@ -514,7 +523,19 @@ async function executeClick(selector, msgId) {
                         if (cursor && window.__ai_cursor_pulse) {
                             window.__ai_cursor_pulse();
                         }
-                        el.click(); 
+                        const runMode = ${modeLiteral};
+                        if (runMode === 'direct') {
+                            el.click();
+                        } else {
+                            // 模拟物理与 DOM 点击事件链
+                            const opts = { bubbles: true, cancelable: true, view: window };
+                            el.dispatchEvent(new PointerEvent('pointerdown', opts));
+                            el.dispatchEvent(new MouseEvent('mousedown', opts));
+                            if (typeof el.focus === 'function') el.focus();
+                            el.dispatchEvent(new PointerEvent('pointerup', opts));
+                            el.dispatchEvent(new MouseEvent('mouseup', opts));
+                            el.click();
+                        }
                         return true; 
                     }
                     return false;
@@ -522,13 +543,13 @@ async function executeClick(selector, msgId) {
             `;
             const clickResult = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick, returnByValue: true });
             if (!clickResult.result?.value) {
-                if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
+                if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'error', error: `Element not found for selector: ${selector}` }));
                 return;
             }
-            if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
+            if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'success' }));
         } catch (e) {
             console.error("Error in executeClick timeout:", e);
-            if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
+            if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'error', error: e.toString() }));
         }
     }, 1200); 
 }
@@ -544,17 +565,22 @@ async function executeType(selector, text, msgId) {
     
     setTimeout(async () => {
         try {
-            // 关键1：先真正触发一次 DOM 级别的 focus 和 click，并在 JS 中尝试使用 execCommand（以抗衡富文本编辑器在后台标签页时 CDP 输入失效的限制）
+            // 关键1：先真正触发一次 DOM 级别的 focus 和 click，并在 JS 中以异步循环模拟富文本编辑器的渐进输入
             const codeClick = `
-                (() => {
+                (async () => {
                     const el = document.querySelector(${selectorLiteral});
                     if (el) { 
                         el.focus();
                         el.click();
                         if (el.tagName === 'DIV' || el.contentEditable === 'true') {
                             el.innerHTML = '';
-                            document.execCommand('insertText', false, ${textLiteral});
-                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            const fullText = ${textLiteral};
+                            for (const char of fullText) {
+                                document.execCommand('insertText', false, char);
+                                el.dispatchEvent(new Event('input', { bubbles: true }));
+                                // 随机延迟模拟打字机效果（50ms - 130ms 随机抖动）
+                                await new Promise(r => setTimeout(r, Math.random() * 80 + 50));
+                            }
                             return "exec_success";
                         }
                         // 为了触发 React 的状态更新，直接修改其底层 value tracker
@@ -569,18 +595,27 @@ async function executeType(selector, text, msgId) {
                         return "standard_input";
                     }
                     return "not_found";
-                })();
+                })()
             `;
-            const res = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
+            const res = await sendCommand(agentTabId, 'Runtime.evaluate', { 
+                expression: codeClick, 
+                returnByValue: true,
+                awaitPromise: true 
+            });
             const typeMode = res.result?.value;
             if (typeMode === "not_found") {
                 if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
                 return;
             }
             
-            // 关键2：如果是标准文本框/区域，使用 CDP 的 insertText 强行输入，保障最大物理真度
-            if (typeMode !== "exec_success") {
-                await sendCommand(agentTabId, 'Input.insertText', { text: text });
+            // 关键2：如果是标准文本框/区域，分步使用 CDP 的 insertText 模拟逐字敲击，保障物理真实度
+            if (typeMode === "standard_input") {
+                for (const char of text) {
+                    await sendCommand(agentTabId, 'Input.insertText', { text: char });
+                    // 模拟打字机按键间隔延迟（50ms - 130ms 随机抖动）
+                    const delay = Math.floor(Math.random() * 80) + 50;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
             }
             
             // 关键3：为了保险，有些网站需要回车键触发
@@ -594,6 +629,7 @@ async function executeType(selector, text, msgId) {
         }
     }, 1200);
 }
+
 
 async function executeSnapshot(msgId) {
     await touchFakeCursor();

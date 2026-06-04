@@ -98,7 +98,7 @@ Use this shape:
     { "action": "navigate", "url": "https://example.com", "wait_seconds": 3 },
     { "action": "wait_for", "placeholder": "Search", "timeout": 10 },
     { "action": "type", "placeholder": "Search", "value": "query text", "retries": 2 },
-    { "action": "click", "text": "Search", "retries": 2 },
+    { "action": "click", "text": "Search", "mode": "smart", "retries": 2 },
     { "action": "wait_for", "text": "Results", "timeout": 15 },
     { "action": "screenshot", "path": "debug/results.png" },
     { "action": "visual_snapshot", "key": "layout_after_search" },
@@ -117,8 +117,10 @@ Supported actions:
 - `snapshot` or `observe`: saves visible DOM and login-wall state.
 - `screenshot`: captures a PNG viewport or full-page image; use `path` to save locally and `full_page: true` when needed.
 - `visual_snapshot`: text-only visual layout JSON for models without image input.
-- `click`: semantic or CSS locator, guarded by snapshot by default.
-- `type`: semantic or CSS locator plus `value`; guarded by snapshot by default.
+- `click`: semantic or CSS locator. Supported `"mode"` values:
+  - `"smart"` (default): Simulates full event chain (pointerdown -> mousedown -> focus -> pointerup -> mouseup -> click) to bypass anti-bot heuristics and trigger React/Vue event listeners.
+  - `"direct"`: Fast direct DOM `el.click()` in memory. Use ONLY for websites with no anti-bot or complex event handlers.
+- `type`: semantic or CSS locator plus `value`. Automatically emulates human keyboard typing by typing character-by-character with randomized keystroke delays (50ms - 130ms jitter).
 - `hover`: semantic or CSS locator.
 - `wait`: fixed sleep with `seconds`.
 - `wait_for`: wait for a locator, visible text, or a truthy JS expression.

@@ -227,7 +227,8 @@ class UniversalActionExecutor:
             if step.get("safe", True):
                 await self.guard_interaction()
             selector = await self.resolve_selector(self.locator_from_step(step), float(step.get("timeout", 8)))
-            return await self.agent.click(selector)
+            mode = step.get("mode", "smart")
+            return await self.agent.click(selector, mode=mode)
 
         if action == "type":
             if step.get("safe", True):

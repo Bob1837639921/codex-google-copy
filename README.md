@@ -164,14 +164,18 @@ if __name__ == "__main__":
 | `screenshot(dest_path=None, full_page=False)` | 通过 CDP 捕获 PNG 视觉截图，可返回 base64 或保存到本地 |
 | `visual_snapshot(limit=80)` | 面向无视觉模型的布局快照：返回可见元素坐标、文本、选择器、层级与疑似遮罩 |
 | `hover(selector)` | 移动虚拟光标到 CSS 选择器 |
-| `click(selector)` | 点击 CSS 选择器对应元素 |
-| `type(selector, text)` | 向输入元素输入文本 |
+| `click(selector, mode='smart')` | 点击 CSS 选择器对应元素。支持 mode='smart'（默认，模拟指针与鼠标事件链防风控）和 mode='direct'（DOM 内存直接点击）。 |
+| `type(selector, text)` | 向输入元素输入文本。内置打字机效果（50ms - 130ms 随机击键微延迟延迟），模拟真人打字。 |
 | `evaluate(js_code)` | 在受控页面执行 JS 并返回结果 |
 | `download(url, filename)` | chrome.downloads 原生下载（可能被 FDM 拦截）|
 | `search_downloads(query)` | 查询 Chrome 下载历史 |
 | `fetch_as_file(url, dest_path)` | 图片直存：带 Cookie fetch → base64 → 直写任意路径（< 30MB）|
 | `download_via_blob(url, filename)` | Blob 下载：fetch → blob: URL → chrome.downloads，FDM 安全 |
 | `smart_save(url, dest_path)` | ⭐ **推荐**：自动路由，图片走直存，其他走 Blob 回退 |
+| `smart_click(selector)` | ⭐ **高级点击**：依次分发 pointer, mouse, focus 事件链，自适应 React/Vue 组件 |
+| `smart_fill_select(label, search, option)` | ⭐ **高级下拉选择**：以 Form 标签匹配自定义下拉框，支持搜索过滤与精准选择 |
+| `sanitize_text(text, strip_emojis)` | ⭐ **文本清洗**：静态过滤 Emoji 表情与非 BMP 符号，规避平台隐性校验错误 |
+| `handle_modal(contains_text, click_selector)` | ⭐ **弹窗处理器**：自动识别遮罩弹窗内容，支持点击目标按钮或首个按钮完成关闭 |
 | `close()` | 优雅关闭 WebSocket 连接 |
 
 ### 🔀 下载方式对比
