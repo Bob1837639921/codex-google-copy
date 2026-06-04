@@ -1,244 +1,202 @@
 ---
 name: nodex-browser-agent
-description: 使用本地 NodeX Browser Agent Chrome 自动化桥，通过 server_live.py 和 agent_core.py 控制已安装的 Chrome 扩展，支持导航、DOM 快照、点击、输入、悬停、JS 执行，以及通过 smart_save() 智能路由将任意 URL 资源写入本地，自动在图片直存（fetch_as_file）和 Blob 回退下载（download_via_blob）之间切换，完全绕过 FDM 等第三方下载管理器拦截。
+description: Use the local NodeX Browser Agent bridge to control Chrome through WebSocket/CDP. Trigger this skill for browser automation, web navigation, form filling, scraping, downloads, DOM snapshots, visual screenshots, semantic clicking/typing, or resilient multi-step action plans. Prefer reusable NodeX tools and JSON action plans over one-off scripts.
 ---
 
 # NodeX Browser Agent
 
-当用户需要通过本仓库的本地桥接控制 Chrome 时，使用此技能。
+Use this skill when a task needs to control the user's local Chrome browser through this repository's bridge.
 
-如果已安装插件的 MCP Server，优先使用 `nodex_*` 工具，无需另写脚本。
+## Default Rule
 
-## 环境要求与启动桥接服务 (两种方式)
+Do not start by writing a new Python script. Prefer this order:
 
-### 方式一：使用编译好的双击程序（推荐，免装 Python 依赖）
-- 开发者已经将桥接服务器编译打包为了独立的可执行程序：[server_live.exe](file:///f:/codex-google-copy/dist/server_live.exe)
-- **启动方法**：直接双击运行 [server_live.exe](file:///f:/codex-google-copy/dist/server_live.exe)（或在终端中运行 `dist\\server_live.exe`）。
+1. Use MCP tools named `nodex_*` if they are available.
+2. Use `nodex_run_action_plan` or `python action_executor.py --plan plan.json` for multi-step tasks.
+3. Use `agent_core.BrowserAgent` directly only when the reusable action plan vocabulary is not enough.
+4. Write a new script only after identifying a reusable gap; then consider adding that capability back to `action_executor.py`.
 
-### 方式二：使用 Python 源码运行
-- 在仓库根目录启动桥接服务：
-```bash
-python server_live.py
-```
-- 安装 Python 依赖：
-```bash
-pip install -r requirements.txt
-```
+The bridge routes Python clients through `ws://localhost:8765/client`. The Chrome extension connects to `ws://localhost:8765`.
 
----
+## Chain Of Truth
 
-## 🤖 AI / Agent 自主操控桥接指南
+These are facts, not suggestions:
 
-作为 AI Agent，当你在自动化流水线中发现 `WebSocket connection refused` 或插件无法连接时，你可以**自主检测并拉起桥接服务**，无需打扰人类用户：
+1. **AI/MCP/SDK layer** creates commands or JSON action plans.
+2. **Python client layer** connects to `ws://localhost:8765/client`.
+3. **Bridge layer** in `server_live.py` forwards commands by id.
+4. **Chrome extension layer** connects to `ws://localhost:8765` and executes CDP/debugger commands.
+5. **Page layer** returns DOM data, screenshots, download responses, or action errors.
 
-### 1. 检测 8765 端口是否已被占用
-在终端中执行以下命令检测端口：
-- **Windows (CMD/PowerShell)**:
-  ```powershell
-  netstat -ano | findstr 8765
-  ```
-- **Linux/macOS**:
-  ```bash
-  lsof -i :8765
-  ```
-- **判定逻辑**：如果命令无输出，说明桥接服务未启动；如果有输出，说明服务已在运行，可以直接连接。
+Do not blur these layers. The AI does not directly control Chrome; it asks the bridge to perform supported actions and must verify the returned evidence.
 
-### 2. 自主拉起桥接服务
-如果端口未被占用，你可以使用以下命令在后台启动服务：
-- **使用 EXE 程序拉起（Windows 推荐，防止命令行挂起阻碍任务）**:
-  ```powershell
-  # 在后台开启新窗口运行 EXE 程序，避免当前终端被进程阻塞
-  start dist\\server_live.exe
-  ```
-- **使用 Python 源码拉起（作为后台 Task 运行）**:
-  ```powershell
-  python -u server_live.py
-  ```
-  *(注：在 Agent 环境下，建议使用后台 Task 执行模式，指定足够长的超时时间，启动后直接进行下一步，不要等待其结束)*
+If MCP is available, call `nodex_capabilities` when unsure. It is the source of truth for supported tools, action-plan actions, locator fields, and route facts.
 
-### 3. 等待并建立连接
-拉起服务后，等待约 1.5 - 2.0 秒（确保服务器就绪且 Chrome 插件完成重连），然后通过 SDK/WebSocket 客户端连接 `ws://localhost:8765/client` 进行通信。
+## Anti-Hallucination Contract
 
----
+- Do not invent tool names, action names, selector syntax, or browser state.
+- Do not claim a task is complete just because `click` or `type` returned success. Verify with `snapshot`, `screenshot`, `extract`, URL, or visible text.
+- A `screenshot` captures pixels only. It does not interpret the image unless the calling AI or host reads that image.
+- If the page state is unknown, run `snapshot` or `screenshot` before deciding the next step.
+- If a selector fails, the next step is observe-and-repair, not guessing more clicks.
+- If the user asks for an unsupported action, explain the gap and use the closest supported primitive only if it is safe.
 
-## SDK 方法一览
+## Connection Check
 
-所有方法均挂载在 `agent_core.BrowserAgent` 上：
+Before controlling Chrome:
 
-## MCP Tools Exposed
-- `nodex_status`: check local bridge and extension connectivity.
-- `nodex_init`: create or attach the controlled Chrome tab group.
-- `nodex_navigate`: navigate the controlled tab to a URL.
-- `nodex_snapshot`: inspect visible DOM elements and login-wall state.
-- `nodex_hover`: move the visible cursor to a selector.
-- `nodex_click`: click a selector after the safety snapshot check.
-- `nodex_type`: type text after the safety snapshot check.
-- `nodex_evaluate`: run trusted JavaScript in the controlled tab.
-- `nodex_download`: download a URL through Chrome's downloads manager.
-- `nodex_run_action_plan`: execute a sequential JSON action plan.
-
-## BrowserAgent Python API
-| 方法 | 说明 |
-|------|------|
-| `connect()` | 建立 WebSocket 连接（max_size=50MB）|
-| `init(task_name)` | 附着到或创建受控 Chrome 标签组 |
-| `navigate(url)` | 导航受控标签到指定 URL |
-| `snapshot()` | 获取 DOM 快照和登录墙检测结果 |
-| `hover(selector)` | 将虚拟光标移动到 CSS 选择器 |
-| `click(selector)` | 点击 CSS 选择器对应元素 |
-| `type(selector, text)` | 向输入元素输入文本 |
-| `evaluate(js_code)` | 在受控页面执行 JavaScript 并返回结果 |
-| `download(url, filename)` | chrome.downloads API 原生下载（可能被 FDM 拦截，慎用）|
-| `search_downloads(query)` | 查询 Chrome 下载历史 |
-| `fetch_as_file(url, dest_path)` | 图片专用直存：扩展后台带 Cookie fetch → base64 → 直接写入任意路径 |
-| `download_via_blob(url, filename)` | 大文件/非图片：扩展 fetch → blob: URL → chrome.downloads（FDM 不拦截）|
-| `smart_save(url, dest_path)` | ⭐ **推荐**：自动路由，图片走直存，其他走 Blob 回退 |
-| `close()` | 优雅关闭 WebSocket 连接 |
-
-## 下载方式对比
-
-| 方法 | 后台安全 | 需要窗口唤醒 | FDM 拦截 | 目标路径 |
-|------|---------|------------|---------|---------|
-| Fetch+Blob（旧方式）| ❌ | ✅ 必须前台 | ❌ 不拦截 | Downloads 文件夹 |
-| `download()` | ✅ | ❌ | ⚠️ 可能弹框 | Downloads 文件夹 |
-| `fetch_as_file()` | ✅ | ❌ | ✅ 完全绕过 | **任意本地路径** |
-| `download_via_blob()` | ✅ | ❌ | ✅ 完全绕过 | Downloads 文件夹 |
-| `smart_save()` ⭐ | ✅ | ❌ | ✅ 完全绕过 | 图片→任意路径；其他→Downloads |
-
-## MCP Tools Exposed
-## Pipeline Error Policy
-
-For long-running generation workflows, use the shared pipeline helpers instead of ad hoc string checks:
-
-- `pipeline_errors.py`: shared state objects and abort/retry/recoverable exceptions.
-- `state_detector.py`: page-state classification for ChatGPT generation flows.
-- `pipeline_runner.py`: consistent retry and abort handling for each task step.
-
-Fatal states such as quota limits, login requirements, CAPTCHA, and account/session blocks should raise `PipelineAbort`. Temporary generation, network, or rendering issues should raise `StepRetry` and let the runner decide whether to retry or skip.
-
-## Safety Notes
-
-## BrowserAgent Python API
-## smart_save() 路由逻辑
-
-```
-smart_save(url, dest_path)
-    │
-    ├─ 先尝试 fetch_as_file()
-    │       │
-    │       ├─ 成功（image/*，< 30MB）→ 直接写入 dest_path ✅
-    │       │
-    │       ├─ reason = "unsupported_mime" → 回退 download_via_blob()
-    │       │       → blob: URL → chrome.downloads → Downloads/filename ✅
-    │       │
-    │       ├─ reason = "file_too_large"（> 30MB）→ 回退 download_via_blob()
-    │       │       → blob: URL → chrome.downloads → Downloads/filename ✅
-    │       │
-    │       └─ 其他错误 → 返回 error dict
+```powershell
+netstat -ano | findstr 8765
 ```
 
-## fetch_as_file() 限制说明
+If port `8765` is not listening, start the bridge from the repository root:
 
-- 仅支持 `image/*` MIME 类型（PNG、JPG、WebP、GIF 等）
-- 文件大小上限 30MB（Base64 后约 40MB，在 50MB WebSocket 限制内）
-- 超出限制时 background.js 返回 `reason: "unsupported_mime"` 或 `"file_too_large"`
-- Python 端 `smart_save()` 会自动捕获这两个 reason 并切换到 `download_via_blob()`
+```powershell
+python -u server_live.py
+```
 
-## 工作流
+On Windows, the packaged server can also be started:
 
-1. 在启动新服务前确认 `server_live.py` 是否已在运行。
-2. 通过 `agent_core.BrowserAgent` 连接，默认地址 `ws://localhost:8765/client`。
-3. 在控制标签前先调用 `await agent.init("任务名称")`。
-4. 在购物、登录、支付或验证类页面点击/输入前，先调用 `await agent.snapshot()`。
-5. 若 `snapshot()["blocked_by_login"]` 为 True，立刻停止并通知用户手动处理。
-6. **下载文件统一使用 `smart_save(url, dest_path)`**，无需手动判断文件类型。
+```powershell
+Start-Process -WindowStyle Hidden dist\server_live.exe
+```
 
-## 安全注意事项
+Make sure the Chrome extension in `extension/` is loaded in Chrome developer mode.
 
-- 扩展拥有广泛的 Chrome 调试器访问权限，只应连接到本地桥接。
-- 不执行不受信任的动作计划或任意 JavaScript。
-- 不绕过 CAPTCHA、滑块验证、登录墙、支付确认或账号安全提示。
-- 与已认证网站交互时，保持自动化可见并由用户监督。
+## Operating Loop
 
-## 最简示例
+For every non-trivial browser task, run this loop:
+
+1. **Observe**: take a DOM snapshot and inspect URL/page state; add a visual screenshot when layout or overlays matter.
+2. **Plan**: convert the user's request into a short JSON action plan.
+3. **Act**: execute actions with semantic locators where possible.
+4. **Verify**: extract evidence, inspect URL/text, or take another snapshot/screenshot.
+5. **Repair**: if a step fails, retry with a different locator or wait condition.
+
+Never blindly click or type after a failed step. Observe again first.
+
+## Safety Rules
+
+- Call `snapshot` before `click` or `type`.
+- Use `screenshot` when DOM text is insufficient, an overlay is visually obvious, the page uses canvas/image-heavy content, or the locator is uncertain.
+- If `blocked_by_login` is true, stop and ask the user to complete login, CAPTCHA, payment confirmation, or account verification manually.
+- Do not try to bypass login walls, CAPTCHA, sliders, payment prompts, or account security prompts.
+- Keep browser automation visible to the user when working on authenticated sites.
+- Use `evaluate` only for trusted JavaScript that you wrote for this task.
+
+## Action Plans
+
+Use this shape:
+
+```json
+{
+  "group_name": "Search and collect results",
+  "stop_on_error": true,
+  "steps": [
+    { "action": "navigate", "url": "https://example.com", "wait_seconds": 3 },
+    { "action": "wait_for", "placeholder": "Search", "timeout": 10 },
+    { "action": "type", "placeholder": "Search", "value": "query text", "retries": 2 },
+    { "action": "click", "text": "Search", "retries": 2 },
+    { "action": "wait_for", "text": "Results", "timeout": 15 },
+    { "action": "screenshot", "path": "debug/results.png" },
+    {
+      "action": "extract",
+      "key": "results",
+      "js_extractor": "Array.from(document.querySelectorAll('a')).slice(0,10).map(a => ({text:a.innerText, href:a.href}))"
+    }
+  ]
+}
+```
+
+Supported actions:
+
+- `navigate`: `{ "url": "...", "wait_seconds": 3 }`
+- `snapshot` or `observe`: saves visible DOM and login-wall state.
+- `screenshot`: captures a PNG viewport or full-page image; use `path` to save locally and `full_page: true` when needed.
+- `click`: semantic or CSS locator, guarded by snapshot by default.
+- `type`: semantic or CSS locator plus `value`; guarded by snapshot by default.
+- `hover`: semantic or CSS locator.
+- `wait`: fixed sleep with `seconds`.
+- `wait_for`: wait for a locator, visible text, or a truthy JS expression.
+- `scroll`: `{ "direction": "down", "amount": 800, "repeat": 3 }`
+- `extract`: use `js_extractor` or a locator.
+- `evaluate`: run trusted JavaScript.
+- `checkpoint`: write current progress to JSON for handoff/resume.
+
+Locator fields:
+
+- `selector`: CSS selector.
+- `text`: visible text contained in a button/link/element.
+- `contains`: same as `text`; useful when wording is partial.
+- `exact_text`: exact visible text.
+- `placeholder`: input placeholder text.
+- `label`: label text associated with an input.
+- `aria_label`: accessible label.
+- `name`: input name attribute.
+- `role`: ARIA role.
+- `tag`: optional tag filter.
+- `index`: zero-based match index.
+
+Prefer semantic locators (`placeholder`, `label`, `text`, `aria_label`) over brittle CSS when possible.
+
+## Failure Policy
+
+When an action fails:
+
+1. Re-observe with `snapshot`.
+2. Add a `wait_for` step if the page is still loading.
+3. Try a different semantic locator before writing JavaScript.
+4. Use `evaluate` only for page-specific extraction or a missing interaction primitive.
+5. If the same blocker repeats, checkpoint and ask the user for help.
+
+Common recoverable cases:
+
+- element appears after delay: add `wait_for`.
+- wording differs: switch from `exact_text` to `contains`.
+- dynamic class names: avoid CSS classes and use text/placeholder/aria-label.
+- infinite feed: use `scroll` plus `extract`.
+
+Fatal cases:
+
+- login wall, CAPTCHA, account risk page, payment confirmation, quota exhausted, or permission denied.
+
+## Prompt Pattern For Smaller Models
+
+When using a smaller model such as Gemini Flash, give it structured work instead of an open-ended instruction:
+
+```text
+Task: <what to accomplish>
+Target site/page: <URL or current page>
+Output needed: <exact data/report format>
+Constraints: do not bypass login/CAPTCHA; stop on blocked_by_login.
+Allowed actions: navigate, snapshot, screenshot, wait_for, click, type, scroll, extract, evaluate.
+Locator preference: placeholder/label/text/aria_label before CSS.
+Return only a JSON action plan with 3-8 steps, then verify with an extract or snapshot.
+```
+
+This reduces random script generation and makes failures easier to repair.
+
+## Direct SDK Use
+
+Use the SDK for custom logic that cannot be expressed as an action plan:
 
 ```python
 import asyncio
 from agent_core import BrowserAgent
 
 async def main():
-    agent = BrowserAgent()
+    agent = BrowserAgent("ws://localhost:8765/client")
     await agent.connect()
-    await agent.init("Codex 浏览器任务")
+    await agent.init("NodeX task")
     await agent.navigate("https://www.google.com")
     snapshot = await agent.snapshot()
     if snapshot["blocked_by_login"]:
-        return
-    await agent.close()
-
-asyncio.run(main())
-```
-
-## 图片生成直存管线示例
-
-```python
-import asyncio, os
-from agent_core import BrowserAgent
-
-CHATGPT_URL = "https://chatgpt.com/c/<你的会话ID>"
-DEST_PATH   = "C:/Ai/character/白无垢/05-服装差分/cover.png"
-
-async def main():
-    agent = BrowserAgent()
-    await agent.connect()
-    await agent.init("图片生成管线")
-    await agent.navigate(CHATGPT_URL)
-    await asyncio.sleep(6.0)
-
-    # 1. 记录当前已有的 DALL-E 图片 URL
-    scan_js = """
-    (() => {
-        return Array.from(document.querySelectorAll('img'))
-            .map(i => i.src)
-            .filter(s => s && (s.includes('oaiusercontent.com') || s.includes('estuary/content'))
-                      && !s.includes('profile'));
-    })()
-    """
-    pre_srcs = set(await agent.evaluate(scan_js) or [])
-
-    # 2. 发送生成 prompt
-    await agent.type("#prompt-textarea", "绘制人物服装差分，超高精度，8k。")
-    await asyncio.sleep(1.5)
-    await agent.evaluate("""
-        (() => {
-            const btn = document.querySelector('button[data-testid="send-button"]');
-            if (btn) btn.click();
-        })()
-    """)
-
-    # 3. 轮询等待新图片（最多 225 秒）
-    new_url = None
-    for _ in range(45):
-        await asyncio.sleep(5.0)
-        srcs = await agent.evaluate(scan_js) or []
-        new = [s for s in srcs if s not in pre_srcs]
-        if new:
-            new_url = new[-1]
-            break
-
-    if not new_url:
-        print("超时未检测到新图片。")
         await agent.close()
         return
-
-    # 4. 智能保存：图片自动走 fetch_as_file()，直接写入目标路径
-    #    如果是非图片/大文件，自动回退到 download_via_blob()
-    result = await agent.smart_save(new_url, DEST_PATH)
-    print(result)
-    # 图片成功示例：{'status': 'success', 'path': '...', 'size': 2663442, 'mime': 'image/png'}
-    # 大文件回退示例：{'status': 'success', 'downloadId': 96, 'mime': 'video/mp4'}
-
+    await agent.type("textarea[name='q']", "NodeX Browser Agent")
     await agent.close()
 
 asyncio.run(main())
 ```
+
+For downloads, prefer `smart_save(url, dest_path)` from `BrowserAgent`; it routes small images to direct local file writes and falls back to blob downloads for other files.

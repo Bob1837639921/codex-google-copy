@@ -101,6 +101,8 @@ function connectWebSocket() {
             await executeType(data.selector, data.text, data.id);
         } else if (data.action === 'snapshot') {
             await executeSnapshot(data.id);
+        } else if (data.action === 'screenshot') {
+            await executeScreenshot(data.id, data.fullPage);
         } else if (data.action === 'download') {
             await executeDownload(data.url, data.filename, data.id);
         } else if (data.action === 'searchDownloads') {
@@ -519,7 +521,34 @@ async function executeSnapshot(msgId) {
     await ensureAgentTab();
     const code = `
         (() => {
-            const bodyText = document.body.innerText || '';
+            // 排除评论、文章正文、大列表等“内容区域”，避免假阳性
+            const contentSelectors = [
+                '.comments-container', '.comment-list', '.comment-item', '.comment-inner-container',
+                '#detail-desc', '.desc-container', '.note-text', '.note-title',
+                '.feed-card', '.feeds-container', '#reviews', '#comments', '.comment-area'
+            ];
+            
+            const isInsideExcludedContent = (el) => {
+                if (!el) return false;
+                try {
+                    return !!el.closest(contentSelectors.join(','));
+                } catch(e) {
+                    return false;
+                }
+            };
+
+            const bodyText = (() => {
+                try {
+                    const bodyClone = document.body.cloneNode(true);
+                    contentSelectors.forEach(sel => {
+                        bodyClone.querySelectorAll(sel).forEach(el => el.remove());
+                    });
+                    return bodyClone.innerText || '';
+                } catch(e) {
+                    return document.body.innerText || '';
+                }
+            })();
+
             const loginSelectors = [
                 '.login-box',
                 '#login-box',
@@ -544,6 +573,8 @@ async function executeSnapshot(msgId) {
             const hasLogin = loginSelectors.some((selector) => {
                                 const el = document.querySelector(selector);
                                 if (!el) return false;
+                                // 排除掉位于详情、正文或评论区内的元素，避免假阳性
+                                if (isInsideExcludedContent(el)) return false;
                                 const rect = el.getBoundingClientRect();
                                 const style = window.getComputedStyle(el);
                                 return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
@@ -579,6 +610,43 @@ async function executeSnapshot(msgId) {
         blockedByLogin: data.blockedByLogin,
         dom: data.dom 
     }));
+}
+
+async function executeScreenshot(msgId, fullPage = false) {
+    await ensureAgentTab();
+    try {
+        await sendCommand(agentTabId, 'Page.enable');
+        let params = {
+            format: 'png',
+            fromSurface: true,
+            captureBeyondViewport: !!fullPage
+        };
+
+        if (fullPage) {
+            const metrics = await sendCommand(agentTabId, 'Page.getLayoutMetrics');
+            const contentSize = metrics.contentSize;
+            if (contentSize && contentSize.width && contentSize.height) {
+                params.clip = {
+                    x: 0,
+                    y: 0,
+                    width: Math.ceil(contentSize.width),
+                    height: Math.ceil(contentSize.height),
+                    scale: 1
+                };
+            }
+        }
+
+        const result = await sendCommand(agentTabId, 'Page.captureScreenshot', params);
+        socket.send(JSON.stringify({
+            id: msgId,
+            status: 'success',
+            mime: 'image/png',
+            base64: result.data,
+            fullPage: !!fullPage
+        }));
+    } catch (e) {
+        socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
+    }
 }
 
 async function executeDownload(url, filename, msgId) {

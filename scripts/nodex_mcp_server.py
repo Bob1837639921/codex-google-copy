@@ -87,6 +87,55 @@ async def tool_status(args: dict[str, Any]) -> dict[str, Any]:
         )
 
 
+async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
+    return ok(
+        {
+            "bridge": {
+                "server": "server_live.py",
+                "port": 8765,
+                "python_client_url": "ws://localhost:8765/client",
+                "chrome_extension_url": "ws://localhost:8765",
+                "routing_rule": "Only Python/SDK/MCP clients use /client. The Chrome extension uses the root path.",
+            },
+            "mcp_tools": sorted(TOOLS.keys()),
+            "action_plan_actions": [
+                "navigate",
+                "snapshot",
+                "observe",
+                "screenshot",
+                "click",
+                "type",
+                "hover",
+                "wait",
+                "wait_for",
+                "scroll",
+                "extract",
+                "evaluate",
+                "checkpoint",
+            ],
+            "locator_fields": [
+                "selector",
+                "text",
+                "contains",
+                "exact_text",
+                "placeholder",
+                "label",
+                "aria_label",
+                "name",
+                "role",
+                "tag",
+                "index",
+            ],
+            "hard_limits": [
+                "No automatic CAPTCHA, slider, login, payment, or account-risk bypass.",
+                "A screenshot only captures pixels; it does not interpret them unless the calling AI or host reads the image.",
+                "A successful click/type means the bridge executed the action, not that the business goal is complete. Verify with snapshot, screenshot, extract, or page state.",
+                "Do not invent unsupported actions or tool names. Use nodex_run_action_plan for multi-step flows.",
+            ],
+        }
+    )
+
+
 async def tool_init(args: dict[str, Any]) -> dict[str, Any]:
     task_name = args.get("task_name", "NodeX Chrome Agent")
     if not isinstance(task_name, str) or not task_name:
@@ -158,6 +207,20 @@ async def tool_evaluate(args: dict[str, Any]) -> dict[str, Any]:
     return ok(await with_agent(run))
 
 
+async def tool_screenshot(args: dict[str, Any]) -> dict[str, Any]:
+    path = args.get("path")
+    full_page = args.get("full_page", args.get("fullPage", False))
+    if path is not None and (not isinstance(path, str) or not path):
+        raise ValueError("`path` must be a non-empty string when provided")
+    if not isinstance(full_page, bool):
+        raise ValueError("`full_page` must be a boolean when provided")
+
+    async def run(agent: BrowserAgent) -> Any:
+        return await agent.screenshot(path, full_page=full_page)
+
+    return ok(await with_agent(run))
+
+
 async def tool_download(args: dict[str, Any]) -> dict[str, Any]:
     url = require_str(args, "url")
     filename = args.get("filename")
@@ -196,6 +259,7 @@ async def tool_run_action_plan(args: dict[str, Any]) -> dict[str, Any]:
 
 
 TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
+    "nodex_capabilities": tool_capabilities,
     "nodex_status": tool_status,
     "nodex_init": tool_init,
     "nodex_navigate": tool_navigate,
@@ -204,12 +268,18 @@ TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
     "nodex_click": tool_click,
     "nodex_type": tool_type,
     "nodex_evaluate": tool_evaluate,
+    "nodex_screenshot": tool_screenshot,
     "nodex_download": tool_download,
     "nodex_run_action_plan": tool_run_action_plan,
 }
 
 
 TOOL_DEFINITIONS: list[dict[str, Any]] = [
+    {
+        "name": "nodex_capabilities",
+        "description": "Return the exact NodeX bridge routes, MCP tools, supported action-plan actions, locator fields, and hard safety/verification limits. Call this when unsure instead of inventing tools or actions.",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
     {
         "name": "nodex_status",
         "description": "Check whether the local NodeX bridge and Chrome extension are reachable.",
@@ -286,6 +356,18 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "nodex_screenshot",
+        "description": "Capture a PNG screenshot of the controlled Chrome tab. Optionally save it to a local path; otherwise returns base64.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"},
+                "full_page": {"type": "boolean"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "nodex_download",
         "description": "Download a URL through Chrome's downloads manager without relying on a foreground page click.",
         "inputSchema": {
@@ -300,7 +382,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     {
         "name": "nodex_run_action_plan",
-        "description": "Run a sequential JSON action plan through the NodeX action executor.",
+        "description": "Run a resilient JSON action plan through NodeX. Supports navigate, snapshot/observe, screenshot, wait_for, click/type/hover with CSS or semantic locators (text, contains, placeholder, label, aria_label, role), scroll, extract, evaluate, and checkpoint. Prefer this over generating one-off browser scripts.",
         "inputSchema": {
             "type": "object",
             "properties": {

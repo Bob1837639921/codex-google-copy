@@ -20,7 +20,7 @@ If you are an AI Agent tasked to perform browser automation tasks (e.g. searchin
 2. **Establish Connection**:
    ```python
    from agent_core import BrowserAgent
-   agent = BrowserAgent("ws://localhost:8765")
+   agent = BrowserAgent("ws://localhost:8765/client")
    await agent.connect()
    await agent.init("AI Active Worker")
    ```
@@ -46,6 +46,18 @@ graph TD
     D -- Inject Cursor & Dispatch Events --> E[Visual Click / Input / DOM Snapshot]
     E -- WebSocket Return --> A
 ```
+
+### Chain of truth
+
+- AI, MCP, or SDK code creates commands; it does not directly control Chrome.
+- Python clients must connect to `ws://localhost:8765/client`.
+- The Chrome extension connects to `ws://localhost:8765`.
+- `server_live.py` only routes command messages between those two sides.
+- `background.js` is the only layer that executes Chrome debugger/CDP actions.
+- A successful action means the bridge executed it; the business goal still needs verification with `snapshot`, `screenshot`, `extract`, URL checks, or visible text checks.
+- A screenshot captures pixels only. It is evidence for a vision-capable caller; it is not automatic image understanding by the bridge itself.
+
+When using MCP, call `nodex_capabilities` if an agent is unsure about supported tools, actions, locator fields, or route facts.
 
 ---
 
@@ -104,7 +116,7 @@ from agent_core import BrowserAgent
 
 async def main():
     # 1. 初始化客户端
-    agent = BrowserAgent("ws://localhost:8765")
+    agent = BrowserAgent("ws://localhost:8765/client")
     await agent.connect()
 
     # 2. 打开 / 附着到标签组
@@ -148,6 +160,7 @@ if __name__ == "__main__":
 | `init(task_name)` | 附着到或创建受控 Chrome 标签组 |
 | `navigate(url)` | 导航受控标签到指定 URL |
 | `snapshot()` | 获取 DOM 快照和登录墙检测结果 |
+| `screenshot(dest_path=None, full_page=False)` | 通过 CDP 捕获 PNG 视觉截图，可返回 base64 或保存到本地 |
 | `hover(selector)` | 移动虚拟光标到 CSS 选择器 |
 | `click(selector)` | 点击 CSS 选择器对应元素 |
 | `type(selector, text)` | 向输入元素输入文本 |

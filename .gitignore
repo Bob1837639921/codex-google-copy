@@ -160,5 +160,12 @@ cython_debug/
 !.codex-plugin/plugin.json
 *.txt
 !requirements.txt
-!extension/popup.html
 *.log
+
+# Scratch directory for temporary agent testing
+scratch/
+
+# Scraper output data
+examples/xhs_scraper/comments_output.json
+comments_output.json
+

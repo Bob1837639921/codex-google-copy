@@ -10,10 +10,12 @@ License: MIT
 """
 
 import asyncio
+import base64
 import json
 import websockets
 import uuid
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -132,6 +134,138 @@ class BrowserAgent:
         logging.info("Executing custom script evaluation on active page...")
         response = await self._send_command("evaluate", code=js_code)
         return response.get("result")
+
+    async def screenshot(self, dest_path: str = None, full_page: bool = False) -> dict:
+        """
+        Captures a PNG screenshot of the controlled tab through CDP.
+        :param dest_path: Optional local path to write the PNG file.
+        :param full_page: Capture the full page instead of only the visible viewport when supported.
+        :return: dict containing status, mime, base64, and optionally path/size.
+        """
+        logging.info("Capturing browser screenshot...")
+        response = await self._send_command("screenshot", fullPage=full_page)
+        b64_data = response.get("base64", "")
+        result = {
+            "status": response.get("status", "success"),
+            "mime": response.get("mime", "image/png"),
+            "base64": b64_data,
+            "full_page": response.get("fullPage", full_page),
+        }
+        if dest_path:
+            parent = os.path.dirname(dest_path)
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            raw_bytes = base64.b64decode(b64_data)
+            with open(dest_path, "wb") as f:
+                f.write(raw_bytes)
+            result.update({"path": dest_path, "size": len(raw_bytes)})
+        return result
+
+    async def visual_snapshot(self, limit: int = 80) -> dict:
+        """
+        Returns a vision-model-free visual layout summary of the current page.
+        This is JSON evidence: viewport size plus visible elements with bounding
+        boxes, text, role, selector, and z-index. Use it when screenshots are not
+        readable by the calling model.
+        """
+        limit = max(1, min(int(limit), 200))
+        js_code = f"""
+(() => {{
+  const limit = {limit};
+  const clean = (value) => String(value || "").replace(/\\s+/g, " ").trim();
+  const escapeCss = (value) => {{
+    if (window.CSS && CSS.escape) return CSS.escape(String(value));
+    return String(value).replace(/[^a-zA-Z0-9_-]/g, (ch) => "\\\\" + ch);
+  }};
+  const selectorFor = (el) => {{
+    if (el.id) return "#" + escapeCss(el.id);
+    const parts = [];
+    let node = el;
+    while (node && node.nodeType === 1 && node !== document.body) {{
+      let part = node.tagName.toLowerCase();
+      if (node.getAttribute("name")) part += `[name="${{String(node.getAttribute("name")).replace(/"/g, "\\\\\"")}}"]`;
+      const parent = node.parentElement;
+      if (parent) {{
+        const siblings = Array.from(parent.children).filter((child) => child.tagName === node.tagName);
+        if (siblings.length > 1) part += `:nth-of-type(${{siblings.indexOf(node) + 1}})`;
+      }}
+      parts.unshift(part);
+      node = parent;
+    }}
+    return parts.length ? parts.join(" > ") : null;
+  }};
+  const textOf = (el) => clean([
+    el.innerText,
+    el.value,
+    el.placeholder,
+    el.getAttribute("aria-label"),
+    el.getAttribute("title"),
+    el.name
+  ].filter(Boolean).join(" "));
+  const visible = (el) => {{
+    const rect = el.getBoundingClientRect();
+    const style = window.getComputedStyle(el);
+    return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity || 1) > 0;
+  }};
+  const viewport = {{
+    width: window.innerWidth,
+    height: window.innerHeight,
+    scrollX: window.scrollX,
+    scrollY: window.scrollY,
+    url: window.location.href,
+    title: document.title
+  }};
+  const query = [
+    "a", "button", "input", "textarea", "select", "summary",
+    "[role]", "[contenteditable='true']", "[tabindex]",
+    "h1", "h2", "h3", "h4", "label", "img", "video", "canvas"
+  ].join(",");
+  const items = Array.from(document.querySelectorAll(query))
+    .filter(visible)
+    .map((el) => {{
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      const tag = el.tagName.toLowerCase();
+      return {{
+        tag,
+        role: el.getAttribute("role") || null,
+        type: el.getAttribute("type") || null,
+        selector: selectorFor(el),
+        text: textOf(el).slice(0, 220),
+        href: el.href || null,
+        src: el.currentSrc || el.src || null,
+        box: {{
+          x: Math.round(rect.left),
+          y: Math.round(rect.top),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height)
+        }},
+        center: {{
+          x: Math.round(rect.left + rect.width / 2),
+          y: Math.round(rect.top + rect.height / 2)
+        }},
+        zIndex: style.zIndex === "auto" ? null : style.zIndex,
+        position: style.position,
+        viewportVisible: rect.bottom >= 0 && rect.right >= 0 && rect.top <= window.innerHeight && rect.left <= window.innerWidth
+      }};
+    }})
+    .filter((item) => item.viewportVisible)
+    .sort((a, b) => {{
+      const za = Number.parseInt(a.zIndex || "0", 10) || 0;
+      const zb = Number.parseInt(b.zIndex || "0", 10) || 0;
+      if (zb !== za) return zb - za;
+      return (a.box.y - b.box.y) || (a.box.x - b.box.x);
+    }})
+    .slice(0, limit);
+  const overlays = items.filter((item) => {{
+    const area = item.box.width * item.box.height;
+    const viewportArea = Math.max(1, viewport.width * viewport.height);
+    return area / viewportArea > 0.2 || item.position === "fixed" || item.position === "sticky";
+  }}).slice(0, 12);
+  return {{ viewport, items, overlays }};
+}})()
+"""
+        return await self.evaluate(js_code)
 
     async def download(self, url: str, filename: str):
         """
