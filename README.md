@@ -56,6 +56,7 @@ graph TD
 - `background.js` is the only layer that executes Chrome debugger/CDP actions.
 - A successful action means the bridge executed it; the business goal still needs verification with `snapshot`, `screenshot`, `extract`, URL checks, or visible text checks.
 - A screenshot captures pixels only. It is evidence for a vision-capable caller; it is not automatic image understanding by the bridge itself.
+- Text-only models should use `visual_snapshot`, which returns JSON layout evidence such as bounding boxes, visible text, selectors, z-index, and likely overlays.
 
 When using MCP, call `nodex_capabilities` if an agent is unsure about supported tools, actions, locator fields, or route facts.
 
@@ -161,6 +162,7 @@ if __name__ == "__main__":
 | `navigate(url)` | 导航受控标签到指定 URL |
 | `snapshot()` | 获取 DOM 快照和登录墙检测结果 |
 | `screenshot(dest_path=None, full_page=False)` | 通过 CDP 捕获 PNG 视觉截图，可返回 base64 或保存到本地 |
+| `visual_snapshot(limit=80)` | 面向无视觉模型的布局快照：返回可见元素坐标、文本、选择器、层级与疑似遮罩 |
 | `hover(selector)` | 移动虚拟光标到 CSS 选择器 |
 | `click(selector)` | 点击 CSS 选择器对应元素 |
 | `type(selector, text)` | 向输入元素输入文本 |

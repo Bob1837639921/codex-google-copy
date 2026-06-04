@@ -3,6 +3,7 @@ import sys
 import os
 import json
 import urllib.parse
+import random
 
 # Ensure SDK path is available
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -12,6 +13,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 KEYWORD = "Notion模板"
 OUTPUT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "comments_output.json")
+SCREENSHOT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "last_note_snapshot.png")
 
 async def scrape_all_comments_for_first_note():
     agent = BrowserAgent("ws://localhost:8765/client")
@@ -77,11 +79,13 @@ async def scrape_all_comments_for_first_note():
                         return window;
                     };
                     const scroller = getScroller();
+                    // 随机化向上滚动像素，防爬特征加噪 (100 - 220px)
+                    const up_dy = Math.floor(Math.random() * 120) + 100;
                     if (scroller === window) {
-                        window.scrollBy(0, -150);
+                        window.scrollBy(0, -up_dy);
                         window.dispatchEvent(new Event('scroll', { bubbles: true }));
                     } else {
-                        scroller.scrollTop -= 150;
+                        scroller.scrollTop -= up_dy;
                         scroller.dispatchEvent(new Event('scroll', { bubbles: true }));
                     }
                 })()
@@ -110,11 +114,13 @@ async def scrape_all_comments_for_first_note():
                     };
                     
                     const scroller = getScroller();
+                    // 随机化向下滚动像素，防爬特征加噪 (1000 - 1450px)
+                    const down_dy = Math.floor(Math.random() * 450) + 1000;
                     if (scroller === window) {
-                        window.scrollBy(0, 1200);
+                        window.scrollBy(0, down_dy);
                         window.dispatchEvent(new Event('scroll', { bubbles: true }));
                     } else {
-                        scroller.scrollTop += 1200;
+                        scroller.scrollTop += down_dy;
                         scroller.dispatchEvent(new Event('scroll', { bubbles: true }));
                     }
                     
@@ -193,7 +199,9 @@ async def scrape_all_comments_for_first_note():
                 no_grow_count = 0
                 
             prev_count = comments_count
-            await asyncio.sleep(3)  # 等待新内容网络加载以及DOM渲染
+            # 真人阅读习惯仿真：随机休眠 2.2~4.5 秒，打乱固定频率特征
+            sleep_time = random.uniform(2.2, 4.5)
+            await asyncio.sleep(sleep_time)
             
         # 4. 一次性获取所有已加载的评论详情
         print("\n提取完整评论详情数据...")
@@ -247,6 +255,13 @@ async def scrape_all_comments_for_first_note():
         
         final_data = await agent.evaluate(extract_js)
         
+        # 4.5 捕获详情页的高清多模态视觉快照并保存（用于视觉模型验证）
+        print(f"📸 捕获详情页多模态视觉快照保存至: {SCREENSHOT_FILE}")
+        try:
+            await agent.screenshot(SCREENSHOT_FILE)
+        except Exception as ss_err:
+            print(f"⚠️ 视觉快照捕获失败: {ss_err}")
+            
         # 5. 关闭 Modal
         close_js = """
             (() => {

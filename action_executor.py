@@ -216,6 +216,13 @@ class UniversalActionExecutor:
             }
             return result
 
+        if action == "visual_snapshot":
+            limit = int(step.get("limit", 80))
+            result = await self.agent.visual_snapshot(limit=limit)
+            key = step.get("key", f"visual_snapshot_{step_idx}")
+            self.extracted_data[key] = result
+            return result
+
         if action == "click":
             if step.get("safe", True):
                 await self.guard_interaction()

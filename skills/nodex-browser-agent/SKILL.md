@@ -1,6 +1,6 @@
 ---
 name: nodex-browser-agent
-description: Use the local NodeX Browser Agent bridge to control Chrome through WebSocket/CDP. Trigger this skill for browser automation, web navigation, form filling, scraping, downloads, DOM snapshots, visual screenshots, semantic clicking/typing, or resilient multi-step action plans. Prefer reusable NodeX tools and JSON action plans over one-off scripts.
+description: Use the local NodeX Browser Agent bridge to control Chrome through WebSocket/CDP. Trigger this skill for browser automation, web navigation, form filling, scraping, downloads, DOM snapshots, visual screenshots, non-vision visual layout snapshots, semantic clicking/typing, or resilient multi-step action plans. Prefer reusable NodeX tools and JSON action plans over one-off scripts.
 ---
 
 # NodeX Browser Agent
@@ -37,6 +37,7 @@ If MCP is available, call `nodex_capabilities` when unsure. It is the source of 
 - Do not invent tool names, action names, selector syntax, or browser state.
 - Do not claim a task is complete just because `click` or `type` returned success. Verify with `snapshot`, `screenshot`, `extract`, URL, or visible text.
 - A `screenshot` captures pixels only. It does not interpret the image unless the calling AI or host reads that image.
+- If the caller does not support vision, use `visual_snapshot` instead of pretending to inspect the screenshot.
 - If the page state is unknown, run `snapshot` or `screenshot` before deciding the next step.
 - If a selector fails, the next step is observe-and-repair, not guessing more clicks.
 - If the user asks for an unsupported action, explain the gap and use the closest supported primitive only if it is safe.
@@ -67,7 +68,7 @@ Make sure the Chrome extension in `extension/` is loaded in Chrome developer mod
 
 For every non-trivial browser task, run this loop:
 
-1. **Observe**: take a DOM snapshot and inspect URL/page state; add a visual screenshot when layout or overlays matter.
+1. **Observe**: take a DOM snapshot and inspect URL/page state; add `screenshot` for vision-capable callers or `visual_snapshot` for text-only callers when layout or overlays matter.
 2. **Plan**: convert the user's request into a short JSON action plan.
 3. **Act**: execute actions with semantic locators where possible.
 4. **Verify**: extract evidence, inspect URL/text, or take another snapshot/screenshot.
@@ -78,7 +79,8 @@ Never blindly click or type after a failed step. Observe again first.
 ## Safety Rules
 
 - Call `snapshot` before `click` or `type`.
-- Use `screenshot` when DOM text is insufficient, an overlay is visually obvious, the page uses canvas/image-heavy content, or the locator is uncertain.
+- Use `screenshot` when DOM text is insufficient and a vision-capable model/tool will inspect the image.
+- Use `visual_snapshot` when the model is text-only; it returns JSON layout evidence such as bounding boxes, visible text, roles, selectors, z-index, and likely overlays.
 - If `blocked_by_login` is true, stop and ask the user to complete login, CAPTCHA, payment confirmation, or account verification manually.
 - Do not try to bypass login walls, CAPTCHA, sliders, payment prompts, or account security prompts.
 - Keep browser automation visible to the user when working on authenticated sites.
@@ -99,6 +101,7 @@ Use this shape:
     { "action": "click", "text": "Search", "retries": 2 },
     { "action": "wait_for", "text": "Results", "timeout": 15 },
     { "action": "screenshot", "path": "debug/results.png" },
+    { "action": "visual_snapshot", "key": "layout_after_search" },
     {
       "action": "extract",
       "key": "results",
@@ -113,6 +116,7 @@ Supported actions:
 - `navigate`: `{ "url": "...", "wait_seconds": 3 }`
 - `snapshot` or `observe`: saves visible DOM and login-wall state.
 - `screenshot`: captures a PNG viewport or full-page image; use `path` to save locally and `full_page: true` when needed.
+- `visual_snapshot`: text-only visual layout JSON for models without image input.
 - `click`: semantic or CSS locator, guarded by snapshot by default.
 - `type`: semantic or CSS locator plus `value`; guarded by snapshot by default.
 - `hover`: semantic or CSS locator.
@@ -169,7 +173,7 @@ Task: <what to accomplish>
 Target site/page: <URL or current page>
 Output needed: <exact data/report format>
 Constraints: do not bypass login/CAPTCHA; stop on blocked_by_login.
-Allowed actions: navigate, snapshot, screenshot, wait_for, click, type, scroll, extract, evaluate.
+Allowed actions: navigate, snapshot, screenshot, visual_snapshot, wait_for, click, type, scroll, extract, evaluate.
 Locator preference: placeholder/label/text/aria_label before CSS.
 Return only a JSON action plan with 3-8 steps, then verify with an extract or snapshot.
 ```

@@ -168,4 +168,6 @@ scratch/
 # Scraper output data
 examples/xhs_scraper/comments_output.json
 comments_output.json
+examples/xhs_scraper/last_note_snapshot.png
+last_note_snapshot.png
 

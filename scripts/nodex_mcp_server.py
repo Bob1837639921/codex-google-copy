@@ -103,6 +103,7 @@ async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
                 "snapshot",
                 "observe",
                 "screenshot",
+                "visual_snapshot",
                 "click",
                 "type",
                 "hover",
@@ -129,6 +130,7 @@ async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
             "hard_limits": [
                 "No automatic CAPTCHA, slider, login, payment, or account-risk bypass.",
                 "A screenshot only captures pixels; it does not interpret them unless the calling AI or host reads the image.",
+                "If the caller has no vision model, use visual_snapshot for JSON layout evidence instead of relying on screenshot interpretation.",
                 "A successful click/type means the bridge executed the action, not that the business goal is complete. Verify with snapshot, screenshot, extract, or page state.",
                 "Do not invent unsupported actions or tool names. Use nodex_run_action_plan for multi-step flows.",
             ],
@@ -221,6 +223,17 @@ async def tool_screenshot(args: dict[str, Any]) -> dict[str, Any]:
     return ok(await with_agent(run))
 
 
+async def tool_visual_snapshot(args: dict[str, Any]) -> dict[str, Any]:
+    limit = args.get("limit", 80)
+    if not isinstance(limit, int):
+        raise ValueError("`limit` must be an integer when provided")
+
+    async def run(agent: BrowserAgent) -> Any:
+        return await agent.visual_snapshot(limit=limit)
+
+    return ok(await with_agent(run))
+
+
 async def tool_download(args: dict[str, Any]) -> dict[str, Any]:
     url = require_str(args, "url")
     filename = args.get("filename")
@@ -269,6 +282,7 @@ TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
     "nodex_type": tool_type,
     "nodex_evaluate": tool_evaluate,
     "nodex_screenshot": tool_screenshot,
+    "nodex_visual_snapshot": tool_visual_snapshot,
     "nodex_download": tool_download,
     "nodex_run_action_plan": tool_run_action_plan,
 }
@@ -368,6 +382,17 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "nodex_visual_snapshot",
+        "description": "Return a vision-model-free JSON layout summary: viewport, visible elements, bounding boxes, text, roles, selectors, z-index, and likely overlays.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "nodex_download",
         "description": "Download a URL through Chrome's downloads manager without relying on a foreground page click.",
         "inputSchema": {
@@ -382,7 +407,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     {
         "name": "nodex_run_action_plan",
-        "description": "Run a resilient JSON action plan through NodeX. Supports navigate, snapshot/observe, screenshot, wait_for, click/type/hover with CSS or semantic locators (text, contains, placeholder, label, aria_label, role), scroll, extract, evaluate, and checkpoint. Prefer this over generating one-off browser scripts.",
+        "description": "Run a resilient JSON action plan through NodeX. Supports navigate, snapshot/observe, screenshot, visual_snapshot, wait_for, click/type/hover with CSS or semantic locators (text, contains, placeholder, label, aria_label, role), scroll, extract, evaluate, and checkpoint. Prefer this over generating one-off browser scripts.",
         "inputSchema": {
             "type": "object",
             "properties": {
