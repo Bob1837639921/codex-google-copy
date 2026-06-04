@@ -6,6 +6,9 @@ let retryCount = 0;
 const MAX_RETRIES = 5;
 let isExplicitlyPaused = false;
 let connectTimeout = null;
+const CURSOR_ACTIVE_OPACITY = '1';
+const CURSOR_IDLE_OPACITY = '0.62';
+const CURSOR_IDLE_DELAY_MS = 8000;
 
 function jsString(value) {
   return JSON.stringify(String(value));
@@ -170,7 +173,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       expression: `
         const cursor = document.getElementById('ai-fake-cursor');
         if (cursor) {
-            cursor.style.opacity = '0';
+            cursor.style.opacity = '${CURSOR_IDLE_OPACITY}';
         }
       `
     }).catch(() => {});
@@ -346,19 +349,72 @@ async function ensureFakeCursor() {
             cursor.style.position = 'fixed';
             cursor.style.zIndex = '2147483647';
             cursor.style.pointerEvents = 'none';
-            cursor.style.width = '28px';
-            cursor.style.height = '28px';
-            cursor.style.background = 'url("data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'28\\' height=\\'28\\' viewBox=\\'0 0 24 24\\' fill=\\'%23FF3366\\' stroke=\\'white\\' stroke-width=\\'1.5\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolygon points=\\'3 3 10 21 14 14 21 10 3 3\\'%3E%3C/polygon%3E%3C/svg%3E") no-repeat';
+            cursor.style.width = '34px';
+            cursor.style.height = '34px';
+            cursor.style.background = 'url("data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'34\\' height=\\'34\\' viewBox=\\'0 0 24 24\\' fill=\\'%23FF3366\\' stroke=\\'white\\' stroke-width=\\'1.7\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'%3E%3Cpolygon points=\\'3 3 10 21 14 14 21 10 3 3\\'%3E%3C/polygon%3E%3C/svg%3E") no-repeat';
             cursor.style.backgroundSize = 'contain';
-            cursor.style.transition = 'top 0.6s ease-out, left 0.6s ease-out, opacity 0.4s ease-in-out, transform 0.15s ease-out';
-            cursor.style.opacity = '0';
-            cursor.style.top = '10px';
-            cursor.style.left = '10px';
-            cursor.style.filter = 'drop-shadow(2px 4px 6px rgba(0,0,0,0.3))';
+            cursor.style.transition = 'top 0.55s cubic-bezier(.2,.8,.2,1), left 0.55s cubic-bezier(.2,.8,.2,1), opacity 0.25s ease, transform 0.16s ease, filter 0.2s ease';
+            cursor.style.opacity = '${CURSOR_IDLE_OPACITY}';
+            cursor.style.top = '18px';
+            cursor.style.left = '18px';
+            cursor.style.transformOrigin = '4px 4px';
+            cursor.style.filter = 'drop-shadow(0 5px 10px rgba(0,0,0,0.32)) drop-shadow(0 0 10px rgba(255,51,102,0.38))';
             document.body.appendChild(cursor);
         }
+
+        window.__ai_cursor_keep_visible = () => {
+            const cursor = document.getElementById('ai-fake-cursor');
+            if (!cursor) return;
+            if (window.__ai_cursor_hide_timeout) {
+                clearTimeout(window.__ai_cursor_hide_timeout);
+            }
+            cursor.style.opacity = '${CURSOR_ACTIVE_OPACITY}';
+            window.__ai_cursor_hide_timeout = setTimeout(() => {
+                const cur = document.getElementById('ai-fake-cursor');
+                if (cur) cur.style.opacity = '${CURSOR_IDLE_OPACITY}';
+            }, ${CURSOR_IDLE_DELAY_MS});
+        };
+
+        window.__ai_cursor_move_to = (x, y) => {
+            const cursor = document.getElementById('ai-fake-cursor');
+            if (!cursor) return;
+            cursor.style.left = Math.round(x) + 'px';
+            cursor.style.top = Math.round(y) + 'px';
+            window.__ai_cursor_keep_visible();
+        };
+
+        window.__ai_cursor_pulse = () => {
+            const cursor = document.getElementById('ai-fake-cursor');
+            if (!cursor) return;
+            window.__ai_cursor_keep_visible();
+            cursor.style.transform = 'scale(0.78)';
+            cursor.style.filter = 'drop-shadow(0 5px 10px rgba(0,0,0,0.34)) drop-shadow(0 0 18px rgba(255,51,102,0.85))';
+            setTimeout(() => {
+                const cur = document.getElementById('ai-fake-cursor');
+                if (cur) {
+                    cur.style.transform = 'scale(1)';
+                    cur.style.filter = 'drop-shadow(0 5px 10px rgba(0,0,0,0.32)) drop-shadow(0 0 10px rgba(255,51,102,0.38))';
+                }
+            }, 160);
+        };
+
+        window.__ai_cursor_keep_visible();
     `;
     await sendCommand(agentTabId, 'Runtime.evaluate', { expression: code });
+}
+
+async function touchFakeCursor() {
+    await ensureFakeCursor();
+    await sendCommand(agentTabId, 'Runtime.evaluate', {
+        expression: `
+            (() => {
+                if (window.__ai_cursor_keep_visible) {
+                    window.__ai_cursor_keep_visible();
+                }
+                return true;
+            })();
+        `
+    }).catch(() => {});
 }
 
 async function executeNavigate(url, msgId) {
@@ -381,6 +437,7 @@ async function executeNavigate(url, msgId) {
 async function executeEvaluate(code, msgId) {
   if (!agentTabId) await initAgentTab('AI 正在执行');
 
+  await touchFakeCursor();
   const result = await sendCommand(agentTabId, 'Runtime.evaluate', {
     expression: code,
     returnByValue: true,
@@ -410,7 +467,7 @@ async function executeHover(selector, msgId) {
                     }
                     
                     // 2. 显式设为可见并移动位置
-                    cursor.style.opacity = '1';
+                    cursor.style.opacity = '${CURSOR_ACTIVE_OPACITY}';
                     cursor.style.left = (rect.left + rect.width / 2) + 'px';
                     cursor.style.top = (rect.top + rect.height / 2) + 'px';
                     
@@ -418,23 +475,33 @@ async function executeHover(selector, msgId) {
                     window.__ai_cursor_hide_timeout = setTimeout(() => {
                         const cur = document.getElementById('ai-fake-cursor');
                         if (cur) {
-                            cur.style.opacity = '0';
+                            cur.style.opacity = '${CURSOR_IDLE_OPACITY}';
                         }
-                    }, 2500);
+                    }, ${CURSOR_IDLE_DELAY_MS});
                 }
             }, 300);
             return true;
         })();
     `;
-    await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeMove });
+    const moveResult = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeMove, returnByValue: true });
+    const moved = moveResult.result?.value;
+    if (!moved) {
+        if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
+        return false;
+    }
     
     setTimeout(() => {
         if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
     }, 1200); 
+    return true;
 }
 
 async function executeClick(selector, msgId) {
-    await executeHover(selector, null); 
+    const moved = await executeHover(selector, null); 
+    if (!moved) {
+        if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
+        return;
+    }
     const selectorLiteral = jsString(selector);
     
     setTimeout(async () => {
@@ -444,9 +511,8 @@ async function executeClick(selector, msgId) {
                     const el = document.querySelector(${selectorLiteral});
                     if (el) { 
                         const cursor = document.getElementById('ai-fake-cursor');
-                        if (cursor) {
-                            cursor.style.transform = 'scale(0.8)';
-                            setTimeout(() => cursor.style.transform = 'scale(1)', 150);
+                        if (cursor && window.__ai_cursor_pulse) {
+                            window.__ai_cursor_pulse();
                         }
                         el.click(); 
                         return true; 
@@ -454,7 +520,11 @@ async function executeClick(selector, msgId) {
                     return false;
                 })();
             `;
-            await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
+            const clickResult = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick, returnByValue: true });
+            if (!clickResult.result?.value) {
+                if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
+                return;
+            }
             if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
         } catch (e) {
             console.error("Error in executeClick timeout:", e);
@@ -464,7 +534,11 @@ async function executeClick(selector, msgId) {
 }
 
 async function executeType(selector, text, msgId) {
-    await executeHover(selector, null);
+    const moved = await executeHover(selector, null);
+    if (!moved) {
+        if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
+        return;
+    }
     const selectorLiteral = jsString(selector);
     const textLiteral = jsString(text);
     
@@ -499,6 +573,10 @@ async function executeType(selector, text, msgId) {
             `;
             const res = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick });
             const typeMode = res.result?.value;
+            if (typeMode === "not_found") {
+                if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
+                return;
+            }
             
             // 关键2：如果是标准文本框/区域，使用 CDP 的 insertText 强行输入，保障最大物理真度
             if (typeMode !== "exec_success") {
@@ -518,7 +596,7 @@ async function executeType(selector, text, msgId) {
 }
 
 async function executeSnapshot(msgId) {
-    await ensureAgentTab();
+    await touchFakeCursor();
     const code = `
         (() => {
             // 排除评论、文章正文、大列表等“内容区域”，避免假阳性
@@ -613,7 +691,7 @@ async function executeSnapshot(msgId) {
 }
 
 async function executeScreenshot(msgId, fullPage = false) {
-    await ensureAgentTab();
+    await touchFakeCursor();
     try {
         await sendCommand(agentTabId, 'Page.enable');
         let params = {
