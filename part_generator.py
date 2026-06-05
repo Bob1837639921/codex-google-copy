@@ -750,7 +750,18 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     logging.info(f"页面当前大图缓存量: {len(pre_srcs)} 张")
     
     # 3. 运行防虚拟化滚动收集，提取已生成的历史图与 prompt 的对应关系，并进行 Prompt 相似度精准匹配
-    history_pairs = await scan_conversation_history(agent)
+    # 如果是已有缓存的专属会话，历史记录绝不应为空。如果是空，则很有可能是因为加载延迟，我们将进行重试
+    history_pairs = []
+    if saved_url:
+        for attempt in range(3):
+            history_pairs = await scan_conversation_history(agent)
+            if history_pairs:
+                break
+            logging.warning(f"⚠️ 警告：检测到专属会话历史解析为空 (第 {attempt+1}/3 次尝试)，等待 3 秒后重试...")
+            await asyncio.sleep(3.0)
+    else:
+        history_pairs = await scan_conversation_history(agent)
+    
     matched_image_src = None
     max_sim = 0.0
     
