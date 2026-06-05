@@ -466,20 +466,28 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
             const hasStopButton = document.querySelector('button[data-testid="stop-button"]') !== null ||
                                   document.querySelector('#composer-submit-button[data-testid="stop-button"]') !== null;
             
+            const hasImageLoadingState = document.querySelector('[data-testid*="image-gen-loading"]') !== null ||
+                                         document.querySelector('[data-testid="image-gen-loading-state-dots"]') !== null;
+            
             const latestAssistantTurn = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]')).pop();
             let isThinkingCurrently = false;
             let hasSpinOrLoader = false;
             if (latestAssistantTurn) {{
-                const thinkBtn = Array.from(latestAssistantTurn.querySelectorAll('button')).find(b => b.innerText.includes("Thinking"));
+                const thinkBtn = Array.from(latestAssistantTurn.querySelectorAll('button')).find(b => 
+                    b.innerText.includes("Thinking") || 
+                    b.innerText.includes("思考") || 
+                    b.innerText.includes("Thought")
+                );
                 if (thinkBtn) isThinkingCurrently = true;
                 
                 const spin = latestAssistantTurn.querySelector('svg[class*="animate-spin"]') !== null;
                 const loader = latestAssistantTurn.querySelector('.streaming-loader') !== null;
-                hasSpinOrLoader = spin || loader;
+                const shimmer = latestAssistantTurn.querySelector('.loading-shimmer') !== null;
+                hasSpinOrLoader = spin || loader || shimmer;
             }}
             const hasThinking = isThinkingCurrently || hasSpinOrLoader;
             
-            const isGeneratingCurrently = hasStopButton || hasThinking;
+            const isGeneratingCurrently = hasStopButton || hasThinking || hasImageLoadingState;
 
             const preSrcs = new Set({pre_srcs_json});
             const imgs = Array.from(document.querySelectorAll('img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'));
@@ -601,6 +609,12 @@ async def scan_conversation_history(agent: BrowserAgent):
                 }
             });
         };
+        
+        // Wait for turns to render (up to 5s)
+        for (let i = 0; i < 50; i++) {
+            if (document.querySelectorAll('section[data-turn]').length > 0) break;
+            await new Promise(r => setTimeout(r, 100));
+        }
         
         // Collect initial state
         collectTurns();
@@ -761,6 +775,10 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
             logging.error(f"历史图直存失败: {res.get('error') if res else '无响应'}，将回退到重新生图流程。")
 
     # 4. 提交绘图
+    # 再次扫描并合并已有大图（防范滚动收集历史对话时在 DOM 中新载入了大量历史图片，导致被误判为新生成的图片）
+    post_scroll_srcs = await scan_existing_web_images(agent)
+    pre_srcs = set(pre_srcs) | set(post_scroll_srcs)
+    
     await trigger_dalle_generation(agent, prompt)
     
     # 4. 如果是新开启的会话，首次发送 Prompt 后立即轮询捕获会话 URL，确保即便后边绘图超时也能完美锁定本角色的专属会话！
