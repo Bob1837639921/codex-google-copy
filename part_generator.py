@@ -468,13 +468,16 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
             
             const latestAssistantTurn = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]')).pop();
             let isThinkingCurrently = false;
+            let hasSpinOrLoader = false;
             if (latestAssistantTurn) {{
                 const thinkBtn = Array.from(latestAssistantTurn.querySelectorAll('button')).find(b => b.innerText.includes("Thinking"));
                 if (thinkBtn) isThinkingCurrently = true;
+                
+                const spin = latestAssistantTurn.querySelector('svg[class*="animate-spin"]') !== null;
+                const loader = latestAssistantTurn.querySelector('.streaming-loader') !== null;
+                hasSpinOrLoader = spin || loader;
             }}
-            const hasThinking = isThinkingCurrently || 
-                                document.querySelector('svg[class*="animate-spin"]') !== null ||
-                                document.querySelector('.streaming-loader') !== null;
+            const hasThinking = isThinkingCurrently || hasSpinOrLoader;
             
             const isGeneratingCurrently = hasStopButton || hasThinking;
 
@@ -1199,7 +1202,109 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
         }
     ]
     
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan
+    rust_warlord_plan = [
+        {
+            "char_id": "char_0010_rust_warlord",
+            "char_name": "铁血军阀",
+            "img_type": "main",
+            "prompt": "A masterpiece post-apocalyptic cinematic concept art of the Rustland Warlord. A massive, muscular East Asian warlord with a scarred face and cold, ruthless expression. His right eye is replaced by a crude mechanical bionic eye glowing with intense red light. His entire right arm is a massive, heavily customized industrial hydraulic cybernetic limb made from rusted iron and copper pipes, venting black soot and faint orange sparks. He is wearing heavy, intimidating scrap-metal power armor welded from truck panels and steel grids, decorated with warning yellow stripes. He stands heroic and tyrannical on a watchtower overlooking a raider camp filled with modified spiked vehicles. Behind him, a giant rusted aircraft carrier wreckage looms under a dramatic dusty red sunset, casting a glorious and oppressive rim light. Masterpiece, unreal engine 5 render, highly detailed textures, 8k resolution."
+        },
+        {
+            "char_id": "char_0010_rust_warlord",
+            "char_name": "铁血军阀",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Rustland Warlord character from our conversation. Focus on his face and shoulders, capturing his scarred face, silver hair, and the crude bionic eye glowing with intense red light. Black soot smudges on his cheeks. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0010_rust_warlord",
+            "char_name": "铁血军阀",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Rustland Warlord character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one cold and sneering, one letting out a terrifying roaring laugh, and one with narrowed eyes in silent rage. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0010_rust_warlord",
+            "char_name": "铁血军阀",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Rustland Warlord character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his scrap-metal power armor and hydraulic arm. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0010_rust_warlord",
+            "char_name": "铁血军阀",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Rustland Warlord character from our conversation, but wearing an alternative casual scavenger warlord outfit: a long, grease-stained leather trench coat over a ribbed black tank top, heavy combat trousers, and steel-toed boots, while keeping his hydraulic bionic arm. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0010_rust_warlord",
+            "char_name": "铁血军阀",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Rustland Warlord's weapons: his massive spiked hydraulic power hammer and his custom diesel-powered mechanical arm showing hydraulic pistons and fuel tubes. Show them from two angles, highlighting the grease-stained rusted metal textures. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0010_rust_warlord",
+            "char_name": "铁血军阀",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic raider camp scene concept art. A fortress built from a massive, decaying aircraft carrier wreckage, surrounded by watchtowers, barbed wire, and spiked desert vehicles. Billowing black smoke and dramatic amber sunset casting long, dark shadows. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0010_rust_warlord",
+            "char_name": "铁血军阀",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Rustland Warlord character from our conversation. He stands triumphantly in his scrap-metal power armor, holding his spiked hydraulic hammer, his red mechanical eye glowing menacingly. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        }
+    ]
+
+    rust_scavenger_queen_plan = [
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "main",
+            "prompt": "A masterpiece post-apocalyptic cinematic concept art of the Scavenger Queen. A slender and agile young East Asian woman with a cunning and sharp gaze. She has short, styled silver hair with glowing neon-green dyed tips. She wears a dark leather tunic reinforced with copper scales, underneath a worn, chemical-resistant dark green hooded hazard cloak that flows in the wind. Her lower face is covered by a detailed brass respirator mask with three circular filters. She stands dynamically amidst the towering rusted ruins of a ruined chemical factory. In her hands, she aims a detailed custom folding metallic crossbow that glows with bubbling, radioactive neon-green liquid vials. The background features acid rain falling through thick yellow clouds, with green toxic puddles reflecting a bleak setting sun casting a sickly warm glow. Cinematic, hyper-realistic, masterpiece, 8k resolution."
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Scavenger Queen character from our conversation. Focus on her face and shoulders, capturing her sharp green eyes, silver-green hair, and the detailed brass respirator mask. Acid rain droplets on her cloak. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Scavenger Queen character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side (without respirator mask): one smiling cunningly, one showing an angry cold glare, and one displaying a calculated smirk. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Scavenger Queen character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her dark green hooded cloak and brass respirator. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Scavenger Queen character from our conversation, but wearing an alternative scavenger outfit: a tight-fitting black environmental hazard jumpsuit, reinforced knee pads and tactical harness, and a glowing green chemical canister strapped to her back, without her large green cloak. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Scavenger Queen's weapons: her custom folding metallic crossbow and a set of glass vials filled with bubbling neon-green acid. Show them from two angles, highlighting the metallic wear and glowing green liquid. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic chemical factory ruins scene concept art. Towering corroded distillation towers, glowing toxic green acid swamps, acid rain falling from yellow chemical smog under a bleak setting sun. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Scavenger Queen character from our conversation. She stands agilely in her green hooded cloak, holding her folding crossbow, her green eyes glowing slightly in the toxic haze. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        }
+    ]
+    
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
