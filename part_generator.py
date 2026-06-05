@@ -69,11 +69,17 @@ TYPE_FOLDER = {
     'outfit': '05-服装差分',
     'prop': '06-道具武器',
     'scene': '07-场景氛围',
-    'comicPanel': '08-漫画单格',
     'cover': '09-封面图',
     'moodboard': '10-氛围板',
-    'sketch': '11-草图废案',
-    'fullBody': '12-全身立绘'
+    'sketch': '11-线稿结构',
+    'fullBody': '12-全身立绘',
+    'modelSheet': '13-标准设定图',
+    'poseSheet': '14-动作姿态',
+    'expressionSheet': '15-表情包',
+    'detailSheet': '16-细节特写',
+    'materialPalette': '17-材质色卡',
+    'outfitBreakdown': '18-服装拆分',
+    'damageState': '19-破损状态'
 }
 
 TYPE_LABEL = {
@@ -84,11 +90,17 @@ TYPE_LABEL = {
     'outfit': '服装差分',
     'prop': '道具武器',
     'scene': '场景氛围',
-    'comicPanel': '漫画单格',
     'cover': '封面图',
     'moodboard': '氛围板',
-    'sketch': '草图废案',
-    'fullBody': '全身立绘'
+    'sketch': '线稿结构',
+    'fullBody': '全身立绘',
+    'modelSheet': '标准设定图',
+    'poseSheet': '动作姿态',
+    'expressionSheet': '表情包',
+    'detailSheet': '细节特写',
+    'materialPalette': '材质色卡',
+    'outfitBreakdown': '服装拆分',
+    'damageState': '破损状态'
 }
 
 # ======================================================
