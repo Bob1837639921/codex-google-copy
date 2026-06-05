@@ -1,0 +1,19 @@
+{
+  "name": "xiaohongshu",
+  "domains": ["xiaohongshu.com", "www.xiaohongshu.com"],
+  "search_url_template": "https://www.xiaohongshu.com/search_result?keyword={query}",
+  "result_card_selectors": [
+    "section.note-item",
+    "div.note-item",
+    "div.feeds-container article"
+  ],
+  "first_card_selector": "section.note-item:nth-of-type(1) img, div.note-item:nth-of-type(1) img, .feeds-container article:nth-of-type(1) img",
+  "modal_selectors": [
+    ".note-detail-mask",
+    ".note-container",
+    ".modal-container"
+  ],
+  "close_selector": ".close-box, .close-btn, .close, button.close, [class*='close-box'], [class*='close-btn']",
+  "extract_results_js": "(() => { const cards = Array.from(document.querySelectorAll('section.note-item, div.note-item, div.feeds-container article')); return cards.slice(0, 20).map((card, index) => { const titleEl = card.querySelector('.title, .note-title, a.title, .title-text, .desc'); const authorEl = card.querySelector('.author, .name, .nickname'); const likesEl = card.querySelector('.like, .like-num, .count'); const linkEl = card.querySelector('a'); const imgEl = card.querySelector('img'); return { index, title: titleEl ? titleEl.innerText.trim() : '', author: authorEl ? authorEl.innerText.trim() : '', likes: likesEl ? likesEl.innerText.trim() : '', href: linkEl ? linkEl.href : '', image: imgEl ? (imgEl.currentSrc || imgEl.src) : '' }; }).filter(item => item.title || item.href || item.image); })()",
+  "extract_modal_js": "(() => { const modal = document.querySelector('.note-detail-mask, .note-container, .modal-container') || document.body; const titleEl = modal.querySelector('.title, .note-title, h1.title, .desc-title, h1'); const descEl = modal.querySelector('.desc, .desc-content, .note-text, #detail-desc, .desc-text'); const imgEls = Array.from(modal.querySelectorAll('.media-container img, .swiper-slide img, .note-content img, .slider-container img, .image-wrapper img')); const commentItems = Array.from(modal.querySelectorAll('.comment-item, .comment-inner-container, .comment-item-layout')).slice(0, 30); return { title: titleEl ? titleEl.innerText.trim() : '', description: descEl ? descEl.innerText.trim() : '', images: imgEls.map(img => img.currentSrc || img.src).filter(Boolean), comments: commentItems.map(item => { const authorEl = item.querySelector('.author, .nickname, .name, .user-name'); const contentEl = item.querySelector('.content, .comment-content, .text, .content-text'); const likeEl = item.querySelector('.like-count, .likes, [class*=like]'); return { author: authorEl ? authorEl.innerText.trim() : '', content: contentEl ? contentEl.innerText.trim() : '', likes: likeEl ? likeEl.innerText.trim() : '' }; }).filter(comment => comment.author || comment.content) }; })()"
+}

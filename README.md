@@ -60,6 +60,10 @@ graph TD
 
 When using MCP, call `nodex_capabilities` if an agent is unsure about supported tools, actions, locator fields, or route facts.
 
+For unfamiliar sites, use `nodex_auto_operate` or `python auto_operator.py --goal "..."` first. It runs a guarded observe-plan-act-verify loop and stops with evidence plus a planner prompt when the next action is uncertain.
+
+For sites you have already explored, move the selectors and extraction rules into `site_profiles/*.json` instead of keeping one-off scraper scripts. `site_profiles/xhs.json` is the Xiaohongshu profile used by `auto_operator.py`.
+
 ---
 
 ## 📦 Project Structure / 项目结构

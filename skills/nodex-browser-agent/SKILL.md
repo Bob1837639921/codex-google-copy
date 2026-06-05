@@ -12,9 +12,10 @@ Use this skill when a task needs to control the user's local Chrome browser thro
 Do not start by writing a new Python script. Prefer this order:
 
 1. Use MCP tools named `nodex_*` if they are available.
-2. Use `nodex_run_action_plan` or `python action_executor.py --plan plan.json` for multi-step tasks.
-3. Use `agent_core.BrowserAgent` directly only when the reusable action plan vocabulary is not enough.
-4. Write a new script only after identifying a reusable gap; then consider adding that capability back to `action_executor.py`.
+2. For unfamiliar sites, use `nodex_auto_operate` or `python auto_operator.py --goal "..."` first.
+3. Use `nodex_run_action_plan` or `python action_executor.py --plan plan.json` for known multi-step tasks.
+4. Use `agent_core.BrowserAgent` directly only when the reusable action plan vocabulary is not enough.
+5. Write a new script only after identifying a reusable gap; then consider adding that capability back to `action_executor.py`.
 
 The bridge routes Python clients through `ws://localhost:8765/client`. The Chrome extension connects to `ws://localhost:8765`.
 
@@ -75,6 +76,26 @@ For every non-trivial browser task, run this loop:
 5. **Repair**: if a step fails, retry with a different locator or wait condition.
 
 Never blindly click or type after a failed step. Observe again first.
+
+## Unfamiliar Site Controller
+
+Use `nodex_auto_operate` for websites where the correct workflow is unknown. It enforces:
+
+1. observe with `snapshot` and `visual_snapshot`;
+2. stop on login/CAPTCHA/payment/account-risk blockers;
+3. execute only high-confidence generic actions such as loading a URL, filling a search box, clicking explicitly named text, or one inspection scroll;
+4. verify by observing again;
+5. stop with `needs_planner` and a `planner_prompt` when the next action is uncertain.
+
+This controller is intentionally conservative. It is not a replacement for a planner model; it is a guardrail that keeps a planner from guessing.
+
+For sites that have already been explored, add a JSON file under `site_profiles/` instead of writing another scraper script. A site profile can hold domain names, search URL templates, stable selectors, and extraction JavaScript. The auto operator loads these profiles before falling back to generic probing. Xiaohongshu is represented by `site_profiles/xhs.json`.
+
+CLI example:
+
+```powershell
+python auto_operator.py --goal "搜索 NodeX Browser Agent" --url "https://www.google.com" --max-rounds 4 --output debug/auto_operator_report.json
+```
 
 ## Safety Rules
 

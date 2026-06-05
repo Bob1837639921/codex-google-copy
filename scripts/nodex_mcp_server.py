@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT))
 
 from agent_core import BrowserAgent  # noqa: E402
 from action_executor import UniversalActionExecutor  # noqa: E402
+from auto_operator import AutoOperator, AutoOperatorConfig  # noqa: E402
 
 
 PROTOCOL_VERSION = "2024-11-05"
@@ -113,6 +114,7 @@ async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
                 "extract",
                 "evaluate",
                 "checkpoint",
+                "auto_operate",
             ],
             "locator_fields": [
                 "selector",
@@ -133,6 +135,7 @@ async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
                 "If the caller has no vision model, use visual_snapshot for JSON layout evidence instead of relying on screenshot interpretation.",
                 "A successful click/type means the bridge executed the action, not that the business goal is complete. Verify with snapshot, screenshot, extract, or page state.",
                 "Do not invent unsupported actions or tool names. Use nodex_run_action_plan for multi-step flows.",
+                "Use nodex_auto_operate for unfamiliar sites when the caller needs the guarded observe-plan-act-verify loop.",
             ],
         }
     )
@@ -271,6 +274,36 @@ async def tool_run_action_plan(args: dict[str, Any]) -> dict[str, Any]:
             plan_path.unlink()
 
 
+async def tool_auto_operate(args: dict[str, Any]) -> dict[str, Any]:
+    goal = require_str(args, "goal")
+    url = args.get("url")
+    if url is not None and (not isinstance(url, str) or not url):
+        raise ValueError("`url` must be a non-empty string when provided")
+
+    max_rounds = args.get("max_rounds", 4)
+    if not isinstance(max_rounds, int) or max_rounds < 1 or max_rounds > 12:
+        raise ValueError("`max_rounds` must be an integer from 1 to 12")
+
+    output_file = args.get("output_file", str(ROOT / "auto_operator_report.json"))
+    if not isinstance(output_file, str) or not output_file:
+        raise ValueError("`output_file` must be a non-empty string")
+
+    take_screenshots = args.get("take_screenshots", False)
+    if not isinstance(take_screenshots, bool):
+        raise ValueError("`take_screenshots` must be a boolean")
+
+    config = AutoOperatorConfig(
+        goal=goal,
+        url=url,
+        max_rounds=max_rounds,
+        output_file=output_file,
+        take_screenshots=take_screenshots,
+        screenshot_dir=str(ROOT / "debug" / "auto_operator"),
+    )
+    result = await asyncio.wait_for(AutoOperator(config).run(), timeout=420)
+    return ok(result)
+
+
 TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
     "nodex_capabilities": tool_capabilities,
     "nodex_status": tool_status,
@@ -285,6 +318,7 @@ TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
     "nodex_visual_snapshot": tool_visual_snapshot,
     "nodex_download": tool_download,
     "nodex_run_action_plan": tool_run_action_plan,
+    "nodex_auto_operate": tool_auto_operate,
 }
 
 
@@ -419,6 +453,22 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 },
             },
             "required": ["steps"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_auto_operate",
+        "description": "Run a guarded observe-plan-act-verify loop for an unfamiliar website. Performs only high-confidence generic actions, stops on safety blockers, and returns evidence plus a planner prompt when replanning is needed.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "goal": {"type": "string"},
+                "url": {"type": "string"},
+                "max_rounds": {"type": "integer"},
+                "output_file": {"type": "string"},
+                "take_screenshots": {"type": "boolean"},
+            },
+            "required": ["goal"],
             "additionalProperties": False,
         },
     },
