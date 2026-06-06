@@ -101,7 +101,7 @@ function connectWebSocket() {
         } else if (data.action === 'click') {
             await executeClick(data.selector, data.mode, data.id);
         } else if (data.action === 'type') {
-            await executeType(data.selector, data.text, data.id);
+            await executeType(data.selector, data.text, data.mode, data.id);
         } else if (data.action === 'snapshot') {
             await executeSnapshot(data.id);
         } else if (data.action === 'screenshot') {
@@ -554,7 +554,8 @@ async function executeClick(selector, modeOrMsgId, msgId) {
     }, 1200); 
 }
 
-async function executeType(selector, text, msgId) {
+async function executeType(selector, text, mode, msgId) {
+    const isDirect = (mode === 'direct');
     const moved = await executeHover(selector, null);
     if (!moved) {
         if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
@@ -575,6 +576,11 @@ async function executeType(selector, text, msgId) {
                         if (el.tagName === 'DIV' || el.contentEditable === 'true') {
                             el.innerHTML = '';
                             const fullText = ${textLiteral};
+                            if (${isDirect}) {
+                                document.execCommand('insertText', false, fullText);
+                                el.dispatchEvent(new Event('input', { bubbles: true }));
+                                return "direct_success";
+                            }
                             for (const char of fullText) {
                                 document.execCommand('insertText', false, char);
                                 el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -586,6 +592,16 @@ async function executeType(selector, text, msgId) {
                         // 为了触发 React 的状态更新，直接修改其底层 value tracker
                         const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
                         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, "value").set;
+                        if (${isDirect}) {
+                            if (nativeInputValueSetter) {
+                                nativeInputValueSetter.call(el, ${textLiteral});
+                            } else {
+                                el.value = ${textLiteral};
+                            }
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                            return "direct_success";
+                        }
                         if (nativeInputValueSetter) {
                             nativeInputValueSetter.call(el, '');
                         } else {
@@ -608,7 +624,7 @@ async function executeType(selector, text, msgId) {
                 return;
             }
             
-            // 关键2：如果是标准文本框/区域，分步使用 CDP 的 insertText 模拟逐字敲击，保障物理真实度
+            // 关键2：如果是标准文本框/区域且非直接模式，分步使用 CDP 的 insertText 模拟逐字敲击，保障物理真实度
             if (typeMode === "standard_input") {
                 for (const char of text) {
                     await sendCommand(agentTabId, 'Input.insertText', { text: char });

@@ -109,16 +109,18 @@ class BrowserAgent:
         logging.info(f"Clicking element (mode={mode}): {selector}")
         return await self._send_command("click", selector=selector, mode=mode)
 
-    async def type(self, selector: str, text: str):
+    async def type(self, selector: str, text: str, mode: str = "smart"):
         """
         向网页中的目标输入框（或 contentEditable 富文本容器）中输入指定文本。
         【AI 决策指南（拟人化输入安全防护）】：
-        - 本方法已在底层自动实现了【人类真实物理击键延迟模拟（50ms - 130ms 随机抖动）】。AI 在进行大文本或多段落输入时表现如同真人。
+        - :param mode: 可传入 'smart'（默认） 或 'direct'。
+        - 默认的 'smart' 模式已在底层自动实现了【人类真实物理击键延迟模拟（50ms - 130ms 随机抖动）】。AI 在进行大文本或多段落输入时表现如同真人。小红书、淘宝等具有高级反爬虫/风控体系的站点，【必须保持默认的 'smart' 状态】。
+        - 若目标网站绝对没有风控阻断行为（例如本地应用、ChatGPT等），或者需要极快触发大文本输入，可使用 mode='direct' 实现一次性填入，绕过逐字延时。
         - 请勿一次性发送海量文本或在极短时间内对同一个输入框频繁发起输入指令，防止被行为流控检测判定为爬虫。
         - 如果是富文本编辑器（如小红书创作者页面），输入前确保先选中该元素，输入完成后如页面未发生状态更新，应结合 snapshot() 或 wait_for() 检查输入状态。
         """
-        logging.info(f"Typing '{text}' into element: {selector}")
-        return await self._send_command("type", selector=selector, text=text)
+        logging.info(f"Typing into element (mode={mode}): {selector}")
+        return await self._send_command("type", selector=selector, text=text, mode=mode)
 
     async def snapshot(self):
         """

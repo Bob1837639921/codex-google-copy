@@ -304,6 +304,79 @@ async def tool_auto_operate(args: dict[str, Any]) -> dict[str, Any]:
     return ok(result)
 
 
+async def tool_run_skill_by_trigger(args: dict[str, Any]) -> dict[str, Any]:
+    query = require_str(args, "query")
+    cmd = [sys.executable, str(ROOT / "skill_router.py"), "--query", query]
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
+        stdout, _ = await process.communicate()
+        output = stdout.decode('utf-8', errors='ignore')
+        try:
+            res_json = json.loads(output.strip().split("\n")[-1])
+            return ok(res_json)
+        except Exception:
+            return ok({"status": "success", "raw_output": output})
+    except Exception as exc:
+        return error(f"Failed to execute router: {exc}")
+
+
+async def tool_taobao_search(args: dict[str, Any]) -> dict[str, Any]:
+    keyword = require_str(args, "keyword")
+    config = AutoOperatorConfig(
+        goal=f"在淘宝搜索 {keyword}",
+        url="https://www.taobao.com",
+        max_rounds=4,
+        output_file=str(ROOT / "auto_operator_report.json"),
+        take_screenshots=False,
+        screenshot_dir=str(ROOT / "debug" / "auto_operator"),
+    )
+    result = await asyncio.wait_for(AutoOperator(config).run(), timeout=420)
+    return ok(result)
+
+
+async def tool_xhs_search(args: dict[str, Any]) -> dict[str, Any]:
+    keyword = require_str(args, "keyword")
+    config = AutoOperatorConfig(
+        goal=f"在小红书搜索 {keyword}",
+        url="https://www.xiaohongshu.com",
+        max_rounds=4,
+        output_file=str(ROOT / "auto_operator_report.json"),
+        take_screenshots=False,
+        screenshot_dir=str(ROOT / "debug" / "auto_operator"),
+    )
+    result = await asyncio.wait_for(AutoOperator(config).run(), timeout=420)
+    return ok(result)
+
+
+async def tool_generate_character(args: dict[str, Any]) -> dict[str, Any]:
+    char_id = args.get("character_name_or_id")
+    img_type = args.get("type")
+    cmd = [sys.executable, str(ROOT / "part_generator.py")]
+    if char_id:
+        cmd.extend(["--char-id", char_id])
+    if img_type:
+        cmd.extend(["--type", img_type])
+        
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
+        stdout, _ = await process.communicate()
+        output = stdout.decode('utf-8', errors='ignore')
+        if process.returncode == 0:
+            return ok({"status": "success", "output": output})
+        else:
+            return error({"status": "failed", "returncode": process.returncode, "output": output})
+    except Exception as exc:
+        return error(f"Failed to execute character generator: {exc}")
+
+
 TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
     "nodex_capabilities": tool_capabilities,
     "nodex_status": tool_status,
@@ -319,6 +392,10 @@ TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
     "nodex_download": tool_download,
     "nodex_run_action_plan": tool_run_action_plan,
     "nodex_auto_operate": tool_auto_operate,
+    "nodex_run_skill_by_trigger": tool_run_skill_by_trigger,
+    "nodex_taobao_search": tool_taobao_search,
+    "nodex_xhs_search": tool_xhs_search,
+    "nodex_generate_character": tool_generate_character,
 }
 
 
@@ -388,6 +465,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "properties": {
                 "selector": {"type": "string"},
                 "text": {"type": "string"},
+                "mode": {"type": "string", "enum": ["smart", "direct"], "description": "smart simulates typing keystroke delays (for anti-bot); direct inserts text instantly (for trusted sites)"}
             },
             "required": ["selector", "text"],
             "additionalProperties": False,
@@ -469,6 +547,54 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 "take_screenshots": {"type": "boolean"},
             },
             "required": ["goal"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_run_skill_by_trigger",
+        "description": "Detect registered triggers within a natural language query and route to the corresponding skill automation workflow.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "The natural language instruction, e.g. '在淘宝上搜索显卡'"}
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_taobao_search",
+        "description": "Directly search for products on Taobao and extract results using the generic taobao site profile.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "keyword": {"type": "string", "description": "The product search term, e.g. '显卡'"}
+            },
+            "required": ["keyword"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_xhs_search",
+        "description": "Directly search on Xiaohongshu and extract results using the generic xhs site profile.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "keyword": {"type": "string", "description": "The search keyword, e.g. '露营'"}
+            },
+            "required": ["keyword"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_generate_character",
+        "description": "Directly execute the character DALL-E asset generator pipeline to generate visual character sheets and sync to frontend constants.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "character_name_or_id": {"type": "string", "description": "The character ID or name, e.g. '沙海游侠'"},
+                "type": {"type": "string", "description": "Optional asset sheet type, e.g. 'main', 'portrait', 'expression'"}
+            },
             "additionalProperties": False,
         },
     },

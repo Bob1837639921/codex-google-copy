@@ -169,9 +169,9 @@ class BrowserAgent:
         logging.info(f"👉 [模拟真人点击] 正在移动并点击: {selector}")
         return await self._send_command("click", selector=selector)
 
-    async def type(self, selector: str, text: str):
-        logging.info(f"👉 [模拟真人输入] 正在移动并输入文本: '{text[:40]}...' 到 {selector}")
-        return await self._send_command("type", selector=selector, text=text)
+    async def type(self, selector: str, text: str, mode: str = "smart"):
+        logging.info(f"👉 [模拟真人输入] 正在移动并输入文本 (mode={mode}): '{text[:40]}...' 到 {selector}")
+        return await self._send_command("type", selector=selector, text=text, mode=mode)
 
     async def hover(self, selector: str):
         logging.info(f"👉 [模拟真人悬停] 正在移动并悬停至: {selector}")
@@ -393,7 +393,7 @@ async def trigger_dalle_generation(agent: BrowserAgent, prompt: str):
     logging.info(f"向 ChatGPT 输入绘制 Prompt (模拟真人): {prompt[:80]}...")
     
     # 1. 使用我们通用的 type 接口输入 prompt，带有人机滑动和输入动画！
-    res = await agent.type("#prompt-textarea", prompt)
+    res = await agent.type("#prompt-textarea", prompt, mode="direct")
     if res == "textarea_not_found":
         raise RuntimeError("未能在 ChatGPT 页面中找到输入框，请确认当前标签页处于 ChatGPT 对话中！")
         

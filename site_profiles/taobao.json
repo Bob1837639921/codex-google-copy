@@ -1,0 +1,13 @@
+{
+  "name": "taobao",
+  "domains": ["taobao.com", "s.taobao.com", "tmall.com", "detail.tmall.com"],
+  "search_url_template": "https://s.taobao.com/search?q={query}",
+  "result_card_selectors": [
+    "div[class*='Card--']",
+    "div[class*='doubleCard--']",
+    "div[class*='singleCard--']",
+    "div.Card--gO3Bz6bu"
+  ],
+  "first_card_selector": "div[class*='Card--'] a, div[class*='doubleCard--'] a, div[class*='singleCard--'] a",
+  "extract_results_js": "(() => { const cards = Array.from(document.querySelectorAll('div, a')).filter(el => { const className = el.className || ''; return className.includes('doubleCard--') || className.includes('singleCard--') || className.includes('Card--gO3Bz6bu'); }); return cards.slice(0, 20).map((card, index) => { const titleEl = card.querySelector('[class*=\"title--\"]'); const title = titleEl ? titleEl.innerText.trim() : ''; const wwEl = card.querySelector('[data-item]'); const itemId = wwEl ? wwEl.getAttribute('data-item') : ''; let href = ''; if (itemId) { href = 'https://item.taobao.com/item.htm?id=' + itemId; } else { const aElements = Array.from(card.querySelectorAll('a')); if (aElements.length > 0) { const detailLink = aElements.find(a => a.href.includes('item.htm') || a.href.includes('detail.tmall.com') || a.href.includes('detail.taobao.com') || a.href.includes('click.simba.taobao.com') || a.href.includes('s.click.taobao.com')); href = detailLink ? detailLink.href : aElements[0].href; } else if (card.tagName === 'A') { href = card.href; } } const priceIntEl = card.querySelector('[class*=\"priceInt--\"]'); const priceFloatEl = card.querySelector('[class*=\"priceFloat--\"]'); let price = ''; if (priceIntEl) { price = priceIntEl.innerText; if (priceFloatEl) { price += priceFloatEl.innerText; } } const salesEl = card.querySelector('[class*=\"realSales--\"]'); const sales = salesEl ? salesEl.innerText.trim() : ''; const shopEl = card.querySelector('[class*=\"shopName--\"]') || card.querySelector('[class*=\"shop--\"]'); const shop = shopEl ? shopEl.innerText.trim() : ''; return { index, title, price, sales, shop, href }; }).filter(item => item.title || item.href); })()"
+}
