@@ -560,9 +560,22 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
 def get_prompt_similarity(p1: str, p2: str) -> float:
     """
     计算两个 Prompt 的 Jaccard 相似度（基于英文单词）
+    为了避免因为共享的 Character lock 头部导致不同部位的相似度被误判为匹配，
+    如果 Prompt 包含 'current asset goal:'，我们将只对比该标记之后的具体绘图目标部分。
     """
-    w1 = set(re.findall(r'\w+', p1.lower()))
-    w2 = set(re.findall(r'\w+', p2.lower()))
+    def clean_prompt(p: str) -> str:
+        p_lower = p.lower()
+        if "current asset goal:" in p_lower:
+            parts = p_lower.split("current asset goal:", 1)
+            return parts[1]
+        if "character lock:" in p_lower:
+            for delimiter in ["style:", "composition:", "background:", "constraints:"]:
+                if delimiter in p_lower:
+                    return p_lower.split(delimiter, 1)[1]
+        return p_lower
+
+    w1 = set(re.findall(r'\w+', clean_prompt(p1)))
+    w2 = set(re.findall(r'\w+', clean_prompt(p2)))
     if not w1 or not w2:
         return 0.0
     return len(w1 & w2) / len(w1 | w2)
@@ -1344,8 +1357,230 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "prompt": "Now, draw a full-body cinematic splash art of the exact same Scavenger Queen character from our conversation. She stands agilely in her green hooded cloak, holding her folding crossbow, her green eyes glowing slightly in the toxic haze. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
         }
     ]
+
+    boundary_investigator_plan = [
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "main",
+            "prompt": "A masterpiece urban mystery concept art of the Boundary Investigator. A handsome, slender young East Asian male detective with short messy ink-blue hair. He wears a gold-rimmed monocle on his left eye, showing sharp, intelligent eyes. He is dressed in a tailored deep-gray double-breasted trench coat with a black vest and crimson tie underneath. He stands in a rainy, dark alleyway at midnight, holding a glowing vintage vacuum-tube radio in his gloved hands. The radio glows with an eerie teal-green aura, casting faint wave ripples in the foggy air. Background features yellow glowing streetlamps reflecting on wet asphalt, cinematic shadows, octane render, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Boundary Investigator character from our conversation. Focus on his face and shoulders, capturing his messy ink-blue hair, the gold-rimmed monocle on his left eye, and his calm, sharp expression. Rain droplets on his coat. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Boundary Investigator character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one calm and calculating, one with a subtle cynical smirk under his monocle, and one looking surprised/tense while listening to the radio. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Boundary Investigator character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his deep-gray double-breasted trench coat. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Boundary Investigator character from our conversation displaying three different outfits side-by-side on a plain clean dark gray background: on the left, his default deep-gray trench coat uniform; in the middle, his alternative private investigator waistcoat outfit (a dark blue waistcoat vest over a rolled-up white shirt and dark trousers, without his trench coat); on the right, his detective field uniform (a dark utility windbreaker jacket with tactical pockets). Show three side-by-side full-body views, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Boundary Investigator's gear: his vintage vacuum-tube radio with glowing teal-green indicator lights and dials, and his leather-bound investigator notebook. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed urban mystery scene concept art. A dark, rain-slicked city alleyway at midnight, glowing yellow streetlamps, dark puddles reflecting the lights, and a mysterious door outlined in faint glowing teal-green energy in the shadows. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "cover",
+            "prompt": "A cinematic vertical cover art showing the Boundary Investigator debugging his glowing vintage radio, standing on a rainy urban building rooftop. Waves of teal-green radio frequency lines ripple across the sky, with the dark cityscape reflecting off rain puddles. High polish, dramatic rim lighting, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "moodboard",
+            "prompt": "A moodboard collage of 4 panels for the Boundary Investigator: one showing close-up rain reflections on a dark asphalt road, one showing glowing copper vacuum tubes of a vintage radio, one showing a gold-rimmed monocle resting on an open investigation notebook, and one showing ink-blue curls of hair under dim yellow streetlights. Eerie, mysterious tone, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "sketch",
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Boundary Investigator in 3 study sketches: adjusting his monocle, tuning his hand-held radio, and walking down a dark corridor. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Boundary Investigator character from our conversation. He stands alert in his trench coat, holding his glowing vintage radio, looking towards the viewer with a knowing smile. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "modelSheet",
+            "prompt": "A clean model sheet of the Boundary Investigator showing full-body front, side, and back views. Standing neutrally in his deep-gray double-breasted trench coat. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "poseSheet",
+            "prompt": "Show 5 poses of the Boundary Investigator on one clean sheet: walking with a flashlight, kneeling to check a rain puddle, tuning his radio close to his ear, running in warning/alarm, and leaning against a brick wall with a cold smirk. Solid clean dark gray background."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "expressionSheet",
+            "prompt": "An expression sheet showing 8 bust portraits of the Boundary Investigator in a clean grid: calm, calculating, a sharp smirk, showing tension while listening to static, tired/exhausted with dark circles, a subtle warning look, coughing in wet cold weather, and focused determination. Clean dark gray background."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "detailSheet",
+            "prompt": "A clean detail sheet showing close-up panels of the Boundary Investigator's features: his gold-rimmed monocle (left eye), his old vacuum-tube radio's speaker grill and teal-green wave dial, the fabric texture of his deep-gray trench coat collar, the leather gloves on his hands, and his scrawled handwritten notes. Clean light gray background."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "materialPalette",
+            "prompt": "A material and color palette sheet for the Boundary Investigator: fabric swatches of deep-gray wool, ink-blue hair sample, gold monocle metal shine, crimson tie silk, and the teal-green light glow of his radio. Clean design layout, plain gray background."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "outfitBreakdown",
+            "prompt": "An outfit breakdown sheet for the Boundary Investigator: showing separate layers of his clothing: deep-gray trench coat, black waistcoat vest, white collared shirt with crimson tie, dark trousers, and leather gloves. Clean layout, plain light background."
+        },
+        {
+            "char_id": "char_0012_boundary_investigator",
+            "char_name": "界线调查员",
+            "img_type": "damageState",
+            "prompt": "Show 3 full-body versions of the Boundary Investigator: clean/default, battle-worn with dust smudges and torn coat sleeve, and heavily damaged with shattered monocle, blood-stained bandages on his forehead, and a cracked vintage radio. Solid clean dark gray background."
+        }
+    ]
+
+    lantern_keeper_plan = [
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "main",
+            "prompt": "A breathtaking gothic fantasy concept art of the Eternal Lantern Keeper. An elegant, young woman with refined features and pale skin. Her eyes glow with a soft starry gold light, and she has long flowing silver-white hair with faint gold reflections. She wears layered midnight-blue gothic robes with intricate gold star-map embroidery on the skirt, and a sheer black cape over her shoulders. She stands inside a silent, towering cathedral library ruins, holding a gothic black-iron candle lantern. Inside the lantern, a floating bright blue stellar flame burns, shedding glowing stardust particles. Dark atmospheric archives in the background, cinematic rim lighting, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Eternal Lantern Keeper character from our conversation. Focus on her face and shoulders, capturing her starry gold eyes, silver-white hair, and her calm, compassionate expression. Star dust particles floating around. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Eternal Lantern Keeper character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one serene and peaceful, one showing gentle sorrow with a starry gold tear, and one with a serious, guarding expression. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Eternal Lantern Keeper character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her midnight-blue gothic robes and black cape. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "outfit",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Eternal Lantern Keeper (永夜守灯人)\nGender / age impression: young woman, elegant, pale skin, serene and holy presence\nBody shape: slender and graceful silhouette\nFace: delicate refined face, calm and compassionate expression\nHair: long flowing silver-white hair with faint gold reflections\nEyes: gold eyes that glow with soft starry light\nOutfit: layered midnight-blue gothic robes with intricate gold star-map embroidery on the skirt, sheer black cape over shoulders\nAccessories / weapon: gothic black-iron candle lantern containing a floating bright blue stellar flame that sheds glowing stardust particles\nColor palette: midnight-blue, silver-white, gold, deep black, bright blue stellar flame highlights\nFixed traits that must never change: silver-white hair, gold-glowing eyes, midnight-blue gothic robes with gold embroidery, black-iron lantern with blue flame, serene holy expression\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default midnight-blue gothic robes; in the middle, her alternative ceremonial white priestess gown with silver embroidery and a silver crescent crown; on the right, her archival scholar robes (a light blue and gray velvet gown with wide sleeves).\n\nStyle:\nGothic fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally. Keep the character clearly readable. Avoid unnecessary extra characters.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, color palette, body shape, and signature accessories.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Eternal Lantern Keeper's gear: her gothic black-iron lantern with a floating bright blue stellar flame, and a heavy, leather-bound ancient tome of destiny. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed dark fantasy scene concept art. Towering stone arches of a cathedral library in ruins, ancient bookshelves stretching into darkness, with floating glowing constellation maps and stardust drifting in the air. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "cover",
+            "prompt": "A cinematic vertical cover art showing the Eternal Lantern Keeper walking down the giant, cathedral-like library ruins. She holds her glowing blue-flamed black-iron lantern high, casting long shadows on towering book archives, as glowing stellar constellations float above her. High polish, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "moodboard",
+            "prompt": "A moodboard collage of 4 panels for the Eternal Lantern Keeper: one showing ancient, dusty leather-bound books, one showing a bright blue candle flame floating inside a gothic iron cage, one showing golden star constellations mapping on dark velvet fabric, and one showing long silver-white hair reflecting soft gold light. Sacred, gothic, mysterious tone, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "sketch",
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Eternal Lantern Keeper in 3 study sketches: holding the lantern forward, praying, and looking down at a giant open book of destiny. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Eternal Lantern Keeper character from our conversation. She stands gracefully in her midnight-blue robes, holding her glowing lantern, looking forward with compassionate gold eyes. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "modelSheet",
+            "prompt": "A clean model sheet of the Eternal Lantern Keeper showing full-body front, side, and back views. Standing neutrally in her midnight-blue gothic priestess robes. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "poseSheet",
+            "prompt": "Show 5 poses of the Eternal Lantern Keeper on one clean sheet: walking gracefully with her lantern, holding the lantern high to examine a wall, kneeling to read an ancient tome, raising her hand to cast a star-barrier, and floating slightly in a state of holy meditation. Solid clean dark gray background."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "expressionSheet",
+            "prompt": "An expression sheet showing 8 bust portraits of the Eternal Lantern Keeper in a clean grid: serene, gentle sorrow with a golden tear, serious guarding look, eyes closed in silent prayer, calm warning, surprised by invader, exhausted/fading light, and compassionate gentle gaze. Clean dark gray background."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "detailSheet",
+            "prompt": "A clean detail sheet showing close-up panels of the Eternal Lantern Keeper's features: her starry gold eyes, her long silver hair with gold strings, the intricate star-map embroidery on her midnight-blue robe skirt, and the gothic black-iron lantern's candle flame. Clean light gray background."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "materialPalette",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Eternal Lantern Keeper (永夜守灯人)\nGender / age impression: young woman, elegant, pale skin, serene and holy presence\nBody shape: slender and graceful silhouette\nFace: delicate refined face, calm and compassionate expression\nHair: long flowing silver-white hair with faint gold reflections\nEyes: gold eyes that glow with soft starry light\nOutfit: layered midnight-blue gothic robes with intricate gold star-map embroidery on the skirt, sheer black cape over shoulders\nAccessories / weapon: gothic black-iron candle lantern containing a floating bright blue stellar flame that sheds glowing stardust particles\nColor palette: midnight-blue, silver-white, gold, deep black, bright blue stellar flame highlights\nFixed traits that must never change: silver-white hair, gold-glowing eyes, midnight-blue gothic robes with gold embroidery, black-iron lantern with blue flame, serene holy expression\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of midnight-blue velvet, silver-white hair sample, starry gold glowing paint, black iron metal texture, and the bright blue stellar flame beside a neutral front view of the character.\n\nStyle:\nGothic fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and signature accessories.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "outfitBreakdown",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Eternal Lantern Keeper (永夜守灯人)\nGender / age impression: young woman, elegant, pale skin, serene and holy presence\nBody shape: slender and graceful silhouette\nFace: delicate refined face, calm and compassionate expression\nHair: long flowing silver-white hair with faint gold reflections\nEyes: gold eyes that glow with soft starry light\nOutfit: layered midnight-blue gothic robes with intricate gold star-map embroidery on the skirt, sheer black cape over shoulders\nAccessories / weapon: gothic black-iron candle lantern containing a floating bright blue stellar flame that sheds glowing stardust particles\nColor palette: midnight-blue, silver-white, gold, deep black, bright blue stellar flame highlights\nFixed traits that must never change: silver-white hair, gold-glowing eyes, midnight-blue gothic robes with gold embroidery, black-iron lantern with blue flame, serene holy expression\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of her clothing: the outer midnight-blue velvet priestess robes, the black lace cape, the silver crescent crown, and the heavy leather-bound ancient tome of destiny.\n\nStyle:\nGothic fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0013_lantern_keeper",
+            "char_name": "永夜守灯人",
+            "img_type": "damageState",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Eternal Lantern Keeper (永夜守灯人)\nGender / age impression: young woman, elegant, pale skin, serene and holy presence\nBody shape: slender and graceful silhouette\nFace: delicate refined face, calm and compassionate expression\nHair: long flowing silver-white hair with faint gold reflections\nEyes: gold eyes that glow with soft starry light\nOutfit: layered midnight-blue gothic robes with intricate gold star-map embroidery on the skirt, sheer black cape over shoulders\nAccessories / weapon: gothic black-iron candle lantern containing a floating bright blue stellar flame that sheds glowing stardust particles\nColor palette: midnight-blue, silver-white, gold, deep black, bright blue stellar flame highlights\nFixed traits that must never change: silver-white hair, gold-glowing eyes, midnight-blue gothic robes with gold embroidery, black-iron lantern with blue flame, serene holy expression\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default, battle-worn with tattered robe hem and dusty cape, and heavily damaged with her body half-translucent and fading, a cracked glass lantern, and golden stellar tears flowing.\n\nStyle:\nGothic fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        }
+    ]
     
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
