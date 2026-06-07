@@ -114,6 +114,11 @@ function connectWebSocket() {
             await executeFetchAsBase64(data.url, data.id);
         } else if (data.action === 'downloadViaBlob') {
             await executeDownloadViaBlob(data.url, data.filename, data.id);
+        } else if (data.action === 'reloadExtension') {
+            socket.send(JSON.stringify({ id: data.id, status: 'success', message: 'Reloading extension...' }));
+            setTimeout(() => {
+                chrome.runtime.reload();
+            }, 150);
         }
     } catch (e) {
         socket.send(JSON.stringify({ id: data.id, status: 'error', error: e.toString() }));
@@ -524,18 +529,20 @@ async function executeClick(selector, modeOrMsgId, msgId) {
                             window.__ai_cursor_pulse();
                         }
                         const runMode = ${modeLiteral};
-                        if (runMode === 'direct') {
-                            el.click();
-                        } else {
-                            // 模拟物理与 DOM 点击事件链
-                            const opts = { bubbles: true, cancelable: true, view: window };
-                            el.dispatchEvent(new PointerEvent('pointerdown', opts));
-                            el.dispatchEvent(new MouseEvent('mousedown', opts));
-                            if (typeof el.focus === 'function') el.focus();
-                            el.dispatchEvent(new PointerEvent('pointerup', opts));
-                            el.dispatchEvent(new MouseEvent('mouseup', opts));
-                            el.click();
-                        }
+                        setTimeout(() => {
+                            if (runMode === 'direct') {
+                                el.click();
+                            } else {
+                                // 模拟物理与 DOM 点击事件链
+                                const opts = { bubbles: true, cancelable: true, view: window };
+                                el.dispatchEvent(new PointerEvent('pointerdown', opts));
+                                el.dispatchEvent(new MouseEvent('mousedown', opts));
+                                if (typeof el.focus === 'function') el.focus();
+                                el.dispatchEvent(new PointerEvent('pointerup', opts));
+                                el.dispatchEvent(new MouseEvent('mouseup', opts));
+                                el.click();
+                            }
+                        }, 50);
                         return true; 
                     }
                     return false;
