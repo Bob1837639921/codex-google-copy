@@ -402,7 +402,8 @@ async def trigger_dalle_generation(agent: BrowserAgent, prompt: str):
     # 2. 找到发送按钮并为其设置临时 ID，进行真人模拟点击发送！
     js_find_send = """
     (() => {
-        const sendBtn = document.querySelector('button[data-testid="send-button"]') || 
+        const sendBtn = document.querySelector('button[data-testid="composer-submit-button"]') ||
+                        document.querySelector('button[data-testid="send-button"]') || 
                         document.querySelector('button[aria-label="Send message"]') ||
                         document.querySelector('button.mb-1.me-1') ||
                         document.querySelector('button:has(svg[viewBox="0 0 24 24"])');
@@ -419,7 +420,8 @@ async def trigger_dalle_generation(agent: BrowserAgent, prompt: str):
         logging.warning("找不到发送按钮，通过底层 DOM 直接触发发送...")
         await agent.evaluate("""
             (() => {
-                const sendBtn = document.querySelector('button[data-testid="send-button"]') || 
+                const sendBtn = document.querySelector('button[data-testid="composer-submit-button"]') ||
+                                document.querySelector('button[data-testid="send-button"]') || 
                                 document.querySelector('button[aria-label="Send message"]');
                 if (sendBtn) sendBtn.click();
             })()
@@ -487,8 +489,7 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
             if (latestAssistantTurn) {{
                 const thinkBtn = Array.from(latestAssistantTurn.querySelectorAll('button')).find(b => 
                     b.innerText.includes("Thinking") || 
-                    b.innerText.includes("思考") || 
-                    b.innerText.includes("Thought")
+                    b.innerText.includes("思考中")
                 );
                 if (thinkBtn) isThinkingCurrently = true;
                 
@@ -605,7 +606,6 @@ async def scan_conversation_history(agent: BrowserAgent):
         const userPrompts = new Map();
         const assistantImages = new Map();
         
-        // Helper to collect user turns and assistant images currently in view
         const collectTurns = () => {
             const userTurns = document.querySelectorAll('section[data-turn="user"]');
             userTurns.forEach(turn => {
@@ -635,47 +635,41 @@ async def scan_conversation_history(agent: BrowserAgent):
             });
         };
         
-        // Wait for turns to render (up to 5s)
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 30; i++) {
             if (document.querySelectorAll('section[data-turn]').length > 0) break;
             await new Promise(r => setTimeout(r, 100));
         }
         
-        // Collect initial state
         collectTurns();
         
-        // 1. Smooth scroll UP to the top in steps of 200px to trigger virtualization loads
+        // Fast scroll UP in 1500px steps
         let currentScroll = container.scrollTop;
         while (currentScroll > 0) {
-            currentScroll = Math.max(0, currentScroll - 200);
+            currentScroll = Math.max(0, currentScroll - 1500);
             container.scrollTop = currentScroll;
             container.dispatchEvent(new Event('scroll', { bubbles: true }));
-            await new Promise(r => setTimeout(r, 40));
+            await new Promise(r => setTimeout(r, 100));
             collectTurns();
         }
         
-        // Wait at the top for additional loading
-        await new Promise(r => setTimeout(r, 2000));
-        collectTurns();
-        
-        // 2. Smooth scroll DOWN to the bottom to collect everything
-        const maxScroll = container.scrollHeight - container.clientHeight;
-        while (currentScroll < maxScroll) {
-            currentScroll = Math.min(maxScroll, currentScroll + 200);
-            container.scrollTop = currentScroll;
-            container.dispatchEvent(new Event('scroll', { bubbles: true }));
-            await new Promise(r => setTimeout(r, 40));
-            collectTurns();
-        }
-        
-        // Wait at the bottom
         await new Promise(r => setTimeout(r, 1000));
         collectTurns();
         
-        // Restore original scroll
+        // Fast scroll DOWN in 1500px steps
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        while (currentScroll < maxScroll) {
+            currentScroll = Math.min(maxScroll, currentScroll + 1500);
+            container.scrollTop = currentScroll;
+            container.dispatchEvent(new Event('scroll', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 100));
+            collectTurns();
+        }
+        
+        await new Promise(r => setTimeout(r, 500));
+        collectTurns();
+        
         container.scrollTop = originalScrollTop;
         
-        // Pair prompts and images: user turn N (odd) corresponds to assistant turn N + 1 (even)
         const result = [];
         for (let [num, images] of assistantImages.entries()) {
             const prompt = userPrompts.get(num - 1);
@@ -790,11 +784,16 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     matched_image_src = None
     max_sim = 0.0
     
-    for pair in history_pairs:
-        sim = get_prompt_similarity(prompt, pair["prompt"])
-        if sim > 0.65 and sim >= max_sim: # 使用 >= 保证存在重生成时选取最新一张
-            max_sim = sim
-            matched_image_src = pair["image"]
+    # 临时旁路机制：将废铁重构师的重构设定类型强行重新生成，避开历史中带机械臂和动漫风格的旧图片
+    bypass_types = {"modelSheet", "poseSheet", "expressionSheet", "detailSheet", "materialPalette", "outfitBreakdown", "damageState"}
+    bypass_history = (char_id == "char_0006_rust_mechanic" and img_type in bypass_types)
+    
+    if not bypass_history:
+        for pair in history_pairs:
+            sim = get_prompt_similarity(prompt, pair["prompt"])
+            if sim > 0.65 and sim >= max_sim: # 使用 >= 保证存在重生成时选取最新一张
+                max_sim = sim
+                matched_image_src = pair["image"]
             
     if matched_image_src:
         logging.info(f"✨ [历史图智能拾取] 相似度匹配成功 (similarity={max_sim:.2f})！")
@@ -1030,7 +1029,35 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0005_astrolabe_archivist",
             "char_name": "星轨记录员",
             "img_type": "outfit",
-            "prompt": "Now, draw the exact same Astrolabe Archivist character from our conversation, but wearing an alternative mystical high-priest outfit: a majestic white and gold ceremonial robe with flowing stardust silk sleeves, holding a silver celestial sceptre, without his dark scholar robes. Full-body view, standing dynamically on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate an outfit variant image. Show three different outfits side-by-side: on the left, his default midnight-blue scholar robes; in the middle, his alternative white and gold high-priest ceremonial robes with silver crescent embroidery; on the right, his dark blue leather astro-explorer gear.
+
+Style:
+Fantasy character concept art, high-fidelity design sheet.
+
+Composition:
+Show three side-by-side full-body views of the same character standing neutrally.
+
+Background:
+Plain clean dark gray background."""
         },
         {
             "char_id": "char_0005_astrolabe_archivist",
@@ -1049,6 +1076,346 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_name": "星轨记录员",
             "img_type": "fullBody",
             "prompt": "Now, draw a full-body cinematic splash art of the exact same Astrolabe Archivist character from our conversation. He stands in his signature midnight-blue scholar robes, holding the glowing floating astrolabe, looking serene and powerful. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "cover",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns  
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate a cover image. The Archivist stands holding his glowing astrolabe in a dark library cathedral with celestial charts floating. High polish, vertical framing.
+
+Style:
+Fantasy character concept art, cinematic poster, dramatic lighting.
+
+Composition:
+Strong vertical framing, centered character, highly detailed, 8k.
+
+Background:
+Gothic Cathedral Library under glowing starry constellations."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "moodboard",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate a moodboard collage. Four panels: constellations on velvet, brass astrolabe gears, silver-gray hair close-up, dusty library archives. Ethereal mystery tone.
+
+Style:
+Fantasy design moodboard, rich textures.
+
+Composition:
+Clean 4-panel collage layout.
+
+Background:
+Dark velvet background."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "sketch",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate a concept sketch sheet. Traditional concept pencil sketches showing the Archivist in 3 study poses: holding the astrolabe, reading a code, and looking up. Clean hand-drawn lines.
+
+Style:
+Monochrome pencil drawings, clean traditional sketch style.
+
+Composition:
+3 study sketches on a plain light background.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "modelSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate a standard model sheet. Full-body front, side, and back views of the Archivist standing neutrally in his midnight-blue scholar robes.
+
+Style:
+Fantasy character concept art, high-fidelity design sheet, even lighting.
+
+Composition:
+Three side-by-side full-body views, no dramatic shadows.
+
+Background:
+Plain clean light gray studio background."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "poseSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate a pose sheet. Show 5 poses of the Archivist on one clean sheet: standing holding astrolabe, casting a star-shield, walking, reading, and sitting in meditation.
+
+Style:
+Fantasy action pose reference sheet, consistent body proportions.
+
+Composition:
+5 poses arranged cleanly on a solid dark gray background.
+
+Background:
+Solid clean dark gray background."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "expressionSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate an expression sheet. Show 8 bust portraits of the Archivist in a clean grid: serene, focused, gentle smile, closed eyes praying, surprised, weary, warning look, and determination.
+
+Style:
+Fantasy character expression grid, consistent facial structure.
+
+Composition:
+8 bust portraits arranged in a clean grid.
+
+Background:
+Clean dark gray background."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "detailSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate a detail sheet. Close-up panels showing his eye blindfold pattern, astrolabe gears, gold robe embroidery, and leather codex buckle.
+
+Style:
+Fantasy detail sheet, clean design board.
+
+Composition:
+Multiple close-up detail panels arranged cleanly.
+
+Background:
+Clean light gray background."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "materialPalette",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate a material and color palette sheet. Show swatches of midnight-blue velvet, silver-white hair sample, glowing blue crystal, and brass metal beside a neutral front view of the character.
+
+Style:
+Fantasy material reference sheet, clean design board layout.
+
+Composition:
+Character standing next to neatly arranged material swatches and color blocks.
+
+Background:
+Plain gray background."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "outfitBreakdown",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate an outfit breakdown sheet. Show separate layers and components of his gear: outer cape, scholar robe, inner tunic, leather codex, and belt straps.
+
+Style:
+Fantasy armor breakdown sheet, clean layout.
+
+Composition:
+Clothing and book parts laid out and separated clearly.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0005_astrolabe_archivist",
+            "char_name": "星轨记录员",
+            "img_type": "damageState",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Astrolabe Archivist (星轨记录员)
+Gender / age impression: young man, elegant, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, serene expression
+Hair: silver-gray hair, naturally wavy and slightly messy mid-length
+Eyes: covered by a fine white silk blindfold with gold star-embroidered patterns
+Outfit: layered midnight-blue scholar robes with gold-threaded celestial constellation embroidery, dark cape with silver buckles
+Accessories / weapon: a floating mechanical gold and silver astrolabe with rotating celestial gears and glowing blue crystal runes
+Color palette: midnight-blue, star gold, cold white, antique brass, glowing stellar blue
+Fixed traits that must never change: silver-gray wavy hair, white star-embroidered blindfold, midnight-blue constellation robes, floating gold-silver astrolabe
+
+Current asset goal:
+Generate damage state variants. Show 3 full-body versions of the Archivist: clean/default; battle-worn with a dusty, torn robe; and heavily damaged with fading star-light, cracked astrolabe, torn blindfold, and stardust tears flowing.
+
+Style:
+Fantasy character damage reference sheet.
+
+Composition:
+Show three side-by-side full-body versions of the character.
+
+Background:
+Solid clean dark gray background."""
         }
     ]
     
@@ -1057,49 +1424,406 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0006_rust_mechanic",
             "char_name": "废铁重构师",
             "img_type": "main",
-            "prompt": "A masterfully crafted epic wasteland action concept art of the Rustland Reconstructor. An energetic young East Asian tomboy mechanic with messy short coffee-brown hair and a patch of black motor grease playfully smudged on her left cheek. She wears protective dusty work goggles pushed up on her forehead and a rugged, sleeveless grease-stained khaki work jumpsuit. She is sitting dynamically inside a cluttered desert scrap-iron workshop, operating a massive, heavily customized rusted scrap-iron exopower mechanical claw that glows with intense, bright orange fiery engine exhaust and white steam. Scrap-metal gears, wrenches, and engine parts lie scattered all around her. The background features a dramatic orange dusty sunset casting rich, glowing rim light over the desert ruins. Masterpiece, unreal engine 5 render, photorealistic, 8k resolution."
+            "prompt": "A masterfully crafted wasteland post-apocalyptic cinematic concept art of the Rustland Reconstructor. A petite but energetic young East Asian woman with highly detailed expressive facial features and messy, wind-blown dark brown short boyish hair. She has a playful smudge of black grease on her left cheek and bright, alert amber eyes. She is wearing a rugged, sleeveless khaki work jumpsuit, with the upper sleeves tied casually around her waist, and a dark tank top underneath. On her right arm, she wears a giant, heavily modified hydraulic mechanical claw made of rusted steel scrap, venting steam from small copper tubes. She stands in a cluttered wasteland workshop filled with half-assembled engines, old metal chains, and hanging welding goggles. Bright industrial sunset light streams through high corrugated metal windows, casting warm orange rim lighting and long shadows, masterpiece, unreal engine 5 render, highly detailed, 8k resolution."
         },
         {
             "char_id": "char_0006_rust_mechanic",
             "char_name": "废铁重构师",
             "img_type": "portrait",
-            "prompt": "Now, draw a close-up high-fidelity portrait of the exact same Rustland Reconstructor character from our conversation. Focus on her face and shoulders, capturing her messy short brown hair, grease-smudged cheek, and bright amber eyes. Pushed up on her forehead are her work goggles. Soft orange glowing highlights from her workshop engines reflect onto her skin, showing highly realistic skin details. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+            "prompt": "Now, draw a close-up portrait of the exact same Rustland Reconstructor character from our conversation. Focus on her face and shoulders, capturing her messy short brown hair, the grease smudge on her cheek, and her energetic amber eyes. The warm glow of a welding fire reflects onto her skin. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0006_rust_mechanic",
             "char_name": "废铁重构师",
             "img_type": "expression",
-            "prompt": "Now, draw an expression sheet of the exact same Rustland Reconstructor character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one bright and energetic with an open-mouthed laugh, one intensely focused and alert, and one showing a cute, playful smirk with a wink. High-fidelity details, professional character model sheet, masterpiece, 8k."
+            "prompt": "Now, draw an expression sheet of the exact same Rustland Reconstructor character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one bright cheerful grin, one focused with a slight pout, and one looking completely surprised/shocked with soot on her nose. High-fidelity details, professional character model sheet, masterpiece, 8k."
         },
         {
             "char_id": "char_0006_rust_mechanic",
             "char_name": "废铁重构师",
             "img_type": "turnaround",
-            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Rustland Reconstructor character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her work goggles, sleeveless khaki jumpsuit, and tactical gloves. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Rustland Reconstructor character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her khaki work jumpsuit and her giant mechanical claw. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
         },
         {
             "char_id": "char_0006_rust_mechanic",
             "char_name": "废铁重构师",
             "img_type": "outfit",
-            "prompt": "Now, draw the exact same Rustland Reconstructor character from our conversation, but wearing an alternative heavy scavenger power armor: a bulkier iron-plated exoskeleton suit with bright glowing copper tubes, and protective heavy steel boots, with her goggles pulled down over her eyes. Full-body view, standing dynamically on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate an outfit variant image. Show three different outfits side-by-side: on the left, her default khaki work jumpsuit; in the middle, her industrial welder outfit (a thick leather welding apron, heavy insulated leather gloves, and a flip-down welding mask); on the right, her mechanical pilot bodysuit (a sleek black and orange bodysuit with carbon-fiber panels). Keep her two normal human arms and black tactical gloves consistent across all three outfits.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, high-fidelity design sheet (no 2D anime, no manga, no flat shading).
+
+Composition:
+Show three side-by-side full-body views of the same character standing neutrally.
+
+Background:
+Plain clean dark gray background."""
         },
         {
             "char_id": "char_0006_rust_mechanic",
             "char_name": "废铁重构师",
             "img_type": "prop",
-            "prompt": "Now, draw a high-fidelity detailed design sheet of the Rustland Reconstructor's heavy exopower bionic claw. Show the giant rusted scrap-iron claw from two angles, highlighting the complex hydraulic gears, exposed copper wiring, and bright orange engine exhaust venting. Solid, clean dark gray background. Masterpiece, 8k."
+            "prompt": "Now, draw a high-fidelity detailed prop design sheet of the Rustland Reconstructor's giant mechanical claw. Show it from two angles, highlighting the rusted steel panels, copper piping, exposed pistons, and the thick leather shoulder harness. Solid, clean dark gray background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0006_rust_mechanic",
             "char_name": "废铁重构师",
             "img_type": "scene",
-            "prompt": "Now, draw a breathtaking post-apocalyptic desert scrap-iron workshop scene concept art. A cluttered workshop filled with mountains of rusted metal plates, scattered gears, steam pipes venting, and a giant scrap engine in the center. Heavy sun rays piercing through the dusty air, casting intense warm rim light over the chaotic workspace. Cinematic, hyper-realistic, masterpiece, 8k."
+            "prompt": "Now, draw a stunning, highly detailed wasteland workshop scene concept art. Corrugated iron walls, rows of rusted tool shelves filled with gears and wrenches, a half-assembled steam engine on a wooden workbench venting faint steam under a dusty orange twilight sky. Cinematic, hyper-realistic, masterpiece, 8k."
         },
         {
             "char_id": "char_0006_rust_mechanic",
             "char_name": "废铁重构师",
             "img_type": "fullBody",
-            "prompt": "Now, draw a full-body cinematic splash art of the exact same Rustland Reconstructor character from our conversation. She stands dynamically in her work jumpsuit next to her giant mechanical claw, smiling confidently with amber eyes. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Rustland Reconstructor character from our conversation. She stands proudly in her work jumpsuit, holding her mechanical claw, looking confident. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "cover",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate a cover image. The Reconstructor stands triumphantly on a massive pile of scrap metal and rusted engines, raising a glowing copper wrench with her hand under a yellow smoggy sunset. High polish, vertical framing.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, cinematic poster, dramatic lighting, unreal engine 5 render style (no 2D anime, no manga).
+
+Composition:
+Strong vertical framing, centered character, highly detailed, 8k.
+
+Background:
+Wasteland scrap yard under a smoky industrial twilight."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "moodboard",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate a moodboard collage. Four panels: one showing glowing welding sparks, one showing grease-covered iron gears and wrenches, one showing a rusted sheet of metal with orange painted stripes, and one showing a close-up of messy dark brown hair curls. Heavy industrial feel.
+
+Style:
+Industrial wasteland concept board, raw textures.
+
+Composition:
+Clean 4-panel collage layout.
+
+Background:
+Dark steel plate background."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "sketch",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate a concept sketch sheet. Traditional concept pencil sketches showing the Reconstructor in 3 study poses: welding a metal joint with sparks flying, laughing with grease on her face, and adjusting the goggles on her forehead. Clean hand-drawn lines.
+
+Style:
+Monochrome pencil drawings, clean traditional sketch style.
+
+Composition:
+3 study sketches on a plain light background.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "modelSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate a standard model sheet. Full-body front, side, and back views of the Reconstructor standing neutrally in her khaki work jumpsuit. She has two normal human arms and hands. Make sure no mechanical claw arm is attached to her body.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland character concept art, high-fidelity design sheet, even lighting (no 2D anime, no manga).
+
+Composition:
+Three side-by-side full-body views, no dramatic shadows.
+
+Background:
+Plain clean light gray studio background."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "poseSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate a pose sheet. Show 5 poses of the Reconstructor on one clean sheet: holding a wrench over her shoulder, crouching to weld a gear with sparks, running with a toolbox, warning pose protecting her face, and raising her mechanical claw in victory.
+
+Style:
+Wasteland action pose reference sheet, consistent body proportions.
+
+Composition:
+5 poses arranged cleanly on a solid dark gray background.
+
+Background:
+Solid clean dark gray background."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "expressionSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate an expression sheet. Show 8 bust portraits of the Reconstructor in a clean grid: lively grin, focused concentration, soot-covered surprise, shouting orders, tired and sweating, crying from heat, cheeky smirk, and proud determination.
+
+Style:
+Wasteland character expression grid, consistent facial structure.
+
+Composition:
+8 bust portraits arranged in a clean grid.
+
+Background:
+Clean dark gray background."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "detailSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate a detail sheet. Close-up panels showing her forehead goggles lens, the hydraulic pistons and steam valves of the separate mechanical claw prop, the gears in her toolbox, and the leather strap of her old canteen.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland mechanical detail sheet, clean design board (no 2D anime, no manga).
+
+Composition:
+Multiple close-up detail panels arranged cleanly.
+
+Background:
+Clean light gray background."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "materialPalette",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate a material and color palette sheet. Show swatches of rust-orange painted metal plates, dark engine oil slick, amber glass, and heavy-duty glove leather beside a neutral front view of the character.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland material reference sheet, clean design board layout (no 2D anime, no manga).
+
+Composition:
+Character standing next to neatly arranged material swatches and color blocks.
+
+Background:
+Plain gray background."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "outfitBreakdown",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate an outfit breakdown sheet. Show separate layers and components of her clothing: khaki work jumpsuit, black tank top, heavy-duty tactical tool belt, mechanical claw harness, and safety boots.
+
+Style:
+Wasteland clothing breakdown sheet, clean layout.
+
+Composition:
+Clothing and protective gear parts laid out and separated clearly.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0006_rust_mechanic",
+            "char_name": "废铁重构师",
+            "img_type": "damageState",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Reconstructor (废铁重构师)
+Gender / age impression: young woman, energetic, lively and technical presence
+Body shape: petite but strong and athletic build, two normal human arms and hands
+Face: cute and expressive face, bright amber eyes, smudge of grease on cheeks, realistic human features
+Hair: messy and fluffy dark brown boyish short hair
+Outfit: khaki sleeveless work jumpsuit with the top half tied around her waist, black tank top underneath, heavy-duty black tactical gloves on both hands
+Accessories / weapon: a dust-proof welding goggle on forehead, heavy tool belt filled with wrenches and gears, an old metal canteen on waist
+Color palette: rust orange, khaki gray, oil black, amber gold, industrial copper
+Fixed traits that must never change: messy dark brown short hair, forehead goggles, two normal human arms, work jumpsuit, grease smudge, black tactical gloves on both hands
+
+Current asset goal:
+Generate damage state variants. Show 3 full-body versions of the Reconstructor: clean/default jumpsuit; battle-worn with oil stains and scratches; and heavily damaged with shattered goggles, leaking oil from cracked joints of her mechanical claw, bandaged forehead, and smoking gears.
+
+Style:
+Wasteland character damage reference sheet.
+
+Composition:
+Show three side-by-side full-body versions of the character.
+
+Background:
+Solid clean dark gray background."""
         }
     ]
     
@@ -1108,49 +1832,406 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0007_rust_sniper",
             "char_name": "尘沙潜行卫",
             "img_type": "main",
-            "prompt": "A masterfully crafted epic post-apocalyptic cinematic concept art of the Rustland Silent Scout. A tall, handsome young East Asian marksman with highly refined sharp facial features and wind-blown short black hair. His right eye is replaced by an intricate, glowing mechanical cybernetic gear assembly glowing with cool cyan light, custom-built from scrap brass by the Reconstructor. He wears a rugged, dust-swept tactical black hooded cape over worn combat plates. He is lying alertly on a decaying, rusted scrap-iron railway bridge above a scenic desert canyon. In his hands, he grips a massive two-meter long heavy futuristic electromagnetic scanning device meticulously welded from scrap steel pipes and copper coils that hums with faint blue electric arcs. The background features a sweeping, cinematic yellow sandstorm engulfing towering metal ruins under a dramatic amber-red dusty sunset. Rich rim lighting, masterpiece, photorealistic textures, octane render, 8k resolution."
+            "prompt": "A masterpiece wasteland post-apocalyptic cinematic concept art of the Rustland Silent Sniper. A tall, athletic young East Asian male sniper with sharp, focused facial features and wind-blown, messy black short hair. His left eye is deep and cold, while his right eye is replaced by a glowing sapphire-blue gear-like mechanical bionic eye. He wears a dust-proof, worn matte-black hooded trench coat that flows slightly in the wind, over a dark reinforced tactical armor vest. In his gloved hands, he holds a heavy, detailed electromagnetic sniper rifle with glowing blue energy indicator lines and an integrated copper gear mechanism. He is kneeling on a steel watchtower ledge overlooking a sweeping desert wasteland, under a hazy yellow sandstorm sunset. The warm golden rim light illuminates his silhouette, casting long dramatic shadows, photorealistic, octane render, masterpiece, 8k."
         },
         {
             "char_id": "char_0007_rust_sniper",
             "char_name": "尘沙潜行卫",
             "img_type": "portrait",
-            "prompt": "Now, draw a close-up high-fidelity portrait of the exact same Rustland Silent Scout character from our conversation. Focus on his face and shoulders, capturing his left cold dark eye and the intricate glowing cyan cybernetic gear assembly replacing his right eye. Dust on his cheek and wind-blown short black hair. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+            "prompt": "Now, draw a close-up portrait of the exact same Rustland Silent Sniper character from our conversation. Focus on his face and shoulders, capturing his messy black hair, the glowing sapphire-blue mechanical eye, and his calm, focused expression. The hood of his windbreaker is pulled up partially. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0007_rust_sniper",
             "char_name": "尘沙潜行卫",
             "img_type": "expression",
-            "prompt": "Now, draw an expression sheet of the exact same Rustland Silent Scout character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one cold and expressionless, one with eyes narrowed in sharp focus, and one showing a subtle, tired half-smile. High-fidelity details, professional character model sheet, masterpiece, 8k."
+            "prompt": "Now, draw an expression sheet of the exact same Rustland Silent Sniper character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one cold and indifferent, one focused through a scope view with his mechanical eye, and one with a tense grimace during battle. High-fidelity details, professional character model sheet, masterpiece, 8k."
         },
         {
             "char_id": "char_0007_rust_sniper",
             "char_name": "尘沙潜行卫",
             "img_type": "turnaround",
-            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Rustland Silent Scout character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his rugged black hooded cape, worn combat plates, and tactical boots. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Rustland Silent Sniper character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his hooded windbreaker and carrying his electromagnetic sniper rifle. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
         },
         {
             "char_id": "char_0007_rust_sniper",
             "char_name": "尘沙潜行卫",
             "img_type": "outfit",
-            "prompt": "Now, draw the exact same Rustland Silent Scout character from our conversation, but wearing an alternative survival outfit: a dust-shielding sand-colored ghillie poncho, lightweight combat harness, and protective tactical mask hanging around his neck. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate an outfit variant image. Show three different outfits side-by-side: on the left, his default hooded black windbreaker; in the middle, his desert travel gear (a sandy-camouflage ghillie cloak, light beige tactical wraps, and a dust goggles hanging around his neck); on the right, his heavy assault armor (reinforced steel plates on chest and shoulders, thick bullet-proof vests, and tactical greaves). Keep his blue mechanical bionic eye on all three outfits.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, high-fidelity design sheet (no 2D anime, no manga, no flat shading).
+
+Composition:
+Show three side-by-side full-body views of the same character standing neutrally.
+
+Background:
+Plain clean dark gray background."""
         },
         {
             "char_id": "char_0007_rust_sniper",
             "char_name": "尘沙潜行卫",
             "img_type": "prop",
-            "prompt": "Now, draw a high-fidelity detailed artifact design sheet of the Rustland Silent Scout's gear: his massive electromagnetic scanning sniper rifle welded from scrap steel pipes and copper coils. Show it from two angles, highlighting the copper wiring and faint blue electric arcs. Solid, clean dark gray background. Masterpiece, 8k."
+            "prompt": "Now, draw a high-fidelity detailed weapon prop design sheet of the Silent Sniper's electromagnetic sniper rifle. Show the rifle from two angles, highlighting the scope lens, carbon-fiber barrel, glowing blue energy cells, and copper gears. Solid, clean dark gray background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0007_rust_sniper",
             "char_name": "尘沙潜行卫",
             "img_type": "scene",
-            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic cinematic scene concept art. A decaying, rusted scrap-iron railway bridge spanning across a deep scenic desert canyon under a sweeping yellow sandstorm and dramatic sunset. Cinematic, hyper-realistic, masterpiece, 8k."
+            "prompt": "Now, draw a stunning, highly detailed wasteland landscape scene concept art. A high metal watchtower standing alone in a vast desert under a dusty sandstorm yellow sunset. Rusted steel beams and warning yellow plates reflecting the faint sunlight. Cinematic, hyper-realistic, masterpiece, 8k."
         },
         {
             "char_id": "char_0007_rust_sniper",
             "char_name": "尘沙潜行卫",
             "img_type": "fullBody",
-            "prompt": "Now, draw a full-body cinematic splash art of the exact same Rustland Silent Scout character from our conversation. He stands alertly in his black hooded cape, holding his massive electromagnetic sniper rifle, with his cyan cybernetic eye glowing softly. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Silent Sniper character from our conversation. He stands alert in his hooded windbreaker, holding his heavy sniper rifle, looking forward with his glowing bionic eye. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "cover",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate a cover image. The Sniper aims his rifle from a high metal watchtower, looking down over the vast desert ruins. Ethereal yellow sandstorm sky and dramatic poster lighting. High polish, vertical framing.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, cinematic poster, dramatic lighting, unreal engine 5 render style (no 2D anime, no manga).
+
+Composition:
+Strong vertical framing, rule of thirds, highly detailed, 8k.
+
+Background:
+Desert wasteland ruins under a sandy twilight."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "moodboard",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate a moodboard collage. Four panels: one showing a close-up of a high-tech sniper scope glass, one showing a glowing blue mechanical lens, one showing sand-swept black ballistic fabric, and one showing a desolate sandstorm horizon. Cool and deadly tone.
+
+Style:
+Wasteland combat reference board, detailed textures.
+
+Composition:
+Clean 4-panel collage layout.
+
+Background:
+Dark carbon-fiber textured background."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "sketch",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate a concept sketch sheet. Traditional concept pencil sketches showing the Sniper in 3 study poses: kneeling and aiming his rifle, reloading a clip, and crouching in shadow with his hood up. Clean hand-drawn lines.
+
+Style:
+Monochrome pencil drawings, clean traditional sketch style.
+
+Composition:
+3 study sketches on a plain light background.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "modelSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate a standard model sheet. Full-body front, side, and back views of the Sniper standing neutrally in his hooded windbreaker.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland character concept art, high-fidelity design sheet, even lighting (no 2D anime, no manga).
+
+Composition:
+Three side-by-side full-body views, no dramatic shadows.
+
+Background:
+Plain clean light gray studio background."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "poseSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate a pose sheet. Show 5 poses of the Sniper on one clean sheet: kneeling and aiming rifle, standing lookout, running under fire, cleaning rifle barrel, and leaning in shadow. Solid clean dark gray background.
+
+Style:
+Wasteland action pose reference sheet, consistent body proportions.
+
+Composition:
+5 poses arranged cleanly on a solid dark gray background.
+
+Background:
+Solid clean dark gray background."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "expressionSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate an expression sheet. Show 8 bust portraits of the Sniper in a clean grid: cold stare, focused scope view, battle grimace, silent warning, exhausted and breathing heavily, gritting teeth, cynical smirk, and calm target-locked look.
+
+Style:
+Wasteland character expression grid, consistent facial structure.
+
+Composition:
+8 bust portraits arranged in a clean grid.
+
+Background:
+Clean dark gray background."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "detailSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate a detail sheet. Close-up panels showing his bionic blue mechanical eye, the muzzle and rail of his sniper rifle, the glove strap stitching, and the windbreaker hood texture.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland mechanical detail sheet, clean design board (no 2D anime, no manga).
+
+Composition:
+Multiple close-up detail panels arranged cleanly.
+
+Background:
+Clean light gray background."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "materialPalette",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate a material and color palette sheet. Show swatches of matte black carbon, desert sand camo fabric, glowing blue bionic lens glass, and rusted steel plate beside a neutral front view of the character.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland material reference sheet, clean design board layout (no 2D anime, no manga).
+
+Composition:
+Character standing next to neatly arranged material swatches and color blocks.
+
+Background:
+Plain gray background."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "outfitBreakdown",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate an outfit breakdown sheet. Show separate layers and components of his gear: the hooded windbreaker, the armor vest, the sniper rifle assembly, the tactical respirator mask, and safety gear.
+
+Style:
+Wasteland clothing breakdown sheet, clean layout.
+
+Composition:
+Clothing and rifle parts laid out and separated clearly.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0007_rust_sniper",
+            "char_name": "尘沙潜行卫",
+            "img_type": "damageState",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Silent Sniper (尘沙潜行卫)
+Gender / age impression: young man, cold, focused and battle-hardened
+Body shape: tall, slender and athletic silhouette with visible scars
+Face: sharp facial features, right eye is a glowing blue gears mechanical eye, left eye deep and cold
+Hair: messy black short hair windblown
+Outfit: dark tactical armor vest under a dust-proof hooded black trench coat, dark survival cargo pants and combat boots
+Accessories / weapon: heavy electromagnetic sniper rifle with glowing energy lines, mechanical blue-glowing eye, tactical respirator mask around neck
+Color palette: matte black, desert yellow, glowing sapphire blue, rust red
+Fixed traits that must never change: hooded black trench coat, blue mechanical eye, heavy electromagnetic sniper rifle, black short hair
+
+Current asset goal:
+Generate damage state variants. Show 3 full-body versions of the Sniper: clean/default; battle-worn with scratched armor plates and dust; and heavily damaged with cracked bionic eye lens, torn hood, bleeding shoulder wound, and smoke coming from his rifle chamber.
+
+Style:
+Wasteland character damage reference sheet.
+
+Composition:
+Show three side-by-side full-body versions of the character.
+
+Background:
+Solid clean dark gray background."""
         }
     ]
     
@@ -1159,49 +2240,406 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0008_rust_apprentice",
             "char_name": "重工坊学徒",
             "img_type": "main",
-            "prompt": "A breathtaking masterfully crafted post-apocalyptic cinematic concept art of the young Rustland Workshop Apprentice. A cheerful, slightly clumsy teenage East Asian boy with short messy black hair and a dirt smudge on his nose. He wears an oversized, loose-fitting khaki mechanic jumpsuit with one shoulder strap hanging down, heavy brown leather work gloves, and steel-toed boots. He carries a heavy canvas bag filled with various rusted metal wrenches and gears on his back. He is standing dynamically in a cluttered scrap yard, holding a giant copper gear, looking proud and energetic. Heavy sun rays piercing through the dusty air, casting intense warm rim light, unreal engine 5 render, highly detailed, photorealistic textures, 8k resolution."
+            "prompt": "A masterfully crafted post-apocalyptic steam workshop concept art of the Rustland Workshop Apprentice. A slender but energetic East Asian teenage boy with highly detailed expressive facial features and messy, wind-blown black short hair, with a small smudge of coal dust on his nose. He is wearing a loose, rugged khaki protective work coverall jumpsuit, with the sleeves rolled up, and oversized yellow rubber safety gloves. In his hands, he carries a massive, heavy iron wrench nearly as big as himself. He stands inside a sprawling industrial steam workshop filled with towering brass pipes, venting steam valves, and rows of old wooden tool cabinets. Dramatic warm orange sunset light streams through high windows, casting bright rim lighting on his silhouette, masterpiece, octane render, highly detailed, 8k resolution."
         },
         {
             "char_id": "char_0008_rust_apprentice",
             "char_name": "重工坊学徒",
             "img_type": "portrait",
-            "prompt": "Now, draw a close-up high-fidelity portrait of the exact same young Rustland Workshop Apprentice character from our conversation. Focus on his face and shoulders, capturing his cheerful expression, short messy black hair, and a dirt smudge on his nose. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+            "prompt": "Now, draw a close-up portrait of the exact same Workshop Apprentice character from our conversation. Focus on his face and shoulders, capturing his messy black hair, his large curious eyes, and his bright smiling expression with soot on his nose. Large goggles hanging around his neck. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0008_rust_apprentice",
             "char_name": "重工坊学徒",
             "img_type": "expression",
-            "prompt": "Now, draw an expression sheet of the exact same young Rustland Workshop Apprentice character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one bright and smiling, one with a confused look scratching his head, and one determined and shouting with grit. High-fidelity details, professional character model sheet, masterpiece, 8k."
+            "prompt": "Now, draw an expression sheet of the exact same Workshop Apprentice character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one bright cheerful smile, one curious and surprised with wide eyes, and one sweating with a determined grimace while lifting a heavy tool. High-fidelity details, professional character model sheet, masterpiece, 8k."
         },
         {
             "char_id": "char_0008_rust_apprentice",
             "char_name": "重工坊学徒",
             "img_type": "turnaround",
-            "prompt": "Now, draw a professional character turnaround model sheet of the exact same young Rustland Workshop Apprentice character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his oversized khaki jumpsuit with one strap hanging down and heavy leather gloves. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Workshop Apprentice character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his khaki coveralls, yellow gloves, and carrying his tool satchel. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
         },
         {
             "char_id": "char_0008_rust_apprentice",
             "char_name": "重工坊学徒",
             "img_type": "outfit",
-            "prompt": "Now, draw the exact same young Rustland Workshop Apprentice character from our conversation, but wearing an alternative work outfit: grease-stained denim overalls over a bright orange t-shirt, thick safety welding goggles on his forehead, and utility tool belt. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate an outfit variant image. Show three different outfits side-by-side: on the left, his default khaki protective coveralls; in the middle, his heavy smelting suit (a fireproof copper-plated protective suit, thick heat-resistant leather gloves, and a copper visor hood); on the right, his scrap-metal scout gear (a light brown utility vest with steel-reinforced joints and pockets, light tactical shorts). Keep his large tool satchel on all three outfits.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, high-fidelity design sheet (no 2D anime, no manga, no flat shading).
+
+Composition:
+Show three side-by-side full-body views of the same character standing neutrally.
+
+Background:
+Plain clean dark gray background."""
         },
         {
             "char_id": "char_0008_rust_apprentice",
             "char_name": "重工坊学徒",
             "img_type": "prop",
-            "prompt": "Now, draw a high-fidelity detailed prop design sheet of the young Rustland Workshop Apprentice's canvas tool bag and his oversized copper gear. Show them from two angles, highlighting the rusted metallic textures. Solid, clean dark gray background. Masterpiece, 8k."
+            "prompt": "Now, draw a high-fidelity detailed prop design sheet of the Workshop Apprentice's giant iron wrench and his large leather tool satchel. Show them from two angles, highlighting the metallic wear, copper fittings, and leather texture. Solid, clean dark gray background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0008_rust_apprentice",
             "char_name": "重工坊学徒",
             "img_type": "scene",
-            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic scrap yard scene concept art. Mountains of rusted metal plates, old engines, scattered gears, and dust floating in dramatic sun rays. Cinematic, hyper-realistic, masterpiece, 8k."
+            "prompt": "Now, draw a stunning, highly detailed steam workshop scene concept art. A massive industrial chamber filled with towering copper steam pipes, venting steam valves, gears, and hanging chains. Warm sun rays piercing through high dust-covered windows. Cinematic, hyper-realistic, masterpiece, 8k."
         },
         {
             "char_id": "char_0008_rust_apprentice",
             "char_name": "重工坊学徒",
             "img_type": "fullBody",
-            "prompt": "Now, draw a full-body cinematic splash art of the exact same young Rustland Workshop Apprentice character from our conversation. He stands proudly in his oversized khaki jumpsuit, carrying his canvas tool bag and holding a giant copper gear, smiling confidently. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Workshop Apprentice character from our conversation. He stands in his protective coveralls, dragging his giant wrench, looking energetic and determined. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "cover",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate a cover image. The Apprentice holds his giant wrench high inside a massive steam workshop filled with pipes. Golden sun rays and venting steam create a dramatic, atmospheric cover art. High polish, vertical framing.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, cinematic poster, dramatic lighting, unreal engine 5 render style (no 2D anime, no manga).
+
+Composition:
+Strong vertical framing, centered character, highly detailed, 8k.
+
+Background:
+Steam-filled industrial workshop."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "moodboard",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate a moodboard collage. Four panels: one showing oversized yellow rubber work gloves, one showing copper steam pipes venting steam, one showing hand-drawn gear blueprints, and one showing a close-up of a nose with soot smudges. Warm, curious tone.
+
+Style:
+Wasteland workshop moodboard, rich textures.
+
+Composition:
+Clean 4-panel collage layout.
+
+Background:
+Dark wood drafting board background."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "sketch",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate a concept sketch sheet. Traditional concept pencil sketches showing the Apprentice in 3 study poses: carrying a heavy wrench over his shoulder, looking in curious wonder, and wiping sweat from his forehead. Clean hand-drawn lines.
+
+Style:
+Monochrome pencil drawings, clean traditional sketch style.
+
+Composition:
+3 study sketches on a plain light background.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "modelSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate a standard model sheet. Full-body front, side, and back views of the Apprentice standing neutrally in his khaki coveralls.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland character concept art, high-fidelity design sheet, even lighting (no 2D anime, no manga).
+
+Composition:
+Three side-by-side full-body views, no dramatic shadows.
+
+Background:
+Plain clean light gray studio background."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "poseSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate a pose sheet. Show 5 poses of the Apprentice on one clean sheet: dragging a giant wrench, pointing in curiosity, running from a steam boiler explosion, waving his hand, and resting on a metal toolbox. Solid clean dark gray background.
+
+Style:
+Wasteland action pose reference sheet, consistent body proportions.
+
+Composition:
+5 poses arranged cleanly on a solid dark gray background.
+
+Background:
+Solid clean dark gray background."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "expressionSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate an expression sheet. Show 8 bust portraits of the Apprentice in a clean grid: cheerful smile, curious wonder, startled/shocked, focused concentration, tired/sweating, crying from smoke, warning look, and proud accomplishment.
+
+Style:
+Wasteland character expression grid, consistent facial structure.
+
+Composition:
+8 bust portraits arranged in a clean grid.
+
+Background:
+Clean dark gray background."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "detailSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate a detail sheet. Close-up panels showing his yellow glove stitching, the head and teeth of his giant iron wrench, the buckle of his leather satchel, and the goggles resting on his neck.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland mechanical detail sheet, clean design board (no 2D anime, no manga).
+
+Composition:
+Multiple close-up detail panels arranged cleanly.
+
+Background:
+Clean light gray background."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "materialPalette",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate a material and color palette sheet. Show swatches of khaki canvas fabric, copper pipe patina texture, warning yellow rubber, and steel gray metal beside a neutral front view of the character.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland material reference sheet, clean design board layout (no 2D anime, no manga).
+
+Composition:
+Character standing next to neatly arranged material swatches and color blocks.
+
+Background:
+Plain gray background."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "outfitBreakdown",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate an outfit breakdown sheet. Show separate layers and components of his gear: loose coveralls, leather satchel, giant wrench, neck goggles, and work boots.
+
+Style:
+Wasteland clothing breakdown sheet, clean layout.
+
+Composition:
+Clothing and protective gear parts laid out and separated clearly.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0008_rust_apprentice",
+            "char_name": "重工坊学徒",
+            "img_type": "damageState",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Rustland Workshop Apprentice (重工坊学徒)
+Gender / age impression: teenage boy, energetic, curious and youthful
+Body shape: slender and agile teenage build
+Face: bright and wide eyes, curious expression, soot smudges on nose
+Hair: messy black short hair
+Outfit: loose khaki protective coveralls work jumpsuit, oversized yellow rubber protective work gloves
+Accessories / weapon: large leather tool satchel, a massive heavy iron wrench, protective welding goggles on neck
+Color palette: earth brown, copper green, iron gray, warning yellow
+Fixed traits that must never change: messy black hair, leather tool satchel, oversized yellow gloves, large iron wrench
+
+Current asset goal:
+Generate damage state variants. Show 3 full-body versions of the Apprentice: clean/default coveralls; battle-worn with soot stains and grease; and heavily damaged with torn coveralls sleeve, singed black hair, broken goggles glass, and bandaged hand.
+
+Style:
+Wasteland character damage reference sheet.
+
+Composition:
+Show three side-by-side full-body versions of the character.
+
+Background:
+Solid clean dark gray background."""
         }
     ]
     
@@ -1210,49 +2648,406 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0009_rust_nomad",
             "char_name": "荒原流民",
             "img_type": "main",
-            "prompt": "A desolate, highly detailed character concept art in a photorealistic cinematic style showing a silent Wasteland Nomad. A thin, weary Middle Eastern man covered in heavily patched dusty gray and brown linen rags and sandproof face wrappings. He carries an old, dented brass water jar in both hands, walking wearily through a toxic yellow desert sandstorm. Behind him are scattered ruins of half-buried rusted steel containers, heavy dust atmosphere, dramatic setting sunset casting majestic rim lighting, unreal engine 5 render, highly detailed, masterpiece, 8k resolution."
+            "prompt": "A masterfully crafted post-apocalyptic cinematic concept art of the Wasteland Nomad. An emaciated, slightly hunched middle-aged East Asian man with highly detailed weary facial features and sparse, messy black hair mixed with gray strands. His eyes are alert with a deep survival instinct. He wears a tattered, patched sand-gray wind protection cloak, with coarse linen wraps around his legs and feet. On his back, he carries an old, heavily patched copper water flask, and holds a simple weathered wooden walking staff in his hand. He is walking slowly across a desolate, dry desert landscape under a blazing red sun, with sand grains drifting in the hot air. Cinematic, hyper-realistic, masterpiece, 120mm lens, 8k."
         },
         {
             "char_id": "char_0009_rust_nomad",
             "char_name": "荒原流民",
             "img_type": "portrait",
-            "prompt": "Now, draw a close-up high-fidelity portrait of the exact same Wasteland Nomad character from our conversation. Focus on his face and shoulders, capturing his weary Middle Eastern features, dark alert eyes, and sandproof face wrappings. Dust and dirt smudged on his face. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+            "prompt": "Now, draw a close-up portrait of the exact same Wasteland Nomad character from our conversation. Focus on his face and shoulders, capturing his weary face with deep wrinkles, sparse gray-black hair, and alert eyes. A ragged cloth face mask hangs around his neck. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0009_rust_nomad",
             "char_name": "荒原流民",
             "img_type": "expression",
-            "prompt": "Now, draw an expression sheet of the exact same Wasteland Nomad character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one alert and watchful, one weary with half-closed eyes, and one displaying a rare, subtle peaceful gaze. High-fidelity details, professional character model sheet, masterpiece, 8k."
+            "prompt": "Now, draw an expression sheet of the exact same Wasteland Nomad character from our conversation. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one weary and calm, one coughing and squinting against the dust, and one displaying a rare, serene and gentle smile of survival. High-fidelity details, professional character model sheet, masterpiece, 8k."
         },
         {
             "char_id": "char_0009_rust_nomad",
             "char_name": "荒原流民",
             "img_type": "turnaround",
-            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Wasteland Nomad character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his heavily patched dusty gray and brown linen rags and sandproof face wrappings. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Wasteland Nomad character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his tattered sand-gray cloak and foot wraps. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
         },
         {
             "char_id": "char_0009_rust_nomad",
             "char_name": "荒原流民",
             "img_type": "outfit",
-            "prompt": "Now, draw the exact same Wasteland Nomad character from our conversation, but wearing an alternative scavenger outfit: a hooded sand-cloak reinforced with scrap metal plates, thick survival wraps around his limbs, and a worn tactical satchel. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate an outfit variant image. Show three different outfits side-by-side: on the left, his default tattered sand-gray cloak; in the middle, his heavy desert travel gear (thick leather sheets wrapped over his torso, heavy sand-resistant canvas cloak, and full head wraps); on the right, his scrap-armored scavenger gear (a tattered utility vest reinforced with rusted metal sheet plates and wiring). Keep his walking staff on all three outfits.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, high-fidelity design sheet (no 2D anime, no manga, no flat shading).
+
+Composition:
+Show three side-by-side full-body views of the same character standing neutrally.
+
+Background:
+Plain clean dark gray background."""
         },
         {
             "char_id": "char_0009_rust_nomad",
             "char_name": "荒原流民",
             "img_type": "prop",
-            "prompt": "Now, draw a high-fidelity detailed artifact design sheet of the Wasteland Nomad's gear: his old dented brass water jar and a walking staff wrapped in linen. Show them from two angles, highlighting the weathered textures and dents. Solid, clean dark gray background. Masterpiece, 8k."
+            "prompt": "Now, draw a high-fidelity detailed prop design sheet of the Wasteland Nomad's gear: his patched copper water flask and his weathered wooden walking staff. Show them from two angles, highlighting the dents, patches, and worn textures. Solid, clean dark gray background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0009_rust_nomad",
             "char_name": "荒原流民",
             "img_type": "scene",
-            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic desert landscape scene concept art. Desolate sand dunes, ruins of half-buried rusted steel containers under a toxic yellow sandstorm and majestic setting sunset. Cinematic, hyper-realistic, masterpiece, 8k."
+            "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. A desolate, endless desert wasteland under a blazing red sun, with heat waves warping the horizon and a half-buried rusted container cabin in the sand. Cinematic, hyper-realistic, masterpiece, 8k."
         },
         {
             "char_id": "char_0009_rust_nomad",
             "char_name": "荒原流民",
             "img_type": "fullBody",
-            "prompt": "Now, draw a full-body cinematic splash art of the exact same Wasteland Nomad character from our conversation. He stands wearily in his patched linen rags, holding his dented brass water jar, looking forward with resilient dark eyes. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Wasteland Nomad character from our conversation. He stands in his tattered gray cloak, leaning on his walking staff, looking alert. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "cover",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate a cover image. The Nomad walks with his staff across a vast sandstorm desert toward a setting red sun. Heat waves and sand dust create a dramatic cover layout. High polish, vertical framing.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, cinematic poster, dramatic lighting, unreal engine 5 render style (no 2D anime, no manga).
+
+Composition:
+Strong vertical framing, centered character, highly detailed, 8k.
+
+Background:
+Desolate desert sunset with drifting sand dust."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "moodboard",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate a moodboard collage. Four panels: one showing a patched copper water flask surface, one showing sand-swept gray cloak fabric, one showing weathered staff wood carvings, and one showing a dry desert sandstorm horizon. Survival tone.
+
+Style:
+Wasteland texture reference board, realistic textures.
+
+Composition:
+Clean 4-panel collage layout.
+
+Background:
+Sand-swept wood background."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "sketch",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate a concept sketch sheet. Traditional concept pencil sketches showing the Nomad in 3 study poses: walking slowly with his staff, drinking from his copper flask, and shivering in the sandstorm wind. Clean hand-drawn lines.
+
+Style:
+Monochrome pencil drawings, clean traditional sketch style.
+
+Composition:
+3 study sketches on a plain light background.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "modelSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate a standard model sheet. Full-body front, side, and back views of the Nomad standing neutrally in his tattered sand-gray cloak.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland character concept art, high-fidelity design sheet, even lighting (no 2D anime, no manga).
+
+Composition:
+Three side-by-side full-body views, no dramatic shadows.
+
+Background:
+Plain clean light gray studio background."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "poseSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate a pose sheet. Show 5 poses of the Nomad on one clean sheet: walking with walking staff, drinking from flask, crouched in sandstorm shelter, warning gesture, and sitting exhausted on sand. Solid clean dark gray background.
+
+Style:
+Wasteland action pose reference sheet, consistent body proportions.
+
+Composition:
+5 poses arranged cleanly on a solid dark gray background.
+
+Background:
+Solid clean dark gray background."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "expressionSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate an expression sheet. Show 8 bust portraits of the Nomad in a clean grid: weary calm, alert fear, crying from thirst, focused survival, coughing in dust, silent despair, rare dry smile, and determined look.
+
+Style:
+Wasteland character expression grid, consistent facial structure.
+
+Composition:
+8 bust portraits arranged in a clean grid.
+
+Background:
+Clean dark gray background."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "detailSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate a detail sheet. Close-up panels showing his patched copper flask surface, the ragged face mask texture, the weathered staff wood grain, and the worn foot bindings.
+
+Style:
+Wasteland detail sheet, clean design board.
+
+Composition:
+Multiple close-up detail panels arranged cleanly.
+
+Background:
+Clean light gray background."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "materialPalette",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate a material and color palette sheet. Show swatches of sand-gray linen, weathered copper, walking staff wood, and desert sand dust beside a neutral front view of the character.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland material reference sheet, clean design board layout (no 2D anime, no manga).
+
+Composition:
+Character standing next to neatly arranged material swatches and color blocks.
+
+Background:
+Plain gray background."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "outfitBreakdown",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate an outfit breakdown sheet. Show separate layers and components of his clothing: tattered cloak, inner wraps, copper flask straps, foot bindings, and face mask.
+
+Style:
+Wasteland clothing breakdown sheet, clean layout.
+
+Composition:
+Clothing and accessory parts laid out and separated clearly.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0009_rust_nomad",
+            "char_name": "荒原流民",
+            "img_type": "damageState",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Wasteland Nomad (荒原流民)
+Gender / age impression: middle-aged man, weary, alert and survival-focused
+Body shape: thin, emaciated and slightly hunched posture
+Face: weathered face with deep wrinkles, weary eyes showing strong survival instinct
+Hair: sparse black hair mixed with gray strands
+Outfit: tattered and patched sand-gray wind protection cloak, worn linen wraps around feet and legs
+Accessories / weapon: a ragged cloth face mask, an old patched copper water flask carried on back, a wooden walking staff
+Color palette: sand yellow, dust gray, weathered copper, earth brown
+Fixed traits that must never change: patched copper water flask, ragged face mask, sand-gray cloak, emaciated frame
+
+Current asset goal:
+Generate damage state variants. Show 3 full-body versions of the Nomad: clean/default; battle-worn with dirt and sand layer; and heavily damaged with torn cloak, cracked water flask, bandaged leg, and cuts from sandstorm debris.
+
+Style:
+Wasteland character damage reference sheet.
+
+Composition:
+Show three side-by-side full-body versions of the character.
+
+Background:
+Solid clean dark gray background."""
         }
     ]
     
@@ -1279,13 +3074,13 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0010_rust_warlord",
             "char_name": "铁血军阀",
             "img_type": "turnaround",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate a professional character turnaround model sheet. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his scrap-metal power armor and hydraulic arm.\n\nStyle:\nWasteland post-apocalyptic concept art, high-fidelity design sheet.\n\nComposition:\nThree side-by-side full-body views, neutral standing pose, even lighting.\n\nBackground:\nPlain clean dark gray background."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate a professional character turnaround model sheet. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his scrap-metal power armor and hydraulic arm.\n\nStyle:\nSemi-realistic 3D game concept art, wasteland post-apocalyptic style, high-fidelity design sheet (no 2D anime, no manga, no flat shading).\n\nComposition:\nThree side-by-side full-body views, neutral standing pose, even lighting.\n\nBackground:\nPlain clean dark gray background."
         },
         {
             "char_id": "char_0010_rust_warlord",
             "char_name": "铁血军阀",
             "img_type": "outfit",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, his default scrap-metal power armor; in the middle, his casual warlord outfit (a long, grease-stained leather trench coat over a black tank top and combat trousers); on the right, his heavy battle armor (reinforced with extra steel shielding and chainmail layers). Keep his hydraulic bionic arm.\n\nStyle:\nWasteland post-apocalyptic concept art, high-fidelity design sheet.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally.\n\nBackground:\nPlain clean dark gray background."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, his default scrap-metal power armor; in the middle, his casual warlord outfit (a long, grease-stained leather trench coat over a black tank top and combat trousers); on the right, his heavy battle armor (reinforced with extra steel shielding and chainmail layers). Keep his hydraulic bionic arm.\n\nStyle:\nSemi-realistic 3D game concept art, wasteland post-apocalyptic style, high-fidelity design sheet (no 2D anime, no manga, no flat shading).\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally.\n\nBackground:\nPlain clean dark gray background."
         },
         {
             "char_id": "char_0010_rust_warlord",
@@ -1327,7 +3122,7 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0010_rust_warlord",
             "char_name": "铁血军阀",
             "img_type": "modelSheet",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate a standard model sheet / character design reference. Full-body front, side, and back views of the Warlord standing neutrally in his scrap-metal power armor.\n\nStyle:\nWasteland character concept art, high-fidelity design sheet, even lighting.\n\nComposition:\nThree side-by-side full-body views, no dramatic shadows.\n\nBackground:\nPlain clean light gray studio background."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate a standard model sheet / character design reference. Full-body front, side, and back views of the Warlord standing neutrally in his scrap-metal power armor.\n\nStyle:\nSemi-realistic 3D game concept art style, wasteland character concept art, high-fidelity design sheet, even lighting (no 2D anime, no manga).\n\nComposition:\nThree side-by-side full-body views, no dramatic shadows.\n\nBackground:\nPlain clean light gray studio background."
         },
         {
             "char_id": "char_0010_rust_warlord",
@@ -1345,13 +3140,13 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0010_rust_warlord",
             "char_name": "铁血军阀",
             "img_type": "detailSheet",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate a detail sheet. Close-up panels showing his glowing red mechanical eye, the welding seams and warning yellow stripes on his scrap metal armor, the fuel tube and exhaust pipes of his cybernetic arm, the spikes on his hydraulic hammer, and the gear gears in his joints.\n\nStyle:\nWasteland mechanical detail sheet, clean design board.\n\nComposition:\nMultiple close-up detail panels arranged cleanly.\n\nBackground:\nClean light gray background."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate a detail sheet. Close-up panels showing his glowing red mechanical eye, the welding seams and warning yellow stripes on his scrap metal armor, the fuel tube and exhaust pipes of his cybernetic arm, the spikes on his hydraulic hammer, and the gear gears in his joints.\n\nStyle:\nSemi-realistic 3D game concept art style, wasteland mechanical detail sheet, clean design board (no 2D anime, no manga).\n\nComposition:\nMultiple close-up detail panels arranged cleanly.\n\nBackground:\nClean light gray background."
         },
         {
             "char_id": "char_0010_rust_warlord",
             "char_name": "铁血军阀",
             "img_type": "materialPalette",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of rusted steel plates, black diesel oil texture, yellow warning painted metal, industrial copper piping, and glowing red lens glass beside a neutral front view of the character.\n\nStyle:\nWasteland material reference sheet, clean design board layout.\n\nComposition:\nCharacter standing next to neatly arranged material swatches and color blocks.\n\nBackground:\nPlain gray background."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Rustland Warlord (铁血军阀)\nGender / age impression: middle-aged man, muscular, scarred face, ruthless expression\nBody shape: massive, muscular, heavily built, imposing silhouette\nFace: scarred face, left eye fierce and cold, right eye is a crude mechanical bionic eye glowing with intense red light\nHair: sparse gray buzz-cut hair\nOutfit: heavy scrap-metal power armor welded from car panels and steel grids, decorated with warning yellow stripes, chains, and bullet belts\nAccessories / weapon: a massive spiked hydraulic power hammer, right hydraulic mechanical cybernetic arm venting black smoke from exhaust pipes\nColor palette: rust red, diesel black, warning stripe yellow, industrial copper\nFixed traits that must never change: spiked power hammer, mechanical right arm with exhaust pipes, red-glowing bionic eye, scrap power armor, scarred face\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of rusted steel plates, black diesel oil texture, yellow warning painted metal, industrial copper piping, and glowing red lens glass beside a neutral front view of the character.\n\nStyle:\nSemi-realistic 3D game concept art style, wasteland material reference sheet, clean design board layout (no 2D anime, no manga).\n\nComposition:\nCharacter standing next to neatly arranged material swatches and color blocks.\n\nBackground:\nPlain gray background."
         },
         {
             "char_id": "char_0010_rust_warlord",
@@ -1373,31 +3168,58 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_id": "char_0011_scavenger_queen",
             "char_name": "拾荒女皇",
             "img_type": "main",
-            "prompt": "A masterpiece post-apocalyptic cinematic concept art of the Scavenger Queen. A slender and agile young East Asian woman with a cunning and sharp gaze. She has short, styled silver hair with glowing neon-green dyed tips. She wears a dark leather tunic reinforced with copper scales, underneath a worn, chemical-resistant dark green hooded hazard cloak that flows in the wind. Her lower face is covered by a detailed brass respirator mask with three circular filters. She stands dynamically amidst the towering rusted ruins of a ruined chemical factory. In her hands, she aims a detailed custom folding metallic crossbow that glows with bubbling, radioactive neon-green liquid vials. The background features acid rain falling through thick yellow clouds, with green toxic puddles reflecting a bleak setting sun casting a sickly warm glow. Cinematic, hyper-realistic, masterpiece, 8k resolution."
+            "prompt": "A masterpiece post-apocalyptic cinematic concept art of the Scavenger Queen. A slender and agile young East Asian woman with a cunning and sharp gaze. She has short, styled silver hair with glowing neon-green dyed tips. She wears a dark leather tunic reinforced with copper scales, underneath a worn, chemical-resistant dark green hooded hazard cloak that flows in the wind. Her lower face is covered by a detailed brass respirator mask with three circular filters. She stands dynamically amidst the towering rusted ruins of a ruined chemical factory. In her hands, she aims a detailed custom folding metallic crossbow that glows with bubbling, radioactive neon-green liquid vials. The background features acid rain falling through thick yellow clouds, with green toxic puddles reflecting a bleak setting sun casting a sickly warm glow. Cinematic, hyper-realistic, masterpiece, 8k."
         },
         {
             "char_id": "char_0011_scavenger_queen",
             "char_name": "拾荒女皇",
             "img_type": "portrait",
-            "prompt": "Now, draw a close-up portrait of the exact same Scavenger Queen character from our conversation. Focus on her face and shoulders, capturing her sharp green eyes, silver-green hair, and the detailed brass respirator mask. Acid rain droplets on her cloak. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+            "prompt": "Now, draw a close-up portrait of the exact same Scavenger Queen character from our conversation. Focus on her face and shoulders, capturing her short silver hair with green tips, her cunning green eyes, and her gas mask. The hood of her dark green cloak is pulled over her head. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
         },
         {
             "char_id": "char_0011_scavenger_queen",
             "char_name": "拾荒女皇",
             "img_type": "expression",
-            "prompt": "Now, draw an expression sheet of the exact same Scavenger Queen character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side (without respirator mask): one smiling cunningly, one showing an angry cold glare, and one displaying a calculated smirk. High-fidelity details, professional character model sheet, masterpiece, 8k."
+            "prompt": "Now, draw an expression sheet of the exact same Scavenger Queen character from our conversation. Show her (without mask) on a solid, clean dark gray background with three different facial expressions side-by-side: one with a mocking smirk, one showing focused aim with narrowed green eyes, and one with an angry, commanding shout. High-fidelity details, professional character model sheet, masterpiece, 8k."
         },
         {
             "char_id": "char_0011_scavenger_queen",
             "char_name": "拾荒女皇",
             "img_type": "turnaround",
-            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Scavenger Queen character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her dark green hooded cloak and brass respirator. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Scavenger Queen character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her green hooded hazard cloak and brass respirator mask. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
         },
         {
             "char_id": "char_0011_scavenger_queen",
             "char_name": "拾荒女皇",
             "img_type": "outfit",
-            "prompt": "Now, draw the exact same Scavenger Queen character from our conversation, but wearing an alternative scavenger outfit: a tight-fitting black environmental hazard jumpsuit, reinforced knee pads and tactical harness, and a glowing green chemical canister strapped to her back, without her large green cloak. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate an outfit variant image. Show three different outfits side-by-side: on the left, her default dark green hooded cape; in the middle, her alternative hazard jumpsuit (a tight-fitting black environmental hazard jumpsuit, reinforced knee pads, and a glowing green chemical canister strapped to her back, without her cape); on the right, her scavenger ceremonial armor (adorned with bone trophies, spikes, and copper plates). Keep her gas mask on all three outfits.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, high-fidelity design sheet (no 2D anime, no manga, no flat shading).
+
+Composition:
+Show three side-by-side full-body views of the same character standing neutrally.
+
+Background:
+Plain clean dark gray background."""
         },
         {
             "char_id": "char_0011_scavenger_queen",
@@ -1416,6 +3238,336 @@ async def run_all_pipeline(dry_run: bool, char_id: str = None, img_type: str = N
             "char_name": "拾荒女皇",
             "img_type": "fullBody",
             "prompt": "Now, draw a full-body cinematic splash art of the exact same Scavenger Queen character from our conversation. She stands agilely in her green hooded cloak, holding her folding crossbow, her green eyes glowing slightly in the toxic haze. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "cover",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate a cover image. The Queen stands victoriously on a rusted tower platform aiming her acid crossbow over a toxic green swamp ruins under acid rain. High polish, vertical framing.
+
+Style:
+Semi-realistic 3D game concept art, wasteland post-apocalyptic style, cinematic poster, dramatic lighting, unreal engine 5 render style (no 2D anime, no manga).
+
+Composition:
+Strong vertical framing, centered character, highly detailed, 8k.
+
+Background:
+Toxic chemical ruins with neon-green swamp under a yellow twilight."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "moodboard",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate a moodboard collage. Four panels: one showing glowing neon-green acid vials, one showing brass gas mask filters, one showing dark green hooded fabric, and one showing short silver hair with green tips. Toxic survival feel.
+
+Style:
+Wasteland chemical moodboard, rich textures.
+
+Composition:
+Clean 4-panel collage layout.
+
+Background:
+Corroded iron plate background."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "sketch",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate a concept sketch sheet. Traditional concept pencil sketches showing the Queen in 3 study poses: aiming her crossbow, adjusting her respirator mask, and looking down with a cynical smirk. Clean hand-drawn lines.
+
+Style:
+Monochrome pencil drawings, clean traditional sketch style.
+
+Composition:
+3 study sketches on a plain light background.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "modelSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate a standard model sheet. Full-body front, side, and back views of the Queen standing neutrally in her green hooded cape.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland character concept art, high-fidelity design sheet, even lighting (no 2D anime, no manga).
+
+Composition:
+Three side-by-side full-body views, no dramatic shadows.
+
+Background:
+Plain clean light gray studio background."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "poseSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate a pose sheet. Show 5 poses of the Queen on one clean sheet: aiming her crossbow, crouching in ambush, throwing an acid bottle, standing triumphantly, and adjusting her gas mask. Solid clean dark gray background.
+
+Style:
+Wasteland action pose reference sheet, consistent body proportions.
+
+Composition:
+5 poses arranged cleanly on a solid dark gray background.
+
+Background:
+Solid clean dark gray background."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "expressionSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate an expression sheet. Show 8 bust portraits of the Queen (without mask) in a clean grid: cunning smirk, focused aim, angry shout, coughing in toxic gas, mock smile, cold warning stare, battle weariness, and calm determination.
+
+Style:
+Wasteland character expression grid, consistent facial structure.
+
+Composition:
+8 bust portraits arranged in a clean grid.
+
+Background:
+Clean dark gray background."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "detailSheet",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate a detail sheet. Close-up panels showing her gas mask filters, the trigger mechanism of her folding crossbow, the bubbling green acid vial, and her green-dyed hair tips.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland mechanical detail sheet, clean design board (no 2D anime, no manga).
+
+Composition:
+Multiple close-up detail panels arranged cleanly.
+
+Background:
+Clean light gray background."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "materialPalette",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate a material and color palette sheet. Show swatches of neon-green acid liquid, dark green hazard cloth, brass gas mask filters, and black leather armor beside a neutral front view of the character.
+
+Style:
+Semi-realistic 3D game concept art style, wasteland material reference sheet, clean design board layout (no 2D anime, no manga).
+
+Composition:
+Character standing next to neatly arranged material swatches and color blocks.
+
+Background:
+Plain gray background."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "outfitBreakdown",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate an outfit breakdown sheet. Show separate layers and components of her clothing: dark green hooded cape, black leather chest armor, brass respirator mask, folding crossbow and quiver, and tactical belt straps.
+
+Style:
+Wasteland clothing breakdown sheet, clean layout.
+
+Composition:
+Clothing and gear parts laid out and separated clearly.
+
+Background:
+Plain light background."""
+        },
+        {
+            "char_id": "char_0011_scavenger_queen",
+            "char_name": "拾荒女皇",
+            "img_type": "damageState",
+            "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Scavenger Queen (拾荒女皇)
+Gender / age impression: young woman, cunning, sharp and deadly presence
+Body shape: tall and slender, agile feline posture
+Face: handsome face, cunning green eyes, mocking smirk
+Hair: short silver-gray hair with neon-green dyed hair tips
+Outfit: chemical-resistant dark green hooded cape over tight black leather armor reinforced with copper scales
+Accessories / weapon: a brass respirator mask with three circular filters, a custom folding mechanical crossbow glowing with neon-green acid vials
+Color palette: neon green, dark green, brass copper, leather brown, silver-gray
+Fixed traits that must never change: silver-green hair, brass respirator mask, dark green hooded cape, neon-green acid crossbow
+
+Current asset goal:
+Generate damage state variants. Show 3 full-body versions of the Queen: clean/default; battle-worn with acid splatters and dust; and heavily damaged with cracked respirator filters, torn cape, leaking toxic green acid from broken vials, and battle scars.
+
+Style:
+Wasteland character damage reference sheet.
+
+Composition:
+Show three side-by-side full-body versions of the character.
+
+Background:
+Solid clean dark gray background."""
         }
     ]
 

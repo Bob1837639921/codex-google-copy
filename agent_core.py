@@ -68,15 +68,17 @@ class BrowserAgent:
             except json.JSONDecodeError:
                 pass # Ignore keepalive ping/status packets
 
-    async def init(self, task_name: str = "AI Live Agent"):
+    async def init(self, task_name: str = "AI Live Agent", session_id: str = None):
         """
         初始化并接管 Chrome 标签页，在 Chrome 中将当前 Tab 归入醒目的 Cyan（青色）标签页组。
         【AI 行为引导】：
         - 启动任何浏览器交互前的【首要必须步骤】。请勿省略此步骤，否则后续指令将因未附着 Tab 而报错。
         - task_name 将直接展示在受控浏览器的标签页组名称上，用以向用户标明当前的任务名称。
         """
-        logging.info(f"Initializing Browser Agent Group: '{task_name}'")
-        return await self._send_command("init", taskName=task_name)
+        if session_id is None:
+            session_id = os.environ.get("BROWSER_AGENT_SESSION_ID")
+        logging.info(f"Initializing Browser Agent Group: '{task_name}' (session_id={session_id})")
+        return await self._send_command("init", taskName=task_name, sessionId=session_id)
 
     async def navigate(self, url: str):
         """

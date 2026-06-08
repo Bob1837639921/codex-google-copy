@@ -1,6 +1,7 @@
 let socket = null;
 let agentTabId = null;
 let currentGroupId = null;
+let sessions = {}; // sessionId -> { tabId, groupId }
 
 let retryCount = 0;
 const MAX_RETRIES = 5;
@@ -83,29 +84,33 @@ function connectWebSocket() {
     console.log('Received command:', data);
 
     try {
+        const sid = data.sessionId || 'default';
+        let tabId = sessions[sid]?.tabId || agentTabId;
+
         // 如果断掉或者找不到页面，强行新建页面兜底
-        if (!agentTabId && data.action !== 'init') {
-            await initAgentTab('AI 自动兜底新建', null);
+        if (!tabId && data.action !== 'init') {
+            await initAgentTab('AI 自动兜底新建', null, sid);
+            tabId = sessions[sid].tabId;
         }
 
         if (data.action === 'init') {
-            await initAgentTab(data.taskName || 'AI 正在执行', data.id);
+            await initAgentTab(data.taskName || 'AI 正在执行', data.id, data.sessionId);
         } else if (data.action === 'ping') {
             socket.send(JSON.stringify({ id: data.id, status: 'success', message: 'Extension connected' }));
         } else if (data.action === 'navigate') {
-            await executeNavigate(data.url, data.id);
+            await executeNavigate(tabId, data.url, data.id);
         } else if (data.action === 'evaluate') {
-            await executeEvaluate(data.code, data.id);
+            await executeEvaluate(tabId, data.code, data.id);
         } else if (data.action === 'hover') {
-            await executeHover(data.selector, data.id);
+            await executeHover(tabId, data.selector, data.id);
         } else if (data.action === 'click') {
-            await executeClick(data.selector, data.mode, data.id);
+            await executeClick(tabId, data.selector, data.mode, data.id);
         } else if (data.action === 'type') {
-            await executeType(data.selector, data.text, data.mode, data.id);
+            await executeType(tabId, data.selector, data.text, data.mode, data.id);
         } else if (data.action === 'snapshot') {
-            await executeSnapshot(data.id);
+            await executeSnapshot(tabId, data.id);
         } else if (data.action === 'screenshot') {
-            await executeScreenshot(data.id, data.fullPage);
+            await executeScreenshot(tabId, data.id, data.fullPage);
         } else if (data.action === 'download') {
             await executeDownload(data.url, data.filename, data.id);
         } else if (data.action === 'searchDownloads') {
@@ -195,6 +200,19 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   } catch (e) {}
 });
 
+// 监听标签页手动关闭事件，及时同步状态
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (tabId === agentTabId) {
+    agentTabId = null;
+    currentGroupId = null;
+  }
+  for (const sid in sessions) {
+    if (sessions[sid].tabId === tabId) {
+      delete sessions[sid];
+    }
+  }
+});
+
 // 处理来自 Popup 的状态查询和重连指令
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getStatus') {
@@ -214,37 +232,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 
-async function initAgentTab(taskName, msgId) {
-    if (agentTabId) {
+async function initAgentTab(taskName, msgId, sessionId) {
+    // 默认会话 ID 设为 'default'，如果用户指定了会话（如不同的对话），则隔离管理
+    const sid = sessionId || 'default';
+    
+    // 如果此会话已经有开启的标签页，检查是否仍然存在。若存在则直接复用，避免重复关闭创建
+    if (sessions[sid]) {
         try {
-            await chrome.tabs.get(agentTabId);
-            if (currentGroupId) {
-                await chrome.tabGroups.update(currentGroupId, { title: taskName });
+            const oldTabId = sessions[sid].tabId;
+            const tab = await chrome.tabs.get(oldTabId);
+            if (tab) {
+                agentTabId = oldTabId;
+                currentGroupId = sessions[sid].groupId;
+                await attachDebugger(agentTabId);
+                if (msgId) {
+                    socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Tab reused' }));
+                }
+                return;
             }
-            await attachDebugger(agentTabId);
-            if (msgId) {
-                socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Tab already exists (and re-attached)' }));
-            }
-            return;
         } catch (e) {
-            agentTabId = null;
-            currentGroupId = null;
+            // 忽略找不到或者获取失败的情况，代表老标签页已被手动关闭
+            delete sessions[sid];
         }
-    }
-
-    try {
-        const tabs = await chrome.tabs.query({});
-        const chatgptTab = tabs.find(tab => tab.url && tab.url.includes('chatgpt.com'));
-        if (chatgptTab) {
-            agentTabId = chatgptTab.id;
-            await attachDebugger(agentTabId);
-            if (msgId) {
-                socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Attached to existing ChatGPT tab' }));
-            }
-            return;
-        }
-    } catch (e) {
-        console.log('Error searching for existing ChatGPT tab:', e);
     }
 
     const tab = await chrome.tabs.create({ url: 'about:blank', active: false });
@@ -257,6 +266,12 @@ async function initAgentTab(taskName, msgId) {
     });
     
     await attachDebugger(agentTabId);
+    
+    // 将新建标签页记录到会话列表中
+    sessions[sid] = {
+        tabId: agentTabId,
+        groupId: currentGroupId
+    };
     
     if (msgId) {
         socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Tab created and grouped' }));
@@ -345,8 +360,7 @@ async function ensureAgentTab() {
     }
 }
 
-async function ensureFakeCursor() {
-    await ensureAgentTab();
+async function ensureFakeCursor(tabId) {
     const code = `
         if (!document.getElementById('ai-fake-cursor')) {
             const cursor = document.createElement('div');
@@ -405,12 +419,12 @@ async function ensureFakeCursor() {
 
         window.__ai_cursor_keep_visible();
     `;
-    await sendCommand(agentTabId, 'Runtime.evaluate', { expression: code });
+    await sendCommand(tabId, 'Runtime.evaluate', { expression: code });
 }
 
-async function touchFakeCursor() {
-    await ensureFakeCursor();
-    await sendCommand(agentTabId, 'Runtime.evaluate', {
+async function touchFakeCursor(tabId) {
+    await ensureFakeCursor(tabId);
+    await sendCommand(tabId, 'Runtime.evaluate', {
         expression: `
             (() => {
                 if (window.__ai_cursor_keep_visible) {
@@ -422,28 +436,23 @@ async function touchFakeCursor() {
     }).catch(() => {});
 }
 
-async function executeNavigate(url, msgId) {
-  if (!agentTabId) await initAgentTab('AI 正在执行');
-  
-  await chrome.tabs.update(agentTabId, { url: url });
+async function executeNavigate(tabId, url, msgId) {
+  await chrome.tabs.update(tabId, { url: url });
   
   setTimeout(async () => {
       try {
-          await ensureFakeCursor();
+          await ensureFakeCursor(tabId);
           socket.send(JSON.stringify({ id: msgId, status: 'success' }));
       } catch (e) {
           console.error("Error in executeNavigate timeout:", e);
-          // Even if cursor decoration fails, navigation succeeded
           socket.send(JSON.stringify({ id: msgId, status: 'success', warning: e.toString() }));
       }
   }, 3000);
 }
 
-async function executeEvaluate(code, msgId) {
-  if (!agentTabId) await initAgentTab('AI 正在执行');
-
-  await touchFakeCursor();
-  const result = await sendCommand(agentTabId, 'Runtime.evaluate', {
+async function executeEvaluate(tabId, code, msgId) {
+  await touchFakeCursor(tabId);
+  const result = await sendCommand(tabId, 'Runtime.evaluate', {
     expression: code,
     returnByValue: true,
     awaitPromise: true
@@ -452,8 +461,8 @@ async function executeEvaluate(code, msgId) {
   socket.send(JSON.stringify({ id: msgId, status: 'success', result: result.result?.value }));
 }
 
-async function executeHover(selector, msgId) {
-    await ensureFakeCursor();
+async function executeHover(tabId, selector, msgId) {
+    await ensureFakeCursor(tabId);
     const selectorLiteral = jsString(selector);
     const codeMove = `
         (() => {
@@ -466,29 +475,24 @@ async function executeHover(selector, msgId) {
                 const rect = el.getBoundingClientRect();
                 const cursor = document.getElementById('ai-fake-cursor');
                 if (cursor) {
-                    // 1. 清理之前的隐藏定时器
                     if (window.__ai_cursor_hide_timeout) {
                         clearTimeout(window.__ai_cursor_hide_timeout);
                     }
                     
-                    // 2. 显式设为可见并移动位置
                     cursor.style.opacity = '${CURSOR_ACTIVE_OPACITY}';
                     cursor.style.left = (rect.left + rect.width / 2) + 'px';
                     cursor.style.top = (rect.top + rect.height / 2) + 'px';
                     
-                    // 3. 注册新的延迟隐藏定时器，在 2.5 秒无操作后淡出消失
                     window.__ai_cursor_hide_timeout = setTimeout(() => {
                         const cur = document.getElementById('ai-fake-cursor');
-                        if (cur) {
-                            cur.style.opacity = '${CURSOR_IDLE_OPACITY}';
-                        }
+                        if (cur) cur.style.opacity = '${CURSOR_IDLE_OPACITY}';
                     }, ${CURSOR_IDLE_DELAY_MS});
                 }
             }, 300);
             return true;
         })();
     `;
-    const moveResult = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeMove, returnByValue: true });
+    const moveResult = await sendCommand(tabId, 'Runtime.evaluate', { expression: codeMove, returnByValue: true });
     const moved = moveResult.result?.value;
     if (!moved) {
         if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
@@ -501,16 +505,14 @@ async function executeHover(selector, msgId) {
     return true;
 }
 
-async function executeClick(selector, modeOrMsgId, msgId) {
+async function executeClick(tabId, selector, modeOrMsgId, msgId) {
     let mode = 'smart';
-    let actualMsgId = msgId;
+    let actualMsgId = msgId || modeOrMsgId;
     if (typeof modeOrMsgId === 'string' && modeOrMsgId !== 'null' && modeOrMsgId.length < 10) {
         mode = modeOrMsgId;
-    } else {
-        actualMsgId = modeOrMsgId;
     }
 
-    const moved = await executeHover(selector, null); 
+    const moved = await executeHover(tabId, selector, null); 
     if (!moved) {
         if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'error', error: `Element not found for selector: ${selector}` }));
         return;
@@ -533,7 +535,6 @@ async function executeClick(selector, modeOrMsgId, msgId) {
                             if (runMode === 'direct') {
                                 el.click();
                             } else {
-                                // 模拟物理与 DOM 点击事件链
                                 const opts = { bubbles: true, cancelable: true, view: window };
                                 el.dispatchEvent(new PointerEvent('pointerdown', opts));
                                 el.dispatchEvent(new MouseEvent('mousedown', opts));
@@ -548,7 +549,7 @@ async function executeClick(selector, modeOrMsgId, msgId) {
                     return false;
                 })();
             `;
-            const clickResult = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: codeClick, returnByValue: true });
+            const clickResult = await sendCommand(tabId, 'Runtime.evaluate', { expression: codeClick, returnByValue: true });
             if (!clickResult.result?.value) {
                 if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'error', error: `Element not found for selector: ${selector}` }));
                 return;
@@ -561,9 +562,9 @@ async function executeClick(selector, modeOrMsgId, msgId) {
     }, 1200); 
 }
 
-async function executeType(selector, text, mode, msgId) {
+async function executeType(tabId, selector, text, mode, msgId) {
     const isDirect = (mode === 'direct');
-    const moved = await executeHover(selector, null);
+    const moved = await executeHover(tabId, selector, null);
     if (!moved) {
         if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
         return;
@@ -573,7 +574,6 @@ async function executeType(selector, text, mode, msgId) {
     
     setTimeout(async () => {
         try {
-            // 关键1：先真正触发一次 DOM 级别的 focus 和 click，并在 JS 中以异步循环模拟富文本编辑器的渐进输入
             const codeClick = `
                 (async () => {
                     const el = document.querySelector(${selectorLiteral});
@@ -591,12 +591,10 @@ async function executeType(selector, text, mode, msgId) {
                             for (const char of fullText) {
                                 document.execCommand('insertText', false, char);
                                 el.dispatchEvent(new Event('input', { bubbles: true }));
-                                // 随机延迟模拟打字机效果（50ms - 130ms 随机抖动）
                                 await new Promise(r => setTimeout(r, Math.random() * 80 + 50));
                             }
                             return "exec_success";
                         }
-                        // 为了触发 React 的状态更新，直接修改其底层 value tracker
                         const proto = el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
                         const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, "value").set;
                         if (${isDirect}) {
@@ -620,7 +618,7 @@ async function executeType(selector, text, mode, msgId) {
                     return "not_found";
                 })()
             `;
-            const res = await sendCommand(agentTabId, 'Runtime.evaluate', { 
+            const res = await sendCommand(tabId, 'Runtime.evaluate', { 
                 expression: codeClick, 
                 returnByValue: true,
                 awaitPromise: true 
@@ -631,20 +629,17 @@ async function executeType(selector, text, mode, msgId) {
                 return;
             }
             
-            // 关键2：如果是标准文本框/区域且非直接模式，分步使用 CDP 的 insertText 模拟逐字敲击，保障物理真实度
             if (typeMode === "standard_input") {
                 for (const char of text) {
-                    await sendCommand(agentTabId, 'Input.insertText', { text: char });
-                    // 模拟打字机按键间隔延迟（50ms - 130ms 随机抖动）
+                    await sendCommand(tabId, 'Input.insertText', { text: char });
                     const delay = Math.floor(Math.random() * 80) + 50;
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
             
-            // 关键3：为了保险，有些网站需要回车键触发
-            await sendCommand(agentTabId, 'Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
-            await sendCommand(agentTabId, 'Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
-
+            await sendCommand(tabId, 'Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+            await sendCommand(tabId, 'Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+ 
             if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
         } catch (e) {
             console.error("Error in executeType timeout:", e);
@@ -653,12 +648,10 @@ async function executeType(selector, text, mode, msgId) {
     }, 1200);
 }
 
-
-async function executeSnapshot(msgId) {
-    await touchFakeCursor();
+async function executeSnapshot(tabId, msgId) {
+    await touchFakeCursor(tabId);
     const code = `
         (() => {
-            // 排除评论、文章正文、大列表等“内容区域”，避免假阳性
             const contentSelectors = [
                 '.comments-container', '.comment-list', '.comment-item', '.comment-inner-container',
                 '#detail-desc', '.desc-container', '.note-text', '.note-title',
@@ -710,7 +703,6 @@ async function executeSnapshot(msgId) {
             const hasLogin = loginSelectors.some((selector) => {
                                 const el = document.querySelector(selector);
                                 if (!el) return false;
-                                // 排除掉位于详情、正文或评论区内的元素，避免假阳性
                                 if (isInsideExcludedContent(el)) return false;
                                 const rect = el.getBoundingClientRect();
                                 const style = window.getComputedStyle(el);
@@ -739,7 +731,7 @@ async function executeSnapshot(msgId) {
             };
         })();
     `;
-    const result = await sendCommand(agentTabId, 'Runtime.evaluate', { expression: code, returnByValue: true });
+    const result = await sendCommand(tabId, 'Runtime.evaluate', { expression: code, returnByValue: true });
     const data = result.result?.value || { blockedByLogin: false, dom: [] };
     socket.send(JSON.stringify({ 
         id: msgId, 
@@ -749,10 +741,10 @@ async function executeSnapshot(msgId) {
     }));
 }
 
-async function executeScreenshot(msgId, fullPage = false) {
-    await touchFakeCursor();
+async function executeScreenshot(tabId, msgId, fullPage = false) {
+    await touchFakeCursor(tabId);
     try {
-        await sendCommand(agentTabId, 'Page.enable');
+        await sendCommand(tabId, 'Page.enable');
         let params = {
             format: 'png',
             fromSurface: true,
@@ -760,7 +752,7 @@ async function executeScreenshot(msgId, fullPage = false) {
         };
 
         if (fullPage) {
-            const metrics = await sendCommand(agentTabId, 'Page.getLayoutMetrics');
+            const metrics = await sendCommand(tabId, 'Page.getLayoutMetrics');
             const contentSize = metrics.contentSize;
             if (contentSize && contentSize.width && contentSize.height) {
                 params.clip = {
@@ -773,7 +765,7 @@ async function executeScreenshot(msgId, fullPage = false) {
             }
         }
 
-        const result = await sendCommand(agentTabId, 'Page.captureScreenshot', params);
+        const result = await sendCommand(tabId, 'Page.captureScreenshot', params);
         socket.send(JSON.stringify({
             id: msgId,
             status: 'success',
@@ -954,4 +946,4 @@ async function executeDownloadViaBlob(url, filename, msgId) {
     }
 }
 
-triggerConnect();
+triggerConnect(true);
