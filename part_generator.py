@@ -3792,8 +3792,230 @@ Solid clean dark gray background."""
             "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Eternal Lantern Keeper (永夜守灯人)\nGender / age impression: young woman, elegant, pale skin, serene and holy presence\nBody shape: slender and graceful silhouette\nFace: delicate refined face, calm and compassionate expression\nHair: long flowing silver-white hair with faint gold reflections\nEyes: gold eyes that glow with soft starry light\nOutfit: layered midnight-blue gothic robes with intricate gold star-map embroidery on the skirt, sheer black cape over shoulders\nAccessories / weapon: gothic black-iron candle lantern containing a floating bright blue stellar flame that sheds glowing stardust particles\nColor palette: midnight-blue, silver-white, gold, deep black, bright blue stellar flame highlights\nFixed traits that must never change: silver-white hair, gold-glowing eyes, midnight-blue gothic robes with gold embroidery, black-iron lantern with blue flame, serene holy expression\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default, battle-worn with tattered robe hem and dusty cape, and heavily damaged with her body half-translucent and fading, a cracked glass lantern, and golden stellar tears flowing.\n\nStyle:\nGothic fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         }
     ]
-    
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan
+
+    mirage_magician_plan = [
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "main",
+            "prompt": "A spectacular urban mystery concept art of the Mirage Magician. A slender and elegant young woman with short wavy silver-purple hair under a top hat, wearing a half cat mask, dressed in a black tailcoat with crimson lining. She stands center stage in an abandoned, dimly lit vintage theater, holding floating, holographic playing cards glowing with intense violet ripples. The stage is covered in floating card silhouettes and light embers, dramatic spotlights, octane render, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Mirage Magician character from our conversation. Focus on her face and shoulders, capturing her silver-purple hair, top hat, half cat mask, and a confident smirk. Floating card particles around. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Mirage Magician character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one elegant and calm, one with a playful and mischievous smirk, and one looking intense and focused as she commands her cards. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Mirage Magician character. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her black-and-red tailcoat and top hat. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Mirage Magician character displaying three different outfits side-by-side: on the left, her default black-and-red tailcoat; in the middle, her alternative casual magician look (a white ruffled shirt, black corset vest, and tight leather trousers); on the right, her stealth/action suit (a sleek dark bodysuit with purple glowing card motifs). Show three side-by-side full-body views, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Mirage Magician's gear: her signature floating playing cards with glowing purple spatial runes and a silver-handled cane. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed urban mystery scene concept art. An abandoned vintage theater stage, dusty velvet curtains, dimly lit spotlights, with holographic playing cards and purple spatial ripples floating in the air. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "cover",
+            "prompt": "A cinematic vertical cover art showing the Mirage Magician standing dramatically on a brick building rooftop at night, tossing a deck of glowing purple playing cards that dissolve into thin air. Dark city skyscrapers under a moonlit cloudy sky in the background. High polish, dramatic rim lighting, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "moodboard",
+            "prompt": "A moodboard collage of 4 panels for the Mirage Magician: one showing scattered playing cards on a dark velvet table, one showing a glossy black top hat next to a white glove, one showing purple spatial distortion waves, and one showing a silver-purple lock of hair under dim stage lights. Mysterious, theatrical tone, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "sketch",
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Mirage Magician in 3 study sketches: bowing gracefully, throwing cards forward, and leaning on her cane with a smile. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Mirage Magician character. She stands elegantly in her black-and-red tailcoat, holding a glowing playing card near her face, looking at the viewer. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "modelSheet",
+            "prompt": "A clean model sheet of the Mirage Magician showing full-body front, side, and back views. Standing neutrally in her signature tailcoat outfit. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "poseSheet",
+            "prompt": "Show 5 poses of the Mirage Magician on one clean sheet: throwing a card, bowing elegantly, walking with her cane, teleporting in a burst of playing cards, and sitting on a floating card platform. Solid clean dark gray background."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "expressionSheet",
+            "prompt": "An expression sheet showing 8 bust portraits of the Mirage Magician in a clean grid: calm, confident smirk, playful wink, deep focus, surprised, angry, exhausted, and a gentle mocking smile. Clean dark gray background."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "detailSheet",
+            "prompt": "A clean detail sheet showing close-up panels of the Mirage Magician's features: her half cat mask, the silver-purple hair under her top hat, the gold embroidery on her tailcoat lapels, the detailed pattern on her playing cards, and her white-gloved hands. Clean light gray background."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "materialPalette",
+            "prompt": "A material and color palette sheet for the Mirage Magician: fabric swatches of black velvet, crimson satin lining, silver-purple hair sample, and the glowing violet energy color. Clean design layout, plain gray background."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "outfitBreakdown",
+            "prompt": "An outfit breakdown sheet for the Mirage Magician: showing separate layers of her clothing: the outer black tailcoat, white ruffled shirt, black waistcoat, tight black trousers, and high-top leather boots. Clean layout, plain light background."
+        },
+        {
+            "char_id": "char_0014_mirage_magician",
+            "char_name": "千面魔术师",
+            "img_type": "damageState",
+            "prompt": "Show 3 full-body versions of the Mirage Magician: clean/default, battle-worn with tattered tailcoat sleeves and a cracked mask, and heavily damaged with her hat missing, her coat torn showing bandages, and card fragments floating in broken spatial rings. Solid clean dark gray background."
+        }
+    ]
+
+    relic_surveyor_plan = [
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "main",
+            "prompt": "A masterpiece post-apocalyptic concept art of the Wasteland Reconstructor. A young East Asian male engineer with messy reddish-brown hair and brass goggles pushed up on his forehead. He wears a dusty brown leather mechanic jacket with a heavy magnetic generator backpack. In his hand, he fires a heavy industrial magnetic pistol, emitting bright blue electrical arcs that link and suspend metallic scraps and rusted plates in mid-air, weaving them into a floating shield mesh. Background features a colossal industrial shipyard ruins under a dusty dark orange sky, cinematic rim lighting, volumetric dust particles, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Wasteland Reconstructor character from our conversation. Focus on his face and shoulders, capturing his messy reddish-brown hair, forehead goggles, and focused brown eyes. Light blue electrical sparks reflecting on his cheeks. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Wasteland Reconstructor character. Show him on a solid, clean dark gray background with three different facial expressions side-by-side: one focused and analytical, one showing a confident smirk, and one looking exhausted but determined. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Wasteland Reconstructor character. Show three full-body views: front, side, and back, standing in a neutral pose. He is wearing his dusty brown leather jacket and generator backpack. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "outfit",
+            "prompt": "Now, draw the exact same Wasteland Reconstructor character displaying three different outfits side-by-side: on the left, his default brown leather jacket and cargo pants; in the middle, his workshop gear (a sleeveless work shirt, grease-stained apron, and heavy work gloves); on the right, his heavy scavenger armor (reinforced metal plates over a leather suit, with goggles pulled down). Show three side-by-side full-body views, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Wasteland Reconstructor's gear: his heavy magnetic pistol emitting blue electrical arcs, and his heavy generator backpack showing wiring and battery meters. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed post-apocalyptic scene concept art. A colossal industrial shipyard ruins under a dusty dark orange sky, with scattered rusted metal plates and copper pipes suspended in mid-air by glowing blue magnetic fields. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "cover",
+            "prompt": "A cinematic vertical cover art showing the Wasteland Reconstructor standing on a heap of rusted scrap metal, holding his magnetic pistol high as blue electrical arcs weave a dome shield around him. A massive dust storm approaching in the background. High polish, dramatic rim lighting, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "moodboard",
+            "prompt": "A moodboard collage of 4 panels for the Wasteland Reconstructor: one showing rusted iron plates and copper pipes, one showing blue electrical arcs crossing dark metal, one showing a pair of brass goggles resting on leather, and one showing messy reddish-brown hair reflecting orange sparks. Industrial, rugged tone, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "sketch",
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Wasteland Reconstructor in 3 study sketches: examining a metal scrap, aiming his magnetic gun, and repairing a generator. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Wasteland Reconstructor character. He stands confidently with his magnetic gun, blue electric arcs surrounding his arm, and flying metal plates orbiting him. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "modelSheet",
+            "prompt": "A clean model sheet of the Wasteland Reconstructor showing full-body front, side, and back views. Standing neutrally in his leather mechanic outfit. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "poseSheet",
+            "prompt": "Show 5 poses of the Wasteland Reconstructor on one clean sheet: firing his magnetic pistol, assembling a scrap turret, ducking behind a magnetic barrier, carrying a heavy metal beam, and examining a copper coil. Solid clean dark gray background."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "expressionSheet",
+            "prompt": "An expression sheet showing 8 bust portraits of the Wasteland Reconstructor in a clean grid: calm, calculating, a smirk, serious warning, screaming in battle, coughing in dust, smiling proudly, and exhausted/sweating. Clean dark gray background."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "detailSheet",
+            "prompt": "A clean detail sheet showing close-up panels of the Wasteland Reconstructor's features: his brass goggles, his messy reddish-brown hair, the gauge meters on his generator backpack, the nozzle of his magnetic pistol, and his heavy leather gloves. Clean light gray background."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "materialPalette",
+            "prompt": "A material and color palette sheet for the Wasteland Reconstructor: material swatches of worn brown leather, rusted iron plate, copper wire, and glowing blue electrical aura. Clean design layout, plain gray background."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "outfitBreakdown",
+            "prompt": "An outfit breakdown sheet for the Wasteland Reconstructor: showing separate layers of his clothing: the outer leather jacket, gray undershirt, cargo pants, utility tool belt, and heavy boots. Clean layout, plain light background."
+        },
+        {
+            "char_id": "char_0015_relic_surveyor",
+            "char_name": "废土重构师",
+            "img_type": "damageState",
+            "prompt": "Show 3 full-body versions of the Wasteland Reconstructor: clean/default, battle-worn with dust and oil smudges, and heavily damaged with cracked goggles, torn jacket sleeves, sparks leaking from his broken generator backpack, and battle scars on his arms. Solid clean dark gray background."
+        }
+    ]
+
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirage_magician_plan + relic_surveyor_plan
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
