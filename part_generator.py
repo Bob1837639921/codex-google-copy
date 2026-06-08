@@ -3793,229 +3793,229 @@ Solid clean dark gray background."""
         }
     ]
 
-    puppet_master_plan = [
+    mirror_walker_plan = [
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "main",
-            "prompt": "A masterpiece urban mystery concept art of the Puppet Master. An elegant young girl with curly golden twin-tails and lifeless ruby eyes, wearing a black-and-red gothic Lolita dress with lace details. She stands center stage in a dark, atmospheric abandoned theater, golden strings glowing with light radiating from her fingers to control a massive, intimidating faceless porcelain puppet dressed in a black tailcoat behind her. Golden thread patterns float in the foggy air, dramatic spotlight, octane render, 8k."
+            "prompt": "A spectacular urban mystery concept art of the Mirror Walker. A slender and sleek female assassin with short silver-gray hair, wearing a full-face reflective silver mirror mask. She wears a translucent, glossy neon-reflecting raincoat over a dark gray stealth suit. She stands in a rainy, neon-drenched city alleyway at midnight, holding a glowing mirror-glass blade that refracts colorful lights. The wet asphalt below reflects her stance, dramatic silhouettes and Tyndall rain effects, octane render, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "portrait",
-            "prompt": "Now, draw a close-up portrait of the exact same Puppet Master character from our conversation. Focus on her face and shoulders, capturing her curly golden twin-tails, lifeless eyes, and a cold expression. Glowing gold thread particles floating in the air. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+            "prompt": "Now, draw a close-up portrait of the exact same Mirror Walker character from our conversation. Focus on her face and shoulders, capturing her silver-gray hair, mirror mask, and cold expression. Raindrops on her coat, glowing reflections on her mask. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "expression",
-            "prompt": "Now, draw an expression sheet of the exact same Puppet Master character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one expressionless and calm, one with a subtle cold smirk, and one looking slightly surprised with widened eyes. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw an expression sheet of the exact same Mirror Walker character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one expressionless with mask on, one with mask tilted up showing her left cold black eye in focus, and one showing a rare half-smirk on her lips. High-fidelity details, masterpiece, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "turnaround",
-            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Puppet Master character. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her gothic Lolita dress. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Mirror Walker character. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her stealth suit and hood. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "outfit",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Puppet Master (无面木偶师)\nGender / age impression: young girl, elegant, gothic, lifeless presence\nBody shape: small, slender silhouette with mechanical ball-joint doll markings on joints\nHair: curly golden twin-tails with black-and-red lace ribbons\nEyes: lifeless ruby-like porcelain eyes\nOutfit: black-and-red gothic Lolita dress with layered lace ruffles\nAccessories / weapon: glowing golden puppet strings, massive faceless porcelain puppet, wind-up music box\nColor palette: ruby red, deep black, gold thread yellow, porcelain white\nFixed traits that must never change: curly golden twin-tails, gothic Lolita dress, glowing gold strings, lifeless eyes\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default black-and-red gothic Lolita dress; in the middle, her casual clothing (a white ruffled collar blouse and black high-waist suspender skirt); on the right, her heavy combat priestess armor (a black armored gown with gold-threaded runic patterns and red silk trims).\n\nStyle:\nGothic mystery concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally. Keep the character clearly readable. Avoid unnecessary extra characters.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, color palette, body shape, and doll joint markings.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Mirror Walker (碎镜行者)\nGender / age impression: young woman, elegant, sleek stealth, mirror reflections\nBody shape: tall, slender, flexible silhouette\nHair: short silver-gray hair in a neat crop\nOutfit: dark gray high-mobility nano-stealth suit under a hooded translucent glossy neon-reflecting raincoat\nAccessories / weapon: a reflective silver mirror mask, a sharp blade made of shattered mirror glass\nColor palette: reflection silver, neon purple, deep gray, rainy street black\nFixed traits that must never change: short silver-gray hair, reflective mirror mask, translucent glassy raincoat, mirror-glass blade\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default translucent raincoat outfit; in the middle, her casual urban wear (a dark high-neck sweater, black leather jacket, and slim-fit trousers); on the right, her heavy combat gear (reinforced carbon-fiber plating over a matte black stealth suit with purple cybernetic lines). \n\nStyle:\nUrban mystery concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally. Keep the character clearly readable. Avoid unnecessary extra characters.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, color palette, body shape, and signature mask.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "prop",
-            "prompt": "Now, draw a high-fidelity detailed design sheet of the Puppet Master's gear: her heavy, vintage brass wind-up music box showing gears, and a miniature porcelain puppet doll. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Mirror Walker's gear: her mirror-glass dagger showing glowing silver runes, and a set of sharp triangular glass throwing stars. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "scene",
-            "prompt": "Now, draw a stunning, highly detailed urban mystery scene concept art. An abandoned, decaying theater stage with dusty velvet curtains, dimly lit spotlights, and glowing golden strings weaving in and out of the wooden floorboard cracks. Cinematic, hyper-realistic, masterpiece, 8k."
+            "prompt": "Now, draw a stunning, highly detailed urban mystery scene concept art. A dark, rain-slicked city alleyway at midnight, glowing yellow streetlamps, dark puddles reflecting the lights, and a mysterious door outlined in faint glowing silver mirror lines in the shadows. Cinematic, hyper-realistic, masterpiece, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "cover",
-            "prompt": "A cinematic vertical cover art showing the Puppet Master standing on the balcony of an abandoned theater, looking down as glowing golden puppet strings extend into the dark pit. A giant shadow of her puppet looms in the background. High polish, dramatic rim lighting, 8k."
+            "prompt": "A cinematic vertical cover art showing the Mirror Walker stepping out of a giant glass skyscraper wall reflection, looking down onto a rainy, neon-lit street below. Shards of glass float around her. High polish, dramatic rim lighting, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "moodboard",
-            "prompt": "A moodboard collage of 4 panels for the Puppet Master: one showing cracked porcelain doll faces, one showing golden strings reflecting light in the dark, one showing a dusty vintage wind-up key, and one showing a gold twin-tail lock under dim theater spotlights. Mysterious, gothic, creepy-doll tone, 8k."
+            "prompt": "A moodboard collage of 4 panels for the Mirror Walker: one showing rain puddles reflecting neon street lights, one showing silver glass shards reflecting a dark silhouette, one showing a silver-gray hair sample, and one showing a glowing purple spatial tear. Mysterious, moody tone, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "sketch",
-            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Puppet Master in 3 study sketches: sitting like a lifeless doll, pointing her finger with gold strings, and adjusting her lace ribbon. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Mirror Walker in 3 study sketches: stepping through a mirror, crouching in shadows, and cleaning her blade. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "fullBody",
-            "prompt": "Now, draw a full-body cinematic splash art of the exact same Puppet Master character. She stands dynamically in her black-and-red Lolita dress, finger tips raised with glowing gold strings connecting to the dark air. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Mirror Walker character. She stands alert in her raincoat, holding her mirror blade, with her reflective mask mirroring the glowing city lights. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "modelSheet",
-            "prompt": "A clean model sheet of the Puppet Master showing full-body front, side, and back views. Standing neutrally in her signature gothic dress. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+            "prompt": "A clean model sheet of the Mirror Walker showing full-body front, side, and back views. Standing neutrally in her signature stealth outfit. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "poseSheet",
-            "prompt": "Show 5 poses of the Puppet Master on one clean sheet: sitting on a theater chair, floating slightly with gold strings, walking like a stiff doll, commanding her giant puppet, and holding her music box. Solid clean dark gray background."
+            "prompt": "Show 5 poses of the Mirror Walker on one clean sheet: running on a wall, diving through a reflection, crouching with a dagger, stepping forward with a cold glare, and leaning against a brick wall. Solid clean dark gray background."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "expressionSheet",
-            "prompt": "An expression sheet showing 8 bust portraits of the Puppet Master in a clean grid: blank expression, cold smirk, playful head-tilt, intense focus, closed eyes, subtle warning look, a tear of gold paint, and a slight curious look. Clean dark gray background."
+            "prompt": "An expression sheet showing 8 bust portraits of the Mirror Walker in a clean grid: blank mask, mask tilted showing cold left eye, a sharp smirk, showing focus, exhausted, showing warning, coughing in wet cold weather, and focused determination. Clean dark gray background."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "detailSheet",
-            "prompt": "A clean detail sheet showing close-up panels of the Puppet Master's features: her lifeless ruby eyes, the mechanical doll joint markings on her wrist, the detailed lace patterns on her collar, the gold string nodes on her fingertips, and the clockwork mechanism of her music box. Clean light gray background."
+            "prompt": "A clean detail sheet showing close-up panels of the Mirror Walker's features: her silver mirror mask, the blade's shattered glass patterns, the translucent plastic texture of her raincoat collar, and the leather gloves on her hands. Clean light gray background."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "materialPalette",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Puppet Master (无面木偶师)\nGender / age impression: young girl, elegant, gothic, lifeless presence\nBody shape: small, slender silhouette with mechanical ball-joint doll markings on joints\nHair: curly golden twin-tails with black-and-red lace ribbons\nEyes: lifeless ruby-like porcelain eyes\nOutfit: black-and-red gothic Lolita dress with layered lace ruffles\nAccessories / weapon: glowing golden puppet strings, massive faceless porcelain puppet, wind-up music box\nColor palette: ruby red, deep black, gold thread yellow, porcelain white\nFixed traits that must never change: curly golden twin-tails, gothic Lolita dress, glowing gold strings, lifeless eyes\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of black velvet, ruby red lace, a golden hair sample, metallic clockwork brass, and the glowing gold thread light next to a neutral front view of the character.\n\nStyle:\nGothic mystery concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and doll joint markings.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Mirror Walker (碎镜行者)\nGender / age impression: young woman, elegant, sleek stealth, mirror reflections\nBody shape: tall, slender, flexible silhouette\nHair: short silver-gray hair in a neat crop\nOutfit: dark gray high-mobility nano-stealth suit under a hooded translucent glossy neon-reflecting raincoat\nAccessories / weapon: a reflective silver mirror mask, a sharp blade made of shattered mirror glass\nColor palette: reflection silver, neon purple, deep gray, rainy street black\nFixed traits that must never change: short silver-gray hair, reflective mirror mask, translucent glassy raincoat, mirror-glass blade\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of deep gray nano-fabric, translucent rain-slicked plastic, a silver-gray hair sample, and a glowing purple spatial light next to a neutral front view of the character.\n\nStyle:\nUrban mystery concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and signature mask.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "outfitBreakdown",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Puppet Master (无面木偶师)\nGender / age impression: young girl, elegant, gothic, lifeless presence\nBody shape: small, slender silhouette with mechanical ball-joint doll markings on joints\nHair: curly golden twin-tails with black-and-red lace ribbons\nEyes: lifeless ruby-like porcelain eyes\nOutfit: black-and-red gothic Lolita dress with layered lace ruffles\nAccessories / weapon: glowing golden puppet strings, massive faceless porcelain puppet, wind-up music box\nColor palette: ruby red, deep black, gold thread yellow, porcelain white\nFixed traits that must never change: curly golden twin-tails, gothic Lolita dress, glowing gold strings, lifeless eyes\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of her clothing: the outer gothic Lolita dress, the ruffled lace petticoat, the red lace headpiece ribbon, and the black lace gloves.\n\nStyle:\nGothic mystery concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Mirror Walker (碎镜行者)\nGender / age impression: young woman, elegant, sleek stealth, mirror reflections\nBody shape: tall, slender, flexible silhouette\nHair: short silver-gray hair in a neat crop\nOutfit: dark gray high-mobility nano-stealth suit under a hooded translucent glossy neon-reflecting raincoat\nAccessories / weapon: a reflective silver mirror mask, a sharp blade made of shattered mirror glass\nColor palette: reflection silver, neon purple, deep gray, rainy street black\nFixed traits that must never change: short silver-gray hair, reflective mirror mask, translucent glassy raincoat, mirror-glass blade\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of her clothing: the outer translucent hooded raincoat, the high-mobility gray stealth bodysuit, the reflective mirror mask, and the heavy leather boots.\n\nStyle:\nUrban mystery concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         },
         {
-            "char_id": "char_0014_puppet_master",
-            "char_name": "无面木偶师",
+            "char_id": "char_0014_mirror_walker",
+            "char_name": "碎镜行者",
             "img_type": "damageState",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Puppet Master (无面木偶师)\nGender / age impression: young girl, elegant, gothic, lifeless presence\nBody shape: small, slender silhouette with mechanical ball-joint doll markings on joints\nHair: curly golden twin-tails with black-and-red lace ribbons\nEyes: lifeless ruby-like porcelain eyes\nOutfit: black-and-red gothic Lolita dress with layered lace ruffles\nAccessories / weapon: glowing golden puppet strings, massive faceless porcelain puppet, wind-up music box\nColor palette: ruby red, deep black, gold thread yellow, porcelain white\nFixed traits that must never change: curly golden twin-tails, gothic Lolita dress, glowing gold strings, lifeless eyes\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with dust and torn dress hem; and heavily damaged with cracked porcelain skin at her joints, her twin-tails untied and messy, and her giant porcelain puppet shattered in pieces behind her.\n\nStyle:\nGothic mystery concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Mirror Walker (碎镜行者)\nGender / age impression: young woman, elegant, sleek stealth, mirror reflections\nBody shape: tall, slender, flexible silhouette\nHair: short silver-gray hair in a neat crop\nOutfit: dark gray high-mobility nano-stealth suit under a hooded translucent glossy neon-reflecting raincoat\nAccessories / weapon: a reflective silver mirror mask, a sharp blade made of shattered mirror glass\nColor palette: reflection silver, neon purple, deep gray, rainy street black\nFixed traits that must never change: short silver-gray hair, reflective mirror mask, translucent glassy raincoat, mirror-glass blade\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with tattered raincoat and dust smudges; and heavily damaged with her silver mirror mask shattered in half revealing a cold dark eye, her stealth suit torn showing bandaged wounds, and a broken mirror blade leaking white sparks. \n\nStyle:\nUrban mystery concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         }
     ]
 
-    tide_siren_plan = [
+    ink_painter_plan = [
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "main",
-            "prompt": "A breathtaking western fantasy concept art of the Tide Siren. A beautiful young mermaid woman with iridescent scales on her cheeks and neck, and long flowing sea-foam blue hair with floating water droplets. She wears a coral crown and layered blue-green silk dresses resembling ocean currents. She stands in a towering underwater ancient temple ruins, holding a pearlescent conch shell that emits a soft blue sonic wave expanding as ripples in the deep ocean water. Glowing jellyfish and air bubbles float around her, cinematic rim lighting, masterpiece, 8k."
+            "prompt": "A breathtaking epic fantasy concept art of the Ink Painter. A serene East Asian woman with long black hair tied with a green bamboo hairpin, dressed in an elegant white-and-teal gradient wide-sleeved Hanfu. She stands inside a misty green bamboo forest, holding a giant jade calligraphy brush glowing with dark green spirit mist. Swirls of glowing black ink splash in the air, materializing into a ghostly tiger outlined in glowing green ink. Ethereal light filtering through the bamboo leaves, cinematic rim lighting, masterpiece, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "portrait",
-            "prompt": "Now, draw a close-up portrait of the exact same Tide Siren character from our conversation. Focus on her face and shoulders, capturing her sea-foam blue hair, coral crown, and beautiful blue eyes. Glowing light ripples on her cheeks. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+            "prompt": "Now, draw a close-up portrait of the exact same Ink Painter character from our conversation. Focus on her face and shoulders, capturing her long black hair, green bamboo hairpin, and serene, focused expression. Faint green ink dust floating around her face. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "expression",
-            "prompt": "Now, draw an expression sheet of the exact same Tide Siren character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one serene and peaceful, one singing with eyes closed, and one showing gentle concern. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw an expression sheet of the exact same Ink Painter character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one serene and peaceful, one focused and chanting, and one showing a gentle, warm smile. High-fidelity details, masterpiece, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "turnaround",
-            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Tide Siren character. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her blue-green silk dress. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Ink Painter character. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her white-and-teal gradient Hanfu. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "outfit",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Tide Siren (潮汐歌姬)\nGender / age impression: young woman, elegant, ethereal, mermaid heritage\nBody shape: tall and slender, graceful underwater dancer posture\nHair: long wavy sea-foam blue hair with floating bioluminescent water droplets\nEyes: clear sky-blue eyes\nOutfit: layered translucent aqua-green and ocean-blue silk robes resembling flowing currents\nAccessories / weapon: red coral crown with pearls, pearlescent conch shell glowing with soft blue ripples\nColor palette: deep sea blue, aqua green, pearl white, coral red\nFixed traits that must never change: sea-foam blue hair, coral crown, pearlescent conch shell, aqua-green silk robes\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default aqua-green silk dress; in the middle, her ceremonial high priestess robes (a pristine white and gold silk gown with gold shell ornaments); on the right, her battle guardian gear (light cyan shell plates armor over a dark blue wetsuit-like silk gown). \n\nStyle:\nWestern fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally. Keep the character clearly readable. Avoid unnecessary extra characters.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, color palette, body shape, and scale markings.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Ink Painter (画灵师)\nGender / age impression: young woman, elegant, serene scholar, painter aesthetic\nBody shape: tall, slender, flowing posture\nHair: long black hair tied with a green bamboo hairpin in a half-up bun\nEyes: clear, gentle black eyes\nOutfit: elegant white-and-teal gradient wide-sleeved Hanfu robe with gold embroidery\nAccessories / weapon: a half-meter long green jade calligraphy brush, white porcelain ink jars at her belt\nColor palette: porcelain blue, bamboo green, ink black, moonlit white\nFixed traits that must never change: long black hair, green bamboo hairpin, jade calligraphy brush, white-and-teal gradient robe\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default white-and-teal gradient Hanfu robe; in the middle, her simple workshop outfit (a white linen blouse with rolled-up sleeves, a dark green skirt, and a paint-splattered gray apron); on the right, her ceremonial ritual robes (a majestic emerald green and gold silk gown with wide sleeves and crane embroidery). \n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally. Keep the character clearly readable. Avoid unnecessary extra characters.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, color palette, body shape, and bamboo hairpin.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "prop",
-            "prompt": "Now, draw a high-fidelity detailed design sheet of the Tide Siren's gear: her signature pearlescent conch shell glowing with soft blue waves, and her red coral crown. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Ink Painter's gear: her giant green jade calligraphy brush showing copper bindings, and her white porcelain ink jars. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "scene",
-            "prompt": "Now, draw a stunning, highly detailed underwater scene concept art. A towering ancient ruins temple under deep sea, glowing jellyfish floating, Tyndall light rays piercing down from the ocean surface casting dreamlike golden-blue glows. Cinematic, hyper-realistic, masterpiece, 8k."
+            "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. A misty green bamboo forest, stone pathways, and a simple wooden writing desk in a small pavilion, with floating swirls of glowing black-green ink in the air. Cinematic, hyper-realistic, masterpiece, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "cover",
-            "prompt": "A cinematic vertical cover art showing the Tide Siren standing on an underwater cliff, blowing her conch shell. Beautiful light beams pierce down, illuminating schools of fish swimming around her. High polish, masterpiece, 8k."
+            "prompt": "A cinematic vertical cover art showing the Ink Painter floating in the air above a waterfall, painting a giant water-dragon that materializes from her brush. High polish, dramatic rim lighting, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "moodboard",
-            "prompt": "A moodboard collage of 4 panels for the Tide Siren: one showing bright red coral reefs underwater, one showing glowing blue wave patterns, one showing a heap of pearl shells, and one showing sea-foam blue hair locks floating in water. Ethereal, marine tone, 8k."
+            "prompt": "A moodboard collage of 4 panels for the Ink Painter: one showing a close-up of emerald green bamboo leaves, one showing black ink dissolving in clear water, one showing a jade hair ornament, and one showing a teal silk fabric sample. Calm, artistic tone, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "sketch",
-            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Tide Siren in 3 study sketches: holding the conch, singing with eyes closed, and looking down at a small seashell. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Ink Painter in 3 study sketches: meditating, dipping her brush in ink, and walking with her brush slung over her shoulder. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "fullBody",
-            "prompt": "Now, draw a full-body cinematic splash art of the exact same Tide Siren character. She stands gracefully in her aqua-green silk robes, holding her conch, looking at the viewer. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Ink Painter character. She stands gracefully in her white-and-teal gradient Hanfu, holding her brush horizontally, with a faint water-snake ink spirit swirling around her feet. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "modelSheet",
-            "prompt": "A clean model sheet of the Tide Siren showing full-body front, side, and back views. Standing neutrally in her signature aqua-green silk gown. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+            "prompt": "A clean model sheet of the Ink Painter showing full-body front, side, and back views. Standing neutrally in her gradient Hanfu robes. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "poseSheet",
-            "prompt": "Show 5 poses of the Tide Siren on one clean sheet: swimming gracefully, holding the conch high to summon tides, sitting on a coral reef, kneeling in prayer, and dancing in a swirl of water currents. Solid clean dark gray background."
+            "prompt": "Show 5 poses of the Ink Painter on one clean sheet: drawing in mid-air, dipping her brush, walking in the wind, sitting and reading a scroll, and defending with a water-shield. Solid clean dark gray background."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "expressionSheet",
-            "prompt": "An expression sheet showing 8 bust portraits of the Tide Siren in a clean grid: serene, singing passionately, warm smile, gentle concern, eyes closed in meditation, sad with a glowing tear, focused alarm, and an ethereal calm. Clean dark gray background."
+            "prompt": "An expression sheet showing 8 bust portraits of the Ink Painter in a clean grid: calm, closed eyes in thought, gentle smile, focused alarm, coughing, surprised, serious, and a compassionate soft gaze. Clean dark gray background."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "detailSheet",
-            "prompt": "A clean detail sheet showing close-up panels of the Tide Siren's features: her iridescent cheek scales, the red coral nodes of her crown, the pearlescent texture of her conch, the fluid translucent fabric of her dress, and her hands wrapped in water droplets. Clean light gray background."
+            "prompt": "A clean detail sheet showing close-up panels of the Ink Painter's features: her green bamboo hairpin, the detailed gold embroidery on her wide collar, the porcelain ink jar's white glaze, and the tip of her jade brush with wet ink. Clean light gray background."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "materialPalette",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Tide Siren (潮汐歌姬)\nGender / age impression: young woman, elegant, ethereal, mermaid heritage\nBody shape: tall and slender, graceful underwater dancer posture\nHair: long wavy sea-foam blue hair with floating bioluminescent water droplets\nEyes: clear sky-blue eyes\nOutfit: layered translucent aqua-green and ocean-blue silk robes resembling flowing currents\nAccessories / weapon: red coral crown with pearls, pearlescent conch shell glowing with soft blue ripples\nColor palette: deep sea blue, aqua green, pearl white, coral red\nFixed traits that must never change: sea-foam blue hair, coral crown, pearlescent conch shell, aqua-green silk robes\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of aqua-green silk, red coral texture, a sea-foam blue hair sample, pearl shell shine, and the glowing water ripple blue light next to a neutral front view of the character.\n\nStyle:\nWestern fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and scale markings.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Ink Painter (画灵师)\nGender / age impression: young woman, elegant, serene scholar, painter aesthetic\nBody shape: tall, slender, flowing posture\nHair: long black hair tied with a green bamboo hairpin in a half-up bun\nEyes: clear, gentle black eyes\nOutfit: elegant white-and-teal gradient wide-sleeved Hanfu robe with gold embroidery\nAccessories / weapon: a half-meter long green jade calligraphy brush, white porcelain ink jars at her belt\nColor palette: porcelain blue, bamboo green, ink black, moonlit white\nFixed traits that must never change: long black hair, green bamboo hairpin, jade calligraphy brush, white-and-teal gradient robe\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of white silk, teal gradient satin, a black hair sample, jade stone texture, and the glowing green spirit mist next to a neutral front view of the character.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and bamboo hairpin.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "outfitBreakdown",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Tide Siren (潮汐歌姬)\nGender / age impression: young woman, elegant, ethereal, mermaid heritage\nBody shape: tall and slender, graceful underwater dancer posture\nHair: long wavy sea-foam blue hair with floating bioluminescent water droplets\nEyes: clear sky-blue eyes\nOutfit: layered translucent aqua-green and ocean-blue silk robes resembling flowing currents\nAccessories / weapon: red coral crown with pearls, pearlescent conch shell glowing with soft blue ripples\nColor palette: deep sea blue, aqua green, pearl white, coral red\nFixed traits that must never change: sea-foam blue hair, coral crown, pearlescent conch shell, aqua-green silk robes\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of her clothing: the outer aqua-green silk wrap gown, the under layer translucent blue dress, the coral crown, and the pearl waist belt decoration.\n\nStyle:\nWestern fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Ink Painter (画灵师)\nGender / age impression: young woman, elegant, serene scholar, painter aesthetic\nBody shape: tall, slender, flowing posture\nHair: long black hair tied with a green bamboo hairpin in a half-up bun\nEyes: clear, gentle black eyes\nOutfit: elegant white-and-teal gradient wide-sleeved Hanfu robe with gold embroidery\nAccessories / weapon: a half-meter long green jade calligraphy brush, white porcelain ink jars at her belt\nColor palette: porcelain blue, bamboo green, ink black, moonlit white\nFixed traits that must never change: long black hair, green bamboo hairpin, jade calligraphy brush, white-and-teal gradient robe\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of her clothing: the outer gradient wide-sleeved robe, the inner undergarment dress, the green bamboo hairpin, and the white porcelain ink jars.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         },
         {
-            "char_id": "char_0015_tide_siren",
-            "char_name": "潮汐歌姬",
+            "char_id": "char_0015_ink_painter",
+            "char_name": "画灵师",
             "img_type": "damageState",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Tide Siren (潮汐歌姬)\nGender / age impression: young woman, elegant, ethereal, mermaid heritage\nBody shape: tall and slender, graceful underwater dancer posture\nHair: long wavy sea-foam blue hair with floating bioluminescent water droplets\nEyes: clear sky-blue eyes\nOutfit: layered translucent aqua-green and ocean-blue silk robes resembling flowing currents\nAccessories / weapon: red coral crown with pearls, pearlescent conch shell glowing with soft blue ripples\nColor palette: deep sea blue, aqua green, pearl white, coral red\nFixed traits that must never change: sea-foam blue hair, coral crown, pearlescent conch shell, aqua-green silk robes\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with torn dress hem and dull scales; and heavily damaged with cracked coral crown, tattered silk, bleeding cyan energy, and a cracked conch shell.\n\nStyle:\nWestern fantasy character concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Ink Painter (画灵师)\nGender / age impression: young woman, elegant, serene scholar, painter aesthetic\nBody shape: tall, slender, flowing posture\nHair: long black hair tied with a green bamboo hairpin in a half-up bun\nEyes: clear, gentle black eyes\nOutfit: elegant white-and-teal gradient wide-sleeved Hanfu robe with gold embroidery\nAccessories / weapon: a half-meter long green jade calligraphy brush, white porcelain ink jars at her belt\nColor palette: porcelain blue, bamboo green, ink black, moonlit white\nFixed traits that must never change: long black hair, green bamboo hairpin, jade calligraphy brush, white-and-teal gradient robe\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with ink splatters and torn sleeves; and heavily damaged with her bamboo hairpin snapped in half releasing her messy black hair, her robes tattered and stained with black ink and blood, and her jade brush cracked in pieces. \n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         }
     ]
 
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + puppet_master_plan + tide_siren_plan
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
