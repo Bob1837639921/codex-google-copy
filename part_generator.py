@@ -4015,7 +4015,227 @@ Solid clean dark gray background."""
         }
     ]
 
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan
+    abyssal_zitherist_plan = [
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "main",
+            "prompt": "A stunning, traditional Chinese ink-wash comic style concept art of the Abyssal Zitherist. A slender young East Asian woman with long messy ink-black hair blowing in the wind. Her eyes are bound by a tattered blood-red silk blindfold. She wears a tattered black-and-charcoal grey wide-sleeved Hanfu robe, sitting cross-legged on a crumbling ancient stone battlement. On her lap lies a charred wood zither, with strings glowing with faint energy. Glowing red sonic wave ripples blast out from her fingers, cutting through graphite-textured fog. Epic dramatic framing, dark graphite shadows with crimson splashes, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Abyssal Zitherist character from our conversation. Focus on her face and shoulders, capturing her long messy black hair, the blood-red blindfold, and a cold, determined expression. Faint crimson mist floating around her face. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Abyssal Zitherist character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one cold and calm, one reciting a spell with focused lips, and one showing a rare, silent soft smile. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Abyssal Zitherist character. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her tattered black-and-grey Hanfu. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "outfit",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Abyssal Zitherist (煞气琴师)\nGender / age impression: young woman, blindfolded, tattered Hanfu, zither musician\nBody shape: tall, slender, rugged posture\nHair: long messy ink-black hair\nEyes: blindfolded with a tattered dark red ribbon\nOutfit: tattered black-and-charcoal grey wide-sleeved Hanfu robe\nAccessories / weapon: a charred wooden zither with beast-tendon strings\nColor palette: blood red, graphite black, charcoal grey, windblown yellow\nFixed traits that must never change: long black hair, red blindfold, black Hanfu, ancient zither\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default tattered black-and-charcoal Hanfu; in the middle, her battle armor outfit (a dark leather bodice, shoulder guards, and tattered red trousers); on the right, her ceremonial ritual robes (a deep crimson velvet gown with gold star map patterns and a silk veil). \n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally. Keep the character clearly readable. Avoid unnecessary extra characters.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, color palette, body shape, and red blindfold.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Abyssal Zitherist\'s gear: her charred wooden zither showing golden tendon strings, and her blood-red silk blindfold. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. A crumbling ancient fortress wall segment at sunset, surrounded by swirling red mist and graphite-colored dust in the air. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "cover",
+            "prompt": "A cinematic vertical cover art showing the Abyssal Zitherist sitting on the edge of a high cliff, playing her zither while massive waves of dark red energy crash against the abyss below. High polish, dramatic rim lighting, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "moodboard",
+            "prompt": "A moodboard collage of 4 panels for the Abyssal Zitherist: one showing close-up of dark red silk, one showing black ink dissolving in blood, one showing charred ancient wood texture, and one showing a desolate sandstorm. Desolate, artistic tone, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "sketch",
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Abyssal Zitherist in 3 study sketches: meditating with her zither, carrying the zither on her back, and kneeling on a broken wall. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Abyssal Zitherist character. She stands gracefully in her tattered black-and-charcoal Hanfu, holding her zither with one arm, with swirls of dark red energy around her feet. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "modelSheet",
+            "prompt": "A clean model sheet of the Abyssal Zitherist showing full-body front, side, and back views. Standing neutrally in her tattered Hanfu robes. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "poseSheet",
+            "prompt": "Show 5 poses of the Abyssal Zitherist on one clean sheet: playing zither in mid-air, carrying zither in the wind, standing defiantly on the wall, sitting and meditating, and defending with a red barrier. Solid clean dark gray background."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "expressionSheet",
+            "prompt": "An expression sheet showing 8 bust portraits of the Abyssal Zitherist in a clean grid: calm, closed eyes in thought, subtle smile, focused alarm, coughing, coughing blood, serious, and a compassionate soft gaze. Clean dark gray background."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "detailSheet",
+            "prompt": "A clean detail sheet showing close-up panels of the Abyssal Zitherist\'s features: her red blindfold\'s silk weave, the detailed charcoal pattern on her sleeves, the ancient zither\'s wood grain, and the beast-tendon strings glowing with crimson energy. Clean light gray background."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "materialPalette",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Abyssal Zitherist (煞气琴师)\nGender / age impression: young woman, blindfolded, tattered Hanfu, zither musician\nBody shape: tall, slender, rugged posture\nHair: long messy ink-black hair\nEyes: blindfolded with a tattered dark red ribbon\nOutfit: tattered black-and-charcoal grey wide-sleeved Hanfu robe\nAccessories / weapon: a charred wooden zither with beast-tendon strings\nColor palette: blood red, graphite black, charcoal grey, windblown yellow\nFixed traits that must never change: long black hair, red blindfold, black Hanfu, ancient zither\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of tattered black silk, grey linen, a black hair sample, charred wood texture, and the glowing red spirit mist next to a neutral front view of the character.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and red blindfold.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "outfitBreakdown",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Abyssal Zitherist (煞气琴师)\nGender / age impression: young woman, blindfolded, tattered Hanfu, zither musician\nBody shape: tall, slender, rugged posture\nHair: long messy ink-black hair\nEyes: blindfolded with a tattered dark red ribbon\nOutfit: tattered black-and-charcoal grey wide-sleeved Hanfu robe\nAccessories / weapon: a charred wooden zither with beast-tendon strings\nColor palette: blood red, graphite black, charcoal grey, windblown yellow\nFixed traits that must never change: long black hair, red blindfold, black Hanfu, ancient zither\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of her clothing: the outer tattered wide-sleeved robe, the inner undergarment dress, the blood-red blindfold, and the charred wood zither.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0016_abyssal_zitherist",
+            "char_name": "煞气琴师",
+            "img_type": "damageState",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Abyssal Zitherist (煞气琴师)\nGender / age impression: young woman, blindfolded, tattered Hanfu, zither musician\nBody shape: tall, slender, rugged posture\nHair: long messy ink-black hair\nEyes: blindfolded with a tattered dark red ribbon\nOutfit: tattered black-and-charcoal grey wide-sleeved Hanfu robe\nAccessories / weapon: a charred wooden zither with beast-tendon strings\nColor palette: blood red, graphite black, charcoal grey, windblown yellow\nFixed traits that must never change: long black hair, red blindfold, black Hanfu, ancient zither\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with ink-wash bloodstains and torn sleeves; and heavily damaged with her red blindfold torn in half revealing a cold dark eye, her Hanfu tattered and heavily stained with blood, and her zither snapped in half with broken strings. \n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        }
+    ]
+    talisman_weaver_plan = [
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "main",
+            "prompt": "A spectacular traditional Chinese ink-wash comic style concept art of the Talisman Weaver. A heroic East Asian young woman with silver-white hair tied in a high ponytail. She wears a black-and-vermilion-red Taoist robe with gold accents. She holds a seven-star peachwood sword, surrounded by dozens of yellow paper talismans inscribed with glowing cinnabar runes orbiting her in a spiraling storm. Tiny embers and golden sparkles fly in the dark temple ruins. High-fidelity ink brushstrokes, dramatic volumetric lighting, cinematic masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Talisman Weaver character from our conversation. Focus on her face and shoulders, capturing her silver-white hair in a high ponytail, the red cinnabar mark on her forehead, and a confident, heroic expression. Golden sparks and floating paper charms in the background. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Talisman Weaver character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one confident and smirking, one chanting an incantation with fierce focused eyes, and one laughing lightheartedly. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Talisman Weaver character. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her black-and-vermilion Taoist robe. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "outfit",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Talisman Weaver (符华天师)\nGender / age impression: young woman, heroic, confident Taoist scribe, exorcist aesthetic\nBody shape: tall, athletic, agile stance\nHair: silver-white hair tied in a high ponytail with a crimson ribbon\nEyes: bright golden eyes\nOutfit: black-and-vermilion-red Taoist robe with gold cloud patterns\nAccessories / weapon: a seven-star peachwood sword, a golden cinnabar brush, leather talisman pouches\nColor palette: cinnabar red, sulfur yellow, charcoal black, silver white\nFixed traits that must never change: silver-white hair, high ponytail, black-and-vermilion robe, floating paper talismans\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default black-and-vermilion Taoist robe; in the middle, her training outfit (a simple white cotton tunic, red arm guards, and black martial trousers); on the right, her ceremonial arch-master robes (a glorious bright yellow silk robe with intricate purple trigram embroidery and golden silk sashes). \n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally. Keep the character clearly readable. Avoid unnecessary extra characters.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, color palette, body shape, and white hair.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Talisman Weaver\'s gear: her seven-star peachwood sword, and a bundle of yellow paper talismans with glowing red ink. Show them from two angles. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. A ruined ancient mountaintop temple under a starry night sky, with floating glowing paper talismans and sparks drifting in the dark wind. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "cover",
+            "prompt": "A cinematic vertical cover art showing the Talisman Weaver standing at the temple gate, pointing her wood sword upward as a massive wave of yellow talismans spirals into the sky like a dragon. High polish, dramatic rim lighting, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "moodboard",
+            "prompt": "A moodboard collage of 4 panels for the Talisman Weaver: one showing close-up of yellow paper with cinnabar ink, one showing sparks of red fire, one showing carved peachwood grain, and one showing silver-white silk thread. Vibrant, mystical tone, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "sketch",
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Talisman Weaver in 3 study sketches: writing a talisman on a desk, leaping in mid-air, and sheathing her wood sword. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Talisman Weaver character. She stands heroically in her black-and-vermilion Taoist robe, holding her peachwood sword, with several paper talismans floating around her. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "modelSheet",
+            "prompt": "A clean model sheet of the Talisman Weaver showing full-body front, side, and back views. Standing neutrally in her black-and-vermilion robes. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "poseSheet",
+            "prompt": "Show 5 poses of the Talisman Weaver on one clean sheet: leaping with talismans, drawing a rune in mid-air, standing defiantly in the wind, sitting cross-legged, and casting a shield. Solid clean dark gray background."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "expressionSheet",
+            "prompt": "An expression sheet showing 8 bust portraits of the Talisman Weaver in a clean grid: confident smile, angry shouting, closed eyes chanting, laughing, surprised, serious, battle-worn, and a gentle gaze. Clean dark gray background."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "detailSheet",
+            "prompt": "A clean detail sheet showing close-up panels of the Talisman Weaver\'s features: the cinnabar mark on her forehead, the gold cloud embroidery on her collar, the carvings on her peachwood sword, and a yellow talisman paper with glowing red ink. Clean light gray background."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "materialPalette",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Talisman Weaver (符华天师)\nGender / age impression: young woman, heroic, confident Taoist scribe, exorcist aesthetic\nBody shape: tall, athletic, agile stance\nHair: silver-white hair tied in a high ponytail with a crimson ribbon\nEyes: bright golden eyes\nOutfit: black-and-vermilion-red Taoist robe with gold cloud patterns\nAccessories / weapon: a seven-star peachwood sword, a golden cinnabar brush, leather talisman pouches\nColor palette: cinnabar red, sulfur yellow, charcoal black, silver white\nFixed traits that must never change: silver-white hair, high ponytail, black-and-vermilion robe, floating paper talismans\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of black silk, vermilion satin, a silver-white hair sample, peachwood texture, and a yellow paper talisman sample next to a neutral front view of the character.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and white hair.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "outfitBreakdown",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Talisman Weaver (符华天师)\nGender / age impression: young woman, heroic, confident Taoist scribe, exorcist aesthetic\nBody shape: tall, athletic, agile stance\nHair: silver-white hair tied in a high ponytail with a crimson ribbon\nEyes: bright golden eyes\nOutfit: black-and-vermilion-red Taoist robe with gold cloud patterns\nAccessories / weapon: a seven-star peachwood sword, a golden cinnabar brush, leather talisman pouches\nColor palette: cinnabar red, sulfur yellow, charcoal black, silver white\nFixed traits that must never change: silver-white hair, high ponytail, black-and-vermilion robe, floating paper talismans\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of her clothing: the outer black-and-vermilion robe, the inner tunic, the seven-star peachwood sword, and a yellow paper talisman.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0017_talisman_weaver",
+            "char_name": "符华天师",
+            "img_type": "damageState",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Talisman Weaver (符华天师)\nGender / age impression: young woman, heroic, confident Taoist scribe, exorcist aesthetic\nBody shape: tall, athletic, agile stance\nHair: silver-white hair tied in a high ponytail with a crimson ribbon\nEyes: bright golden eyes\nOutfit: black-and-vermilion-red Taoist robe with gold cloud patterns\nAccessories / weapon: a seven-star peachwood sword, a golden cinnabar brush, leather talisman pouches\nColor palette: cinnabar red, sulfur yellow, charcoal black, silver white\nFixed traits that must never change: silver-white hair, high ponytail, black-and-vermilion robe, floating paper talismans\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with torn sleeves and dirt smudges; and heavily damaged with her high ponytail undone releasing her messy white hair, her Taoist robe tattered and stained with blood, and her peachwood sword snapped in half. \n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        }
+    ]
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan + abyssal_zitherist_plan + talisman_weaver_plan
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}

@@ -85,6 +85,30 @@
     .btn-reconnect:active {
       transform: translateY(0);
     }
+    .btn-disconnect {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      margin-top: 8px;
+      background: #ef4444;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+    }
+    .btn-disconnect:hover {
+      transform: translateY(-1px);
+      background: #dc2626;
+      box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
+    }
+    .btn-disconnect:active {
+      transform: translateY(0);
+    }
     .note {
       font-size: 11px;
       color: #94a3b8;
@@ -106,6 +130,7 @@
       <span id="status-text">正在获取状态...</span>
     </div>
     <button id="btn-reconnect" class="btn-reconnect" style="display: none;">立即连接服务</button>
+    <button id="btn-disconnect" class="btn-disconnect" style="display: none;">断开服务连接</button>
     <p class="note"><b>智能静音连接开启</b>：插件仅在您打开或激活常规网页（http/https）时才会连接本地后台服务，以防您在调试/整理插件时产生报错干扰。</p>
   </div>
   <script src="popup.js"></script>

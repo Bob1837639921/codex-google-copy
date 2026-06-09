@@ -2,6 +2,7 @@ let socket = null;
 let agentTabId = null;
 let currentGroupId = null;
 let sessions = {}; // sessionId -> { tabId, groupId }
+let lastErrorLog = [];
 
 let retryCount = 0;
 const MAX_RETRIES = 5;
@@ -24,9 +25,9 @@ let keepAliveInterval = setInterval(() => {
 
 async function hasHttpOrHttpsTab() {
   try {
-    const tabs = await chrome.tabs.query({});
+    const tabs = await chrome.tabs.query({ active: true });
     for (let tab of tabs) {
-      if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+      if (tab.url && (tab.url.includes('chatgpt.com') || tab.url.includes('localhost') || tab.url.includes('127.0.0.1'))) {
         return true;
       }
     }
@@ -93,6 +94,10 @@ function connectWebSocket() {
             tabId = sessions[sid].tabId;
         }
 
+        if (tabId && data.action !== 'init' && data.action !== 'listTabs' && data.action !== 'getErrorLog' && data.action !== 'testFind') {
+            await chrome.tabs.update(tabId, { active: true }).catch(() => {});
+        }
+
         if (data.action === 'init') {
             await initAgentTab(data.taskName || 'AI 正在执行', data.id, data.sessionId);
         } else if (data.action === 'ping') {
@@ -119,6 +124,30 @@ function connectWebSocket() {
             await executeFetchAsBase64(data.url, data.id);
         } else if (data.action === 'downloadViaBlob') {
             await executeDownloadViaBlob(data.url, data.filename, data.id);
+        } else if (data.action === 'listTabs') {
+            const tabs = await chrome.tabs.query({});
+            const resTabs = tabs.map(t => ({ id: t.id, url: t.url, title: t.title, active: t.active, windowId: t.windowId }));
+            socket.send(JSON.stringify({ id: data.id, status: 'success', result: resTabs }));
+        } else if (data.action === 'getErrorLog') {
+            socket.send(JSON.stringify({ id: data.id, status: 'success', result: lastErrorLog }));
+        } else if (data.action === 'testFind') {
+            const tabs = await chrome.tabs.query({});
+            const chatgptTab = tabs.find(t => t.url && t.url.includes('chatgpt.com'));
+            socket.send(JSON.stringify({ id: data.id, status: 'success', result: {
+                tabsCount: tabs.length,
+                chatgptFound: !!chatgptTab,
+                chatgptUrl: chatgptTab ? chatgptTab.url : null,
+                urls: tabs.map(t => t.url)
+            }}));
+        } else if (data.action === 'evalBg') {
+            try {
+                // Use function constructor to run in global context
+                const fn = new Function('return (async () => { ' + data.code + ' })()');
+                const evalResult = await fn();
+                socket.send(JSON.stringify({ id: data.id, status: 'success', result: evalResult }));
+            } catch (err) {
+                socket.send(JSON.stringify({ id: data.id, status: 'error', error: err.toString() }));
+            }
         } else if (data.action === 'reloadExtension') {
             socket.send(JSON.stringify({ id: data.id, status: 'success', message: 'Reloading extension...' }));
             setTimeout(() => {
@@ -227,6 +256,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === 'reconnect') {
     triggerConnect(true);
     sendResponse({ status: 'connecting' });
+  } else if (request.action === 'disconnect') {
+    isExplicitlyPaused = true;
+    if (socket) {
+      socket.close();
+    }
+    if (connectTimeout) {
+      clearTimeout(connectTimeout);
+      connectTimeout = null;
+    }
+    sendResponse({ status: 'disconnected' });
   }
   return true; // Keep message channel open for async response
 });
@@ -254,6 +293,43 @@ async function initAgentTab(taskName, msgId, sessionId) {
             // 忽略找不到或者获取失败的情况，代表老标签页已被手动关闭
             delete sessions[sid];
         }
+    }
+
+    // 智能特性：如果浏览器中任何标签页是 chatgpt.com，直接接管它，不新建 about:blank
+    try {
+        const tabs = await chrome.tabs.query({});
+        const chatgptTab = tabs.find(t => t.url && t.url.includes('chatgpt.com'));
+        if (chatgptTab) {
+            agentTabId = chatgptTab.id;
+            
+            // 调试器附着是必选核心步骤，首先执行
+            await attachDebugger(agentTabId);
+            await chrome.tabs.update(agentTabId, { active: true });
+            
+            // 标签页分组为可选外观属性，即使权限或分组限制导致报错也不影响核心功能
+            try {
+                currentGroupId = await chrome.tabs.group({ tabIds: [agentTabId] });
+                await chrome.tabGroups.update(currentGroupId, { 
+                    title: taskName, 
+                    color: 'cyan'
+                });
+            } catch (groupErr) {
+                console.warn('Failed to group tab:', groupErr);
+                lastErrorLog.push('Grouping failed (non-fatal): ' + groupErr.toString());
+            }
+            
+            sessions[sid] = {
+                tabId: agentTabId,
+                groupId: currentGroupId
+            };
+            if (msgId) {
+                socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Attached to ChatGPT tab' }));
+            }
+            return;
+        }
+    } catch (e) {
+        console.error('Error auto-attaching to ChatGPT tab:', e);
+        lastErrorLog.push('auto-attach error: ' + e.toString() + ' stack: ' + e.stack);
     }
 
     const tab = await chrome.tabs.create({ url: 'about:blank', active: false });
@@ -437,7 +513,7 @@ async function touchFakeCursor(tabId) {
 }
 
 async function executeNavigate(tabId, url, msgId) {
-  await chrome.tabs.update(tabId, { url: url });
+  await chrome.tabs.update(tabId, { url: url, active: true });
   
   setTimeout(async () => {
       try {
@@ -946,4 +1022,4 @@ async function executeDownloadViaBlob(url, filename, msgId) {
     }
 }
 
-triggerConnect(true);
+triggerConnect(false);

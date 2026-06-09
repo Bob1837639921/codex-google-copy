@@ -71,7 +71,8 @@ async def handler(websocket, path=None):
         except websockets.exceptions.ConnectionClosed:
             print("[Server] Browser extension disconnected.")
         finally:
-            connected_extension = None
+            if connected_extension == websocket:
+                connected_extension = None
 
 async def send_command(action, **kwargs):
     global connected_extension
