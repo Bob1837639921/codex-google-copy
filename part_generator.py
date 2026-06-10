@@ -4235,7 +4235,227 @@ Solid clean dark gray background."""
             "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Talisman Weaver (符华天师)\nGender / age impression: young woman, heroic, confident Taoist scribe, exorcist aesthetic\nBody shape: tall, athletic, agile stance\nHair: silver-white hair tied in a high ponytail with a crimson ribbon\nEyes: bright golden eyes\nOutfit: black-and-vermilion-red Taoist robe with gold cloud patterns\nAccessories / weapon: a seven-star peachwood sword, a golden cinnabar brush, leather talisman pouches\nColor palette: cinnabar red, sulfur yellow, charcoal black, silver white\nFixed traits that must never change: silver-white hair, high ponytail, black-and-vermilion robe, floating paper talismans\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with torn sleeves and dirt smudges; and heavily damaged with her high ponytail undone releasing her messy white hair, her Taoist robe tattered and stained with blood, and her peachwood sword snapped in half. \n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         }
     ]
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan + abyssal_zitherist_plan + talisman_weaver_plan
+    underworld_magistrate_plan = [
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "main",
+            "prompt": "A breathtaking traditional Chinese ink-wash epic fantasy concept art of the Underworld Magistrate. A mature, powerful East Asian man with sharply chiseled handsome features, cold authoritative dark eyes, and jet-black hair tied tightly into a formal top-knot. He wears an incredibly detailed black silk magistrate robe with sweeping golden flame and cloud embroidery along the cuffs and collar. He stands on the steps of an imposing underworld court gateway. In one hand he grips a massive scarlet-red judgment brush crackling with golden calligraphy energy. Heavy soul-lock chains of dark iron dangle from his waist. Dozens of glowing golden judgment scrolls spiral in the air around him, and spirit lanterns with blue ghost-fire line the ancient stone steps. Background is a towering underworld gate shrouded in black mist and cold blue spirit flames. High-fidelity ink brushstrokes, dramatic volumetric lighting, cinematic masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Underworld Magistrate character from our conversation. Focus on his face and shoulders, capturing his sharp, cold authoritative features, jet-black hair in a formal top-knot, and black magistrate hat. The cold blue ghost-fire light from spirit lanterns casts a dramatic rim light onto his stern face. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Underworld Magistrate character from our conversation. Show him on a solid, clean dark gray background with four different facial expressions side-by-side: one cold and impassive, one stern and commanding with eyes narrowed, one rare cold smile of satisfaction, and one full wrathful shout with golden calligraphy energy blazing around him. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Underworld Magistrate character from our conversation. Show three full-body views: front, side, and back, standing in a neutral authoritative pose. He is wearing his black-and-gold magistrate robe and the soul-lock chains. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "outfit",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Underworld Magistrate (幽冥判官)\nGender / age impression: mature man, authoritative and stern, 35-year appearance\nBody shape: tall, broad-shouldered, commanding presence\nHair: jet-black hair in a formal top-knot\nEyes: cold, dark authoritative eyes\nOutfit: black silk magistrate robe with gold flame embroidery, black official hat\nAccessories / weapon: a scarlet-red giant judgment brush, soul-lock iron chains\nColor palette: jet black, scarlet red, gold foil yellow, ghost-fire blue\nFixed traits that must never change: black magistrate hat, scarlet-and-gold robe, giant red judgment brush, soul-lock chains\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, his default black-and-gold magistrate robe; in the middle, his underworld battle armor (dark iron breastplate with gold rune engravings over a black war tunic); on the right, his formal ceremonial robe (deep purple silk robe with silver constellation embroidery and a tall ceremonial crown).\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, body shape, and cold authoritative bearing.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Underworld Magistrate's signature tools. Show: the giant scarlet judgment brush with gold calligraphy energy crackling at its tip, the heavy soul-lock iron chains with glowing rune links, and a floating golden judgment scroll with ancient spirit writing. Two angles each. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. An immense and imposing underworld court built of dark obsidian stone, massive columns carved with spirit rune reliefs, with blue ghost-fire lanterns lining the grand stairways. Glowing golden judgment scrolls drift in the cold dark air. Towering iron gates stand in the background under a starless void sky. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "cover",
+            "prompt": "A cinematic vertical cover art of the Underworld Magistrate standing at the crest of the underworld court steps, raising his scarlet judgment brush high as a tornado of golden glowing judgment scrolls spirals into a black sky. Cold blue ghost-fires frame his silhouette. High polish, dramatic rim lighting, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "moodboard",
+            "prompt": "A moodboard collage of 4 panels for the Underworld Magistrate: one showing close-up of black silk with gold flame embroidery stitching, one showing glowing golden spirit calligraphy on ancient stone, one showing blue ghost-fire lanterns hanging in the dark, and one showing a rusted iron soul-lock chain with glowing blue rune links. Dark, cold, authoritative tone, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "sketch",
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Underworld Magistrate in 3 study sketches: writing in mid-air with his judgment brush, standing stoically with soul-lock chains at his side, and unrolling a judgment scroll before him. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Underworld Magistrate character from our conversation. He stands imposingly in his black-and-gold magistrate robe, soul-lock chains at his hip, giant red judgment brush in hand, cold gaze forward. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "modelSheet",
+            "prompt": "A clean model sheet of the Underworld Magistrate showing full-body front, side, and back views. Standing neutrally in his black-and-gold magistrate robes and official hat. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "poseSheet",
+            "prompt": "Show 5 poses of the Underworld Magistrate on one clean sheet: writing a judgment verdict in mid-air, sweeping his chains in a wide arc, unrolling a scroll while reading coldly, walking up court steps with authority, and pointing his brush accusingly at the viewer. Solid clean dark gray background."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "expressionSheet",
+            "prompt": "An expression sheet showing 8 bust portraits of the Underworld Magistrate in a clean grid: cold and impassive, stern commanding glare, cold satisfaction smile, furious wrath with golden energy blazing, reading a scroll with concentration, looking away with contempt, surprised, and a rare moment of solemn sorrow. Clean dark gray background."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "detailSheet",
+            "prompt": "A clean detail sheet showing close-up panels of the Underworld Magistrate's features: the gold flame embroidery on his black collar, the rune carvings on his soul-lock chain links, the scarlet tip of his judgment brush crackling with energy, and the ancient spirit-script on a golden judgment scroll. Clean light gray background."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "materialPalette",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Underworld Magistrate (幽冥判官)\nGender / age impression: mature man, authoritative and stern, 35-year appearance\nBody shape: tall, broad-shouldered, commanding presence\nHair: jet-black hair in a formal top-knot\nEyes: cold, dark authoritative eyes\nOutfit: black silk magistrate robe with gold flame embroidery, black official hat\nAccessories / weapon: a scarlet-red giant judgment brush, soul-lock iron chains\nColor palette: jet black, scarlet red, gold foil yellow, ghost-fire blue\nFixed traits that must never change: black magistrate hat, scarlet-and-gold robe, giant red judgment brush, soul-lock chains\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of black silk brocade, gold embroidery thread, scarlet-lacquered brush wood, dark iron chain metal, and a glowing blue ghost-fire sample next to a neutral front view of the character.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and cold authoritative bearing.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "outfitBreakdown",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Underworld Magistrate (幽冥判官)\nGender / age impression: mature man, authoritative and stern, 35-year appearance\nBody shape: tall, broad-shouldered, commanding presence\nHair: jet-black hair in a formal top-knot\nEyes: cold, dark authoritative eyes\nOutfit: black silk magistrate robe with gold flame embroidery, black official hat\nAccessories / weapon: a scarlet-red giant judgment brush, soul-lock iron chains\nColor palette: jet black, scarlet red, gold foil yellow, ghost-fire blue\nFixed traits that must never change: black magistrate hat, scarlet-and-gold robe, giant red judgment brush, soul-lock chains\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of his clothing: the outer black silk magistrate robe with gold embroidery, the inner dark tunic, the soul-lock chains, the black official hat, and the scarlet judgment brush.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0018_underworld_magistrate",
+            "char_name": "幽冥判官",
+            "img_type": "damageState",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Underworld Magistrate (幽冥判官)\nGender / age impression: mature man, authoritative and stern, 35-year appearance\nBody shape: tall, broad-shouldered, commanding presence\nHair: jet-black hair in a formal top-knot\nEyes: cold, dark authoritative eyes\nOutfit: black silk magistrate robe with gold flame embroidery, black official hat\nAccessories / weapon: a scarlet-red giant judgment brush, soul-lock iron chains\nColor palette: jet black, scarlet red, gold foil yellow, ghost-fire blue\nFixed traits that must never change: black magistrate hat, scarlet-and-gold robe, giant red judgment brush, soul-lock chains\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with singed gold embroidery and torn sleeves; and heavily damaged with his official hat knocked off revealing his disheveled top-knot, his black robe scorched and slashed, his soul-lock chains shattered and dragging on the ground, and his judgment brush cracked and leaking golden energy.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        }
+    ]
+    frost_sword_immortal_plan = [
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "main",
+            "prompt": "A breathtaking traditional Chinese ink-wash epic fantasy concept art of the Frost Sword Immortal. A young, ethereally beautiful East Asian woman with long flowing snow-white hair drifting freely in a cold wind. Her expression is serene yet razor-sharp. She wears a stunning white-and-silver flowing Hanfu robe with intricate frost-crystal embroidery and pale blue sash. She grips a colossal transparent ice-crystal sword in one hand, its blade pure as glacial ice, glowing faintly with cold pale blue light. Around her, a perfect orbital ring of dozens of smaller floating flying swords rotates slowly, each blade gleaming with icy reflection. Beneath her feet, frost patterns spread outward across the cracked ancient stone platform. Background is a mountain summit at dusk with aurora-like curtains of pale blue and white spiritual energy rippling across the sky. High-fidelity ink brushstrokes, dramatic volumetric lighting, cinematic masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "portrait",
+            "prompt": "Now, draw a close-up portrait of the exact same Frost Sword Immortal character from our conversation. Focus on her face and shoulders, capturing her serene, ice-cold beautiful features and long snow-white hair flowing freely. The pale blue glow of her ice-crystal sword illuminates her cheekbones with a cold ethereal light. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "expression",
+            "prompt": "Now, draw an expression sheet of the exact same Frost Sword Immortal character from our conversation. Show her on a solid, clean dark gray background with four different facial expressions side-by-side: one calm and distant, one cold contemptuous gaze, one rare look of focused battle intensity, and one fleeting gentle smile. High-fidelity details, professional character model sheet, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "turnaround",
+            "prompt": "Now, draw a professional character turnaround model sheet of the exact same Frost Sword Immortal character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her white-and-silver frost Hanfu robe. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "outfit",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Frost Sword Immortal (雪魄剑仙)\nGender / age impression: young woman, ethereally beautiful, cold and distant, 20-year appearance\nBody shape: slender, tall, graceful like snow\nHair: long flowing snow-white hair\nEyes: cold icy pale blue eyes\nOutfit: white-and-silver flowing Hanfu robe with frost-crystal embroidery\nAccessories / weapon: a transparent ice-crystal giant sword, a ring of floating flying swords\nColor palette: frost white, ice blue, silver gray, pale vermilion accent\nFixed traits that must never change: snow-white hair, ice-crystal sword, flying sword array, white-and-silver flowing robe\n\nCurrent asset goal:\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default white-and-silver frost Hanfu robe; in the middle, her battle armor (silver crystalline breastplate over a form-fitting white battle tunic with ice-pattern engravings); on the right, her sect formal robe (a pristine white and pale gold ceremonial robe with silver sword-motif embroidery and a sword-shaped hair pin).\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet.\n\nComposition:\nShow three side-by-side full-body views of the same character standing neutrally.\n\nBackground:\nPlain clean dark gray background.\n\nConstraints:\nKeep the same face, hairstyle, body shape, and cold ethereal bearing.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "prop",
+            "prompt": "Now, draw a high-fidelity detailed design sheet of the Frost Sword Immortal's weapons. Show: the colossal transparent ice-crystal sword 'Frost Soul' from two angles showing its glacial blade clarity and cold blue glow, and three floating flying swords of different sizes arranged in the formation ring pattern. Solid, clean dark gray background. Masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "scene",
+            "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. The summit platform of the Void Sword Sect's mountain, a vast flat stone terrace with ancient carved sword runes, high above the clouds at golden dusk. Trails of pale blue frost energy drift in the mountain wind. Hundreds of flying swords are embedded in the cliff faces surrounding the platform, glinting in the last sunlight. Cinematic, hyper-realistic, masterpiece, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "cover",
+            "prompt": "A cinematic vertical cover art of the Frost Sword Immortal descending from above, her white hair and silver robe trailing in the cold wind, her ice-crystal sword raised overhead while the orbital ring of flying swords spirals outward like a comet trail. Background is a pale blue aurora sky. High polish, dramatic rim lighting, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "moodboard",
+            "prompt": "A moodboard collage of 4 panels for the Frost Sword Immortal: one showing close-up of transparent ice-crystal sword blade with internal frost fractals, one showing a snow-white silk fabric with silver thread embroidery, one showing pale blue aurora streaks over dark mountain silhouettes, and one showing a frozen mountain spring at dawn. Cold, ethereal, elegant tone, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "sketch",
+            "prompt": "A concept sketch sheet of monochrome pencil drawings showing the Frost Sword Immortal in 3 study sketches: floating in the air with flying swords orbiting, landing from a descent with ice spreading underfoot, and sheathing her ice-crystal sword gracefully. Clean hand-drawn lines, traditional concept art sketch style, plain light background."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "fullBody",
+            "prompt": "Now, draw a full-body cinematic splash art of the exact same Frost Sword Immortal character from our conversation. She stands gracefully in her white-and-silver Hanfu, holding the ice-crystal sword to her side, flying swords hovering around her, snow-white hair flowing freely. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "modelSheet",
+            "prompt": "A clean model sheet of the Frost Sword Immortal showing full-body front, side, and back views. Standing neutrally in her white-and-silver frost Hanfu robes. Even lighting, solid clean light gray background, no dramatic shadows, 8k."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "poseSheet",
+            "prompt": "Show 5 poses of the Frost Sword Immortal on one clean sheet: floating in mid-air with flying swords spiraling outward, a downward slash with ice-crystal sword, standing cross-armed with cold disdain, somersaulting between sword blades, and kneeling on one knee recovering breath after battle. Solid clean dark gray background."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "expressionSheet",
+            "prompt": "An expression sheet showing 8 bust portraits of the Frost Sword Immortal in a clean grid: cold distant calm, cold contemptuous gaze, battle-focused intensity, fleeting gentle smile, surprised, deep in thought with eyes closed, sorrowful, and a rare determined heroic shout. Clean dark gray background."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "detailSheet",
+            "prompt": "A clean detail sheet showing close-up panels of the Frost Sword Immortal's features: the internal frost fractal pattern inside her ice-crystal sword blade, the delicate silver frost-crystal embroidery on her white robe collar, the tip of a flying sword's blade with its pale blue energy edge, and the texture of her snow-white hair in the wind. Clean light gray background."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "materialPalette",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Frost Sword Immortal (雪魄剑仙)\nGender / age impression: young woman, ethereally beautiful, cold and distant, 20-year appearance\nBody shape: slender, tall, graceful like snow\nHair: long flowing snow-white hair\nEyes: cold icy pale blue eyes\nOutfit: white-and-silver flowing Hanfu robe with frost-crystal embroidery\nAccessories / weapon: a transparent ice-crystal giant sword, a ring of floating flying swords\nColor palette: frost white, ice blue, silver gray, pale vermilion accent\nFixed traits that must never change: snow-white hair, ice-crystal sword, flying sword array, white-and-silver flowing robe\n\nCurrent asset goal:\nGenerate a material and color palette sheet. Show swatches of white silk fabric, silver thread, transparent ice crystal, pale blue energy glow, and the hair white color next to a neutral front view of the character.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design-board layout showing the character alongside neatly arranged material swatches.\n\nBackground:\nPlain gray background.\n\nConstraints:\nKeep the same face, hairstyle, outfit logic, color palette, body shape, and snow-white hair.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "outfitBreakdown",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Frost Sword Immortal (雪魄剑仙)\nGender / age impression: young woman, ethereally beautiful, cold and distant, 20-year appearance\nBody shape: slender, tall, graceful like snow\nHair: long flowing snow-white hair\nEyes: cold icy pale blue eyes\nOutfit: white-and-silver flowing Hanfu robe with frost-crystal embroidery\nAccessories / weapon: a transparent ice-crystal giant sword, a ring of floating flying swords\nColor palette: frost white, ice blue, silver gray, pale vermilion accent\nFixed traits that must never change: snow-white hair, ice-crystal sword, flying sword array, white-and-silver flowing robe\n\nCurrent asset goal:\nGenerate an outfit breakdown sheet. Show separate layers and components of her clothing: the outer white silk flowing robe, the inner silver-edged under-robe, the pale blue sash, the ice-crystal sword, and a single flying sword from the array.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nClean design board layout showing the clothes laid out and separated clearly.\n\nBackground:\nPlain light background.\n\nConstraints:\nKeep all parts consistent with the original character design.\nDo not redesign the character.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        },
+        {
+            "char_id": "char_0019_frost_sword_immortal",
+            "char_name": "雪魄剑仙",
+            "img_type": "damageState",
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Frost Sword Immortal (雪魄剑仙)\nGender / age impression: young woman, ethereally beautiful, cold and distant, 20-year appearance\nBody shape: slender, tall, graceful like snow\nHair: long flowing snow-white hair\nEyes: cold icy pale blue eyes\nOutfit: white-and-silver flowing Hanfu robe with frost-crystal embroidery\nAccessories / weapon: a transparent ice-crystal giant sword, a ring of floating flying swords\nColor palette: frost white, ice blue, silver gray, pale vermilion accent\nFixed traits that must never change: snow-white hair, ice-crystal sword, flying sword array, white-and-silver flowing robe\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with torn silver embroidery and small bloodstains on her white robe; and heavily damaged with her white robe torn and stained crimson, her flying swords all shattered and fallen, and her ice-crystal sword cracked with pale blue energy leaking from the fracture lines.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+        }
+    ]
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan + abyssal_zitherist_plan + talisman_weaver_plan + underworld_magistrate_plan + frost_sword_immortal_plan
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
