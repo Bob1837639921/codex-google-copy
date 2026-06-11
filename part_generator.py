@@ -429,6 +429,64 @@ async def trigger_dalle_generation(agent: BrowserAgent, prompt: str):
         
     logging.info("提示词已由虚拟鼠标模拟输入并触发发送，等待 DALL-E 绘图。")
 
+async def get_assistant_turn_count(agent: BrowserAgent) -> int:
+    """
+    返回当前页面中 assistant turn 的数量，用于生成前锚定位置，
+    生成后仅从编号更大的新 turn 里取图，彻底避免把历史图误判为新生成图。
+    """
+    js = """
+    (() => {
+        return document.querySelectorAll('[data-message-author-role="assistant"]').length;
+    })()
+    """
+    res = await agent.evaluate(js)
+    return res if isinstance(res, int) else 0
+
+async def get_image_from_newest_turns(agent: BrowserAgent, min_turn_count: int) -> str | None:
+    """
+    从第 min_turn_count 之后的新 assistant turn 中取最新图片 URL。
+    当 poll_until_image_ready 返回的 URL 疑似是历史缓存图时调用此函数作为修正。
+    """
+    js = f"""
+    (() => {{
+        const turns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+        const newTurns = turns.slice({min_turn_count});
+        for (let i = newTurns.length - 1; i >= 0; i--) {{
+            const imgs = Array.from(newTurns[i].querySelectorAll(
+                'img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'
+            ));
+            if (imgs.length > 0) return imgs[imgs.length - 1].src;
+        }}
+        return null;
+    }})()
+    """
+    res = await agent.evaluate(js)
+    return res if isinstance(res, str) and res.startswith('http') else None
+
+def get_first_significant_word(prompt: str) -> str:
+    """
+    提取 prompt 的第一个有意义的英文词（长度≥4，跳过介词、角色名等高频通用词），
+    用于历史配对时的跨类型误匹配防护。
+    """
+    # 跳过这些高频词，它们在几乎每个 prompt 里都会出现
+    SKIP = {
+        'this','that','with','from','show','have','been','will','draw','same',
+        'your','character','spirit','guardian','bioluminescent','crimson','midnight',
+        'neon','abyssal','stalker','siren','warlord','investigator','painter',
+        'keeper','walker','mechanic','sniper','apprentice','nomad','scavenger',
+        'queen','boundary','lantern','mirror','tide','rust','sand','astrolabe',
+        'also','their','using','into','each','side','both','three','front',
+        'back','view','image','picture','sheet','design','concept','style',
+        'detailed','detail','clean','clear','light','dark','color','white',
+        'black','gray','blue','pink','purple','glow','glowing','include',
+        'featuring','shows','shown','showing','professional','masterpiece',
+    }
+    words = re.findall(r'\b[A-Za-z]{4,}\b', prompt)
+    for w in words:
+        if w.lower() not in SKIP:
+            return w.lower()
+    return words[0].lower() if words else ''
+
 async def scan_existing_web_images(agent: BrowserAgent):
     js_get = """
     (() => {
@@ -782,7 +840,9 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     
     # 2. 扫描已有大图缓存（做为后面触发 DALL-E 之后寻找新生成图片的基准）
     pre_srcs = await scan_existing_web_images(agent)
-    logging.info(f"页面当前大图缓存量: {len(pre_srcs)} 张")
+    # 【修复】同时记录当前 assistant turn 数量，用于生成后的图片 turn 锚定校验
+    pre_turn_count = await get_assistant_turn_count(agent)
+    logging.info(f"页面当前大图缓存量: {len(pre_srcs)} 张 | assistant turn 基准索引: {pre_turn_count}")
     
     # 3. 运行防虚拟化滚动收集，提取已生成的历史图与 prompt 的对应关系，并进行 Prompt 相似度精准匹配
     # 如果是已有缓存的专属会话，历史记录绝不应为空。如果是空，则很有可能是因为加载延迟，我们将进行重试
@@ -804,8 +864,14 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     bypass_types = {"modelSheet", "poseSheet", "expressionSheet", "detailSheet", "materialPalette", "outfitBreakdown", "damageState"}
     bypass_history = (char_id == "char_0006_rust_mechanic" and img_type in bypass_types)
     
+    target_first_word = get_first_significant_word(prompt)
     if not bypass_history:
         for pair in history_pairs:
+            # 【修复】首词强校验：匹配 pair 的 prompt 首个有意义词必须与目标 prompt 相同，
+            # 防止「道具」类型因含 crystal lantern 而与「线稿」「破损」等 prompt 误匹配。
+            pair_first_word = get_first_significant_word(pair["prompt"])
+            if pair_first_word != target_first_word:
+                continue
             sim = get_prompt_similarity(prompt, pair["prompt"])
             if sim > 0.65 and sim >= max_sim: # 使用 >= 保证存在重生成时选取最新一张
                 max_sim = sim
@@ -854,6 +920,18 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     if new_src == "error" or not new_src:
         logging.error(f"绘图执行出现错误或超时，本次生成失败。")
         return False
+
+    # 【修复】Turn 索引锚定校验：验证 poll 返回的图片是否真的来自新 turn（编号 > pre_turn_count）。
+    # 若 URL 集合差值检测到的图片实为被虚拟滚动重新载入的旧图，则从最新 turn 里重新取图修正。
+    anchored_src = await get_image_from_newest_turns(agent, pre_turn_count)
+    if anchored_src and anchored_src != new_src:
+        logging.warning(
+            f"⚠️ [Turn锚定修正] poll 检测到的图片 URL 与最新 turn 的图片不一致，"
+            f"疑似历史虚拟化重载图，已切换为最新 turn 图片。"
+        )
+        new_src = anchored_src
+    elif not anchored_src:
+        logging.warning("⚠️ [Turn锚定] 未找到新 turn 图片，继续使用 poll 返回的 URL。")
         
     # 6. 智能保存大图，绕过 FDM 拦截，直接存入目标文件夹
     logging.info(f"正在通过 smart_save 智能直存图片至: {target_path}")
