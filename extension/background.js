@@ -87,8 +87,9 @@ function connectWebSocket() {
         const sid = data.sessionId || 'default';
         let tabId = sessions[sid]?.tabId || agentTabId;
 
-        // 如果断掉或者找不到页面，强行新建页面兜底
-        if (!tabId && data.action !== 'init') {
+        // 如果断掉或者找不到页面，强行新建页面兜底（仅针对需要 tabId 的页面操控指令）
+        const needsTabId = ['navigate', 'evaluate', 'hover', 'click', 'type', 'snapshot', 'screenshot'];
+        if (!tabId && needsTabId.includes(data.action)) {
             await initAgentTab('AI 自动兜底新建', null, sid);
             tabId = sessions[sid].tabId;
         }
@@ -119,6 +120,22 @@ function connectWebSocket() {
             await executeFetchAsBase64(data.url, data.id);
         } else if (data.action === 'downloadViaBlob') {
             await executeDownloadViaBlob(data.url, data.filename, data.id);
+        } else if (data.action === 'screenshotActiveTab') {
+            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tabs.length > 0) {
+                const activeTabId = tabs[0].id;
+                await attachDebugger(activeTabId);
+                await executeScreenshot(activeTabId, data.id, data.fullPage);
+            } else {
+                socket.send(JSON.stringify({ id: data.id, status: 'error', error: 'No active tab found' }));
+            }
+        } else if (data.action === 'getActiveTab') {
+            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tabs.length > 0) {
+                socket.send(JSON.stringify({ id: data.id, status: 'success', tab: { id: tabs[0].id, url: tabs[0].url, title: tabs[0].title } }));
+            } else {
+                socket.send(JSON.stringify({ id: data.id, status: 'error', error: 'No active tab found' }));
+            }
         } else if (data.action === 'reloadExtension') {
             socket.send(JSON.stringify({ id: data.id, status: 'success', message: 'Reloading extension...' }));
             setTimeout(() => {

@@ -468,12 +468,25 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
                 return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达今日上限（Rate Limit / Quota Exceeded）" }};
             }}
 
-            // 2. 检测 DALL-E 临时服务错误
-            if (bodyText.includes("wasn't able to generate") || 
-                bodyText.includes("encountered an error") || 
-                bodyText.includes("generation tool encountered") || 
-                bodyText.includes("Error generating image")) {{
-                return {{ "status": "error", "error": "OpenAI DALL-E 官方绘图服务发生临时错误" }};
+            const lastTurn = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]')).pop();
+            if (lastTurn) {{
+                const turnText = lastTurn.innerText;
+                // 2. 检测 DALL-E 临时服务错误
+                if (turnText.includes("wasn't able to generate") || 
+                    turnText.includes("encountered an error") || 
+                    turnText.includes("generation tool encountered") || 
+                    turnText.includes("Error generating image")) {{
+                    return {{ "status": "error", "error": "OpenAI DALL-E 官方绘图服务发生临时错误" }};
+                }}
+
+                // 检测 DALL-E 内容安全政策拦截
+                if (turnText.includes("违反了我们的内容政策") || 
+                    turnText.includes("violates our content policy") ||
+                    turnText.includes("违反内容政策") ||
+                    turnText.includes("Content policy violation") ||
+                    turnText.includes("content policy")) {{
+                    return {{ "status": "policy_violation", "error": "检测到 ChatGPT 官方内容安全政策拦截" }};
+                }}
             }}
 
             // 3. 检查是否有生图指示或停止按钮，代表生图已经在运行了
@@ -549,6 +562,9 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
             elif status == "error":
                 logging.error(f"检测到 OpenAI 官方后台发生暂时性生成错误: {res.get('error')}")
                 return "error"
+            elif status == "policy_violation":
+                logging.error(f"⚠️ [内容安全策略拦截] {res.get('error')}")
+                return "policy_violation"
             elif status == "generating" or status == "rendering" or is_generating:
                 logging.info("图片生成中 / 页面排版中 / AI思考中，继续监控...")
             else:
@@ -832,6 +848,9 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     if new_src == "quota_limit":
         logging.error(f"⚠️ [限额拦截] 检测到生图限额已满，停止当前角色的流水线生成以避免无谓重试。")
         return "quota_limit"
+    if new_src == "policy_violation":
+        logging.error(f"⚠️ [内容安全策略拦截] 检测到内容政策冲突，跳过此资产生成。")
+        return "policy_violation"
     if new_src == "error" or not new_src:
         logging.error(f"绘图执行出现错误或超时，本次生成失败。")
         return False
@@ -4015,7 +4034,7 @@ Solid clean dark gray background."""
         }
     ]
 
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan + siren_plan + tide_warlord_plan + abyssal_stalker_plan + bioluminescent_spirit_plan
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
@@ -4071,6 +4090,9 @@ Solid clean dark gray background."""
                     if res == "quota_limit":
                         logging.critical("🚨 [额度已达上限] 触发 OpenAI 生图频率或额度限制，系统将直接强行终止并退出整个绘图流水线！")
                         return
+                    if res == "policy_violation":
+                        logging.critical("🚨 [内容安全策略拦截] 触发内容政策拦截，将直接跳过此项并不再重试。")
+                        break
                     if res:
                         success = True
                         break
@@ -4112,6 +4134,454 @@ def main():
         logging.info("\n用户手动终止。")
     except Exception as e:
         logging.critical(f"严重未捕获错误: {e}", exc_info=True)
+
+
+# ======================================================
+# 🦄 自动生成的角色生图方案 (Module Level)
+# ======================================================
+siren_plan = [
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "main",
+        "prompt": "A masterpiece marine fantasy concept art of the Abyssal Siren. An ethereal, beautiful young mermaid priestess with highly detailed expressive facial features and flowing, wavy bioluminescent aqua-blue hair floating in water. Her eyes are a pure, tear-blue. She wears a semi-translucent marine gown woven from sea-silk, pearls, and coral branches. Her lower body is a sleek, elegant fish tail with scales that shimmer with a gradient of cyan and deep blue bioluminescent light. She is underwater, holding a water-resonance harp that glows with soft teal energy. The background features a deep-sea coral forest with glowing jellyfish and schools of silver fish, lit by shafts of moonlight filtering down through the deep water, casting a magical rim light. Cinematic, hyper-realistic, 8k resolution."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "portrait",
+        "prompt": "Now, draw a close-up portrait of the exact same Abyssal Siren character from our conversation. Focus on her face and shoulders, capturing her flowing wavy aqua-blue bioluminescent hair, her pure tear-blue eyes with a gentle sad expression, and her white pearl shell earrings. She is floating underwater, with tiny bubbles rising around her. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "expression",
+        "prompt": "Now, draw an expression sheet of the exact same Abyssal Siren character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one serene and calm, one singing with her mouth gently open and sound waves floating around, and one showing a faint, gentle and warm smile. High-fidelity details, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "turnaround",
+        "prompt": "Now, draw a professional character turnaround model sheet of the exact same Abyssal Siren character. Show three views: front, side, and back, floating in a neutral pose. She is wearing her semi-translucent white-and-aqua gown and showing her elegant fish tail with scales shimmering. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "outfit",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nPrimary request:\\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\nGender / age impression: young woman, ethereal, beautiful mermaid priestess\\nBody shape: slender and elegant mermaid build\\nFace: highly detailed features, pure tear-blue eyes showing gentle sadness\\nHair: wavy bioluminescent aqua-blue hair floating in water, glowing at the tips\\nOutfit: semi-translucent white-and-aqua gown woven from sea-silk, pearls, and coral branches\\nAccessories / weapon: water-resonance harp made of shipwreck wood and glowing water-flow strings, pearl shell earrings\\nColor palette: deep-sea blue, aqua-green, pearl white, bioluminescent cyan, coral pink\\nFixed traits that must never change: wavy aqua-blue bioluminescent hair, tear-blue eyes, pearl shell earrings, water-resonance harp\\n\\nCurrent asset goal:\\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default white-and-aqua gown; in the middle, her coral ritual gown (a majestic dress made of pink coral branches, pearl strings, and golden sea anemone silks); on the right, her battle tide armor (sleek pearl-white shell armor plates covering her torso and shoulders, with bioluminescent blue energy seams, and a silver trident at her side). Keep her pearl shell earrings in all three outfits.\\n\\nStyle:\\nFantasy character concept art, high-fidelity design sheet, detailed fabric and shell material rendering, coherent design language, consistent facial identity, production-ready asset.\\n\\nComposition:\\nShow three side-by-side full-body views of the same character standing/floating neutrally.\\n\\nBackground:\\nPlain clean dark gray background."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "prop",
+        "prompt": "Now, draw a high-fidelity detailed design sheet of the Abyssal Siren's signature gear: her water-resonance harp made of deep-sea shipwreck wood and glowing water-flow strings, and her white pearl shell earrings. Show them from multiple angles. Solid, clean dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "scene",
+        "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. A majestic, ancient tide temple ruins under deep water, surrounded by giant glowing deep-sea coral forests, luminous jellyfish floating, and moonlight beams filtering through the water surface. Cinematic, hyper-realistic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "fullBody",
+        "prompt": "Now, draw a full-body cinematic splash art of the exact same Abyssal Siren character. She floats gracefully in her white-and-aqua gown, holding her water-resonance harp, with schools of small silver fish swimming around her tail. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "cover",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nPrimary request:\\nCreate a high-quality character asset image for the following character.\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\nGender / age impression: young woman, ethereal, beautiful mermaid priestess\\nHair: wavy bioluminescent aqua-blue hair floating in water\\nEyes: pure tear-blue\\nOutfit: semi-translucent white-and-aqua gown\\nAccessories: water-resonance harp, pearl shell earrings\\n\\nCurrent asset goal:\\nGenerate a cover image. The Siren floats holding her glowing harp inside a majestic underwater tide temple ruins. Bioluminescent coral and drifting jellyfish create an ethereal, dreamlike atmosphere. High polish, vertical framing.\\n\\nStyle:\\nFantasy character concept art, cinematic poster, dramatic lighting, unreal engine 5 render style."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "moodboard",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\nHair: wavy bioluminescent aqua-blue hair\\n\\nCurrent asset goal:\\nGenerate a moodboard collage. Four panels: one showing glowing blue water-flow harp strings, one showing shimmering fish scales with cyan-blue gradient, one showing white pearl shell earrings on velvet, and one showing deep-sea coral forest under soft blue light. Ethereal mystery tone."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "sketch",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a concept sketch sheet. Traditional concept pencil sketches showing the Siren in 3 study poses: floating calmly, playing her water harp, and looking up towards the light. Clean hand-drawn lines."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "modelSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a standard model sheet. Full-body front, side, and back views of the Siren floating neutrally in her white-and-aqua gown."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "poseSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a pose sheet. Show 5 poses of the Siren on one clean sheet: playing her water harp, casting a tide-shield, swimming downwards, singing, and resting on a giant sea shell."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "expressionSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate an expression sheet. Show 8 bust portraits of the Siren in a clean grid: serene, singing with closed eyes, gentle smile, warning look, crying, focused, surprised, and tired/sad."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "detailSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a detail sheet. Close-up panels showing her aqua-blue bioluminescent hair strand glow, the shell and pearl details of her gown collar, the shipwreck wood grain of her harp, and the pearl shell pattern of her earrings."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "materialPalette",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a material and color palette sheet. Show swatches of white sea-silk, aqua-blue bioluminescent hair, pink coral branch, and glowing blue water-flow beside a neutral front view of the character."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "outfitBreakdown",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate an outfit breakdown sheet. Show separate layers of her clothing: the outer white-and-aqua gown, the shell bodice, the coral branch sash, and the pearl string straps."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "damageState",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate damage state variants. Show 3 full-body versions of the Siren: clean/default; battle-worn with seaweed tangles and minor tail scratches; and heavily damaged with her gown torn, her bioluminescent hair dim, tail scales cracked and bleeding, and her water harp strings broken."
+    }
+]
+
+tide_warlord_plan = [
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "main",
+        "prompt": "A masterpiece marine fantasy concept art of the Abyssal Warlord. An ethereal, powerful mature mermaid warlord with highly detailed chiseled facial features, glowing golden-amber eyes, and messy sea-foam white-and-gray hair floating in water. He wears heavy dark marine armor plates forged from shipwreck iron and Leviathan bones. His lower body is a thick, sleek dark blue scaled tail. He is underwater, holding his massive Tide-shaking Trident, a classic three-pronged spear made of bone with exactly three prongs (one central vertical spike and two symmetrical side prongs curving slightly outward). The trident radiates vibrant cyan water currents. Background features deep ocean trench ruins with black smokers and hydrothermal vents glowing red, cinematic, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "portrait",
+        "prompt": "Now, draw a close-up portrait of the exact same Abyssal Warlord character from our conversation. Focus on his face and shoulders, capturing his chiseled chinned face with battle scars, his glowing golden-amber eyes, and his messy sea-foam hair floating in water. Simple dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "expression",
+        "prompt": "Now, draw an expression sheet of the exact same Abyssal Warlord character from our conversation. Show three facial expressions side-by-side: one stern and silent, one letting out a fierce battle shout with his mouth wide open, and one showing a grim, knowing half-smirk. Plain clean dark gray background. High-fidelity details, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "turnaround",
+        "prompt": "Now, draw a professional character turnaround model sheet of the exact same Abyssal Warlord character. Show three views: front, side, and back, floating in a neutral pose. Clear silhouette from head to tail tip. Plain clean dark gray background. High-fidelity details, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "outfit",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\nGender / age impression: mature man, fierce and commanding, weather-beaten fantasy mermaid presence\\nHair: messy, wavy white-and-gray hair\\nOutfit: heavy bone and shipwreck iron armor\\n\\nCurrent asset goal:\\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, his default heavy bone armor; in the middle, his ceremonial coral scale armor (shining gold-and-red coral scales with a royal crown-like helm); on the right, his deep-sea wanderer cloak (a flowing dark-green cloak woven from sea kelp and glowing deep-sea anemones). Keep all core features consistent. Any tridents shown must strictly have exactly three prongs (one central vertical spike and two symmetrical side prongs).\\n\\nStyle:\\nFantasy character concept art, high-fidelity design sheet."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "prop",
+        "prompt": "Now, draw a prop and weapon reference sheet of the Abyssal Warlord's gear: his massive Tide-shaking Trident forged from elder beast bone, flowing with bright bioluminescent cyan water energy (the trident must strictly have exactly three prongs: one long central spike and two symmetrical side prongs curving slightly outward. Avoid four or five prongs). Show the trident and a detailed close-up of his Leviathan bone chestplate from multiple angles. Clean dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "scene",
+        "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. A deep ocean trench landscape showing towering black hydrothermal vents (black smokers), hydrothermal mineral chimneys glowing with faint red heat, surrounded by deep-sea bioluminescent sea creatures. No character figures. Cinematic, hyper-realistic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "fullBody",
+        "prompt": "Now, draw a full-body splash art of the Warlord visible from head to his tail tip, floating in an authoritative guardian stance, holding his massive Tide-shaking Trident with both hands. The trident must strictly have exactly three prongs (one central vertical spike and two symmetrical side prongs). Plain clean dark gray background. Masterpiece, highly detailed, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "cover",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\nWeapon: Tide-shaking Trident\\n\\nCurrent asset goal:\\nGenerate a cover image. The Warlord floats in front of a giant kraken silhouette in the dark deep ocean, his trident glowing brightly (the trident must strictly have exactly three prongs: one central vertical spike and two symmetrical side prongs), creating high contrast. Strong vertical framing.\\n\\nStyle:\\nEpic vertical cover poster, dramatic cinematic lighting, unreal engine 5 render style."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "moodboard",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a moodboard collage. Four panels: one showing bioluminescent cyan water bubbles, one showing chiseled dark ship iron textures with barnacles, one showing white fossil bone teeth, and one showing deep ocean vents under soft blue light. Ethereal abyssal mystery tone."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "sketch",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a concept sketch sheet. Monochrome pencil drawings, clean traditional sketch style showing the Warlord in 3 study sketches: thrusting his trident (the trident must strictly have exactly three prongs: one central vertical spike and two symmetrical side prongs), roaring, and crossing his arms in defense."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "modelSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a standard model sheet. Full-body front, side, and back views of the Warlord floating neutrally in his bone armor. Plain clean light gray studio background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "poseSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a pose sheet. Show 5 poses on one clean sheet: guard stance, trident thrusting, swimming downward fast, calling tidal wave, and resting on an iron anchor. In all poses, his trident must strictly have exactly three prongs (one central spike, two side spikes). Solid clean dark gray background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "expressionSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate an expression sheet. Show 8 bust portraits in a grid: calm, silent rage, battle roar, grim smirk, exhausted, warning glare, eye closed in pain, focused determination. Clean dark gray background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "detailSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a detail sheet. Close-up panels showing his shoulder scar markings, the bone trident grip wrapping, the leviathan bone chestplate joints, and his glowing eyes close-up. Clean light gray background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "materialPalette",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a material and color palette sheet. Show swatches of bone white, ship iron gray, bioluminescent cyan energy, and deep blue scales next to a neutral front view of the character. If he holds his trident, it must strictly have exactly three prongs (one central spike, two side spikes). Plain gray background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "outfitBreakdown",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate an outfit breakdown sheet. Separate layers of his gear: bone chestplate, iron shoulder guards, tide-washed ropes sash, waist scale armor, and trident (the trident must strictly have exactly three prongs: one central vertical spike and two symmetrical side prongs). Plain light background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "damageState",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate damage state variants. Show 3 full-body versions: default; battle-worn with cracked armor and kelp tangles; heavily damaged with bone chestplate shattered, tail scales cracked and scarred, trident cracked, and glowing eyes dimming. The trident in all views must strictly have exactly three prongs (one central spike, two side spikes)."
+    }
+]
+
+abyssal_stalker_plan = [
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "main",
+        "prompt": "A masterpiece marine fantasy concept art of the Abyssal Stalker. An ethereal, stealthy young shark-mermaid hunter with highly detailed sharp facial features, glowing emerald-green eyes, and messy black hair floating in water. She wears a light chestplate made of black sea-shell plates. Her lower body is a sleek, powerful silver-gray shark tail with a distinct dorsal fin. She is underwater in a dark ocean trench, holding dual curved daggers forged from black obsidian that glow with vibrant bioluminescent lime-green energy. The background features deep sea ruins, hydrothermal vents, and glowing jellyfish filtering soft light through the water, cinematic, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Abyssal Stalker, face clearly visible. Focus on her sharp facial features, slanted shark-like ears, messy black hair floating in water, and piercing emerald-green eyes. Minimalist dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Abyssal Stalker. Show three facial expressions side-by-side: one calm and calculating with closed lips, one snarling with rows of sharp teeth visible, and one focused with narrowed emerald-green eyes during combat. Maintain the same hair and face structure. Plain dark background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Abyssal Stalker. Show three views: front, side, and back, floating neutrally. Her eyes glow emerald, and her silver-gray shark tail with its dorsal fin is clearly visible. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "outfit",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Stalker (逆潮之锋)\\n\\nCurrent asset goal:\\nGenerate an outfit variant image showing three outfits side-by-side: left, her default light shell armor; middle, a ritual scale dress made of iridescent dark-blue fish scales; right, a scout wrap made of dark green kelp ribbons and leather straps. All maintain her silver-gray shark tail and glowing green eyes. Clean background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Abyssal Stalker's gear: her dual curved daggers forged from black obsidian. Show the daggers from multiple angles, highlighting the sharp jagged obsidian edges, the leather cord wrapping on the hilts, and how they connect at the handles to form a double-ended glaive. The blades glow with vibrant lime-green energy lines. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of a deep-sea hydrothermal trench field. Show active vents venting black smoke, hydrothermal chimneys glowing dull orange-red at their cracks, surrounded by bioluminescent underwater flora and corals. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Abyssal Stalker. She floats neutrally, holding her dual obsidian daggers in a reverse grip. Her sleek silver-gray shark tail, sharp dorsal fin, light black shell breastplate, and glowing emerald-green eyes are fully visible. Clean light gray background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Abyssal Stalker. She is shown in a dynamic floating pose in the foreground, dual daggers glowing bright lime-green. The background is the dark abyss of a deep-sea trench with silhouettes of giant kraken tentacles looming. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Abyssal Stalker. Four panels: one showing bioluminescent lime-green fluid flowing over black obsidian glass; one showing silver-gray shark scales texture; one showing deep-sea hydrothermic smoke vents; and one showing dense underwater kelp forests in shadows."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Abyssal Stalker. Show 3 quick study sketches: lunging forward with daggers; hiding behind a coral rock; and standing neutrally holding her connected double-glaive. Clean white studio background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Abyssal Stalker. Full-body front, side, and back views of her floating neutrally with her dual obsidian daggers in hip sheaths. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Abyssal Stalker showing 5 poses on one sheet: swimming downwards rapidly; dual daggers crossed in defense; dashing forward in a hunting pose; connecting her daggers into a double-ended glaive; and crouching stealthily on a dark sea rock. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Abyssal Stalker showing 8 bust portraits in a grid: calm, calculating, aggressive snarl with sharp shark teeth visible, warning glare, exhausted, breathing heavily in pain, smirking, and deep focus. Clean background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Abyssal Stalker: close-ups of her slanted ears, the jagged teeth patterns on her chestplate armor joints, the textured silver-gray scales of her shark tail, and the glowing green toxin trail on the obsidian blade."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of black shell plates, silver-gray scales, glowing lime-green poison, and dark seaweed ropes next to a front view of the Abyssal Stalker. Plain background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Abyssal Stalker's gear: the chestplate shell pieces, the waist seaweed sashes, the forearm spike wraps, and the dagger thigh sheaths. Clean light background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with shell armor cracked and seaweed wraps torn; right, heavily worn with tail scales fractured and leaking glowing green energy, chestplate cracked, and one dagger broken in half. Clean dark gray background."
+    }
+]
+
+bioluminescent_spirit_plan = [
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "main",
+        "prompt": "A masterpiece marine fantasy concept art of the Bioluminescent Spirit. An ethereal, beautiful young mermaid-jellyfish spirit with highly detailed expressive facial features, glowing pink-blue eyes, and wavy lavender hair floating in water. She wears a translucent pale pink-purple dome veil resembling a jellyfish hood. Her lower body is a sleek dark blue tail with several glowing, translucent pink-purple tentacles drifting. She is underwater, holding a delicate crystal lantern housing a glowing bioluminescent jellyfish. The background features deep-sea ruins with glowing anemones and schools of floating tiny jellyfish, lit by soft shafts of bioluminescent light, cinematic, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Bioluminescent Spirit, face clearly visible. Focus on her sharp yet delicate facial features, glowing pink-blue eyes, wavy lavender hair floating in water, and the translucent pale pink-purple dome veil over her head. Minimalist dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Bioluminescent Spirit. Show three facial expressions side-by-side: one serene and calm with closed eyes, one surprised and curious with eyes wide open, and one showing a gentle, warm smile. Maintain the same lavender hair, translucent dome veil, and face structure. Plain dark background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Bioluminescent Spirit. Show three views: front, side, and back, floating neutrally. Her eyes glow pink-blue, and her dark blue fish tail with long, glowing pink-purple tentacles is clearly visible. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Bioluminescent Spirit. Show three outfit designs side-by-side: left, her default lavender gown; middle, a formal white ceremonial gown; right, a travel wrap of ocean silk. All designs maintain her lavender hair and pink-blue eyes. Solid light gray background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Bioluminescent Spirit's gear: her signature crystal lantern. Show the lantern from multiple angles, highlighting the intricate carvings on the dark crystal frame, the bronze hanging chain, and the glowing bioluminescent jellyfish floating inside. The lantern casts a warm teal-purple light. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Tide Temple无光区 (dark zone). Show ancient underwater ruins and archways, filled with giant glowing coral trees, bioluminescent sea anemones, and schools of glowing jellyfish filtering light through the dark water. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Bioluminescent Spirit. She floats gracefully in the water, holding her glowing crystal lantern in front of her. Her sleek dark blue fish tail, long pink-purple translucent tentacles, light marine gown, and glowing pink-blue eyes are fully visible. Clean light gray background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Bioluminescent Spirit. She is shown in a dynamic floating pose in the foreground, holding her glowing crystal lantern which casts a bright light. The background is a mysterious deep-sea temple with silhouettes of giant ancient ruins. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Bioluminescent Spirit. Four panels: one showing glowing pink-purple jellyfish tentacles underwater; one showing deep-sea dark crystal texture; one showing soft glowing neon teal light in dark water; and one showing delicate white pearls and pink coral grains."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Bioluminescent Spirit. Show 3 quick study sketches: floating peacefully with her lantern; casting a light barrier with her hand; and curling her fish tail neutrally. Clean white studio background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Bioluminescent Spirit. Full-body front, side, and back views of her floating neutrally with her crystal lantern. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Bioluminescent Spirit showing 5 poses on one sheet: floating vertically holding her lantern; casting a micro-glow barrier; swimming downwards with tentacles trailing; sitting on a glowing coral; and curling up defensively. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Bioluminescent Spirit showing 8 bust portraits in a grid: serene, surprised, gentle smile, worried frown, closed-eyes meditation, focused spellcasting, shy look, and exhausted/tired. Clean background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Bioluminescent Spirit: close-ups of the translucent texture of her jellyfish dome veil, the detailed glowing patterns in her pink-blue eyes, the pearlescent surface of her dark blue tail scales, and the crystal frame joints of her lantern."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of translucent pink-purple veil fabric, dark blue scales, glowing teal-purple light, and white coral beads next to a front view of the Bioluminescent Spirit. Plain background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Bioluminescent Spirit's gear: the translucent dome veil, the shell bodice, the light silk gown layers, the seaweed waist sash, and the lantern handle attachment. Clean light background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with dome veil slightly torn and lantern dim; right, heavily worn with veil ripped, tail tentacles fractured and leaking glowing blue energy, gown torn, and her crystal lantern cracked with the inner flame dim. Clean dark gray background."
+    }
+]
 
 if __name__ == "__main__":
     main()
