@@ -4112,7 +4112,7 @@ Solid clean dark gray background."""
         }
     ]
 
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan + siren_plan + tide_warlord_plan + abyssal_stalker_plan + bioluminescent_spirit_plan
+    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan + siren_plan + tide_warlord_plan + abyssal_stalker_plan + bioluminescent_spirit_plan + rule_weaver_plan
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
@@ -4661,5 +4661,117 @@ bioluminescent_spirit_plan = [
     }
 ]
 
+rule_weaver_plan = [
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "main",
+        "prompt": "A masterpiece modern urban mystery concept art of the Rule Weaver. A slender, elegant young East Asian woman with highly refined focused facial features, long dark gray hair, wearing a gold-rimmed monocle over one eye, a sleek double-breasted black trench coat, and a dark purple tie. She holds a glowing crimson fountain pen in one hand, writing glowing red rules in the air onto a heavy black leather ledger in her other hand. Ethereal glowing red text runes hover and chain around her in the dark. The background is a dimly lit, atmospheric investigation office with glowing red computer screens and crime files. High-contrast cinematic lighting, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Rule Weaver, face clearly visible. Focus on her sharp facial features, long dark gray hair, a gold-rimmed monocle over one eye, and her dark purple tie under a black trench coat. She looks cold and focused. Minimalist dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Rule Weaver. Show three facial expressions side-by-side: one cold and emotionless, one speaking a stern command with eyes narrowed, and one showing a faint tired smirk. Maintain the same dark gray hair, monocle, and face structure. Plain dark background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Rule Weaver. Show three views: front, side, and back, standing neutrally. She wears the double-breasted black trench coat, dark purple tie, and gold monocle. Her long dark gray hair falls down her back. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Rule Weaver. Show three outfit designs side-by-side: left, her default black trench coat uniform; middle, a formal dark gray investigator blazer; right, a casual black sweater with purple accent scarf. All designs maintain her long dark gray hair and gold monocle. Solid light gray background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Rule Weaver's gear: her signature glowing crimson fountain pen and heavy black leather ledger. Show the pen and the ledger from multiple angles, highlighting the intricate gold engravings on the pen body, the glowing crimson ink at the nib, and the embossed silver symbol on the ledger cover. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Paranormal Special Investigation Office. Show a spacious office in deep shadows at midnight, with tables covered in crime files, glowing red screens displaying bizarre data, and floating red neon warning signs. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Rule Weaver. She stands tall and elegant, holding her glowing crimson fountain pen and writing on her open black leather ledger. She wears her double-breasted black trench coat, dark purple tie, and gold monocle. Glowing red runes hover around her. Clean light gray background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Rule Weaver. She is shown in a dynamic pose in the foreground, pointing her glowing crimson fountain pen forward as red glowing chains of text weave around her. The background features a distorted, surreal urban skyline under a blood-red moon. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Rule Weaver. Four flat panels showing: one of glowing crimson ink droplets spreading in dark water; one of a close-up of a vintage gold-rimmed monocle; one of textured black leather with silver engravings; and one of neon red glowing text runes shining in shadows. Clean grid layout, no borders, no text, no labels, plain background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Rule Weaver. Show 3 quick study sketches: standing and writing on her ledger; pointing her pen to cast a rule-lock; and standing neutrally looking over her shoulder. Clean white studio background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Rule Weaver. Full-body front, side, and back views of her standing neutrally with her black ledger and red pen. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Rule Weaver showing 5 poses on one sheet: standing vertically writing rules in the air; pointing her glowing red pen forward; holding the closed ledger against her chest; inspecting a floating red rune; and standing in a defense stance with red chains of text surrounding her. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Rule Weaver showing 8 bust portraits in a grid: cold/emotionless, speaking a command, faint tired smirk, focused concentration, eyes closed in meditation, analytical frown, startled look, and exhausted/fatigued. Clean background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Rule Weaver: close-ups of the gold-rimmed monocle, the glowing crimson fountain pen nib with red energy, the embossed silver seal on the black ledger, and the dark purple tie knot on the black trench coat collar. Clean light background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of black trench coat fabric, gold metal monocle frame, glowing crimson ink, and dark purple tie silk next to a front view of the Rule Weaver. Plain background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Rule Weaver's gear: the black trench coat, the investigator shirt, the dark purple tie, the silver badge, and the leather holster. Clean light background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with trench coat slightly torn and pen glowing dimly; right, heavily worn with trench coat shredded, monocle cracked, ledger torn with burning red pages, and red glowing rules leaking chaotically around her. Clean dark gray background."
+    }
+]
+
 if __name__ == "__main__":
     main()
+
