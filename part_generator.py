@@ -6444,7 +6444,7 @@ cyber_corporate_plan = [
         "char_id": "char_0029_cyber_corporate",
         "char_name": "霓虹极道",
         "img_type": "prop",
-        "prompt": "Prop reference sheet of the Neon Yakuza's gear: her monowire whip and compact submachine gun. Show them from multiple angles, highlighting the purple light lines, holographic sight, and metallic textures. Clean studio background, 8k."
+        "prompt": "Prop reference sheet of the Neon Yakuza's gear: her glowing purple monowire whip and a sleek high-tech energy emitter blaster device. Show them from multiple angles, highlighting the purple light lines, holographic scanner sight, and polished chrome textures. Clean studio background, 8k."
     },
     {
         "char_id": "char_0029_cyber_corporate",
