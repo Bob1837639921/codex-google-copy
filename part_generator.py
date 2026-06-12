@@ -1070,10 +1070,11 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
                 
     # 5. 等待完成
     new_src = await poll_until_image_ready(agent, pre_srcs, pre_assistant_count=pre_assistant_count)
+    error_dir = os.path.join(os.path.dirname(OUTPUT_ROOT), "errors")
     if new_src == "quota_limit":
         logging.error(f"⚠️ [限额拦截] 检测到生图限额已满，停止当前角色的流水线生成以避免无谓重试。")
-        screenshot_path = os.path.join(target_dir, "error_screenshot.png")
-        os.makedirs(target_dir, exist_ok=True)
+        screenshot_path = os.path.join(error_dir, f"{char_id}_{img_type}_quota_limit.png")
+        os.makedirs(error_dir, exist_ok=True)
         try:
             await agent.screenshot(screenshot_path)
             logging.info(f"📸 [限额现场] 已自动保存限额截图至: {screenshot_path}")
@@ -1082,8 +1083,8 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
         return "quota_limit"
     if new_src == "policy_violation":
         logging.error(f"⚠️ [内容安全策略拦截] 检测到内容政策冲突，跳过此资产生成。")
-        screenshot_path = os.path.join(target_dir, "error_screenshot.png")
-        os.makedirs(target_dir, exist_ok=True)
+        screenshot_path = os.path.join(error_dir, f"{char_id}_{img_type}_policy_violation.png")
+        os.makedirs(error_dir, exist_ok=True)
         try:
             await agent.screenshot(screenshot_path)
             logging.info(f"📸 [策略拦截现场] 已自动保存内容安全截图至: {screenshot_path}")
@@ -1092,8 +1093,8 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
         return "policy_violation"
     if new_src == "error" or not new_src:
         logging.error(f"绘图执行出现错误或超时，本次生成失败。")
-        screenshot_path = os.path.join(target_dir, "error_screenshot.png")
-        os.makedirs(target_dir, exist_ok=True)
+        screenshot_path = os.path.join(error_dir, f"{char_id}_{img_type}_error.png")
+        os.makedirs(error_dir, exist_ok=True)
         try:
             await agent.screenshot(screenshot_path)
             logging.info(f"📸 [超时/错误现场] 已自动保存错误截图至: {screenshot_path}")
