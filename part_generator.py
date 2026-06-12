@@ -5166,7 +5166,7 @@ moonshadow_ranger_plan = [
         "char_id": "char_0024_moonshadow_ranger",
         "char_name": "月影游侠",
         "img_type": "turnaround",
-        "prompt": "A professional character turnaround model sheet of the Moonshadow Ranger. Show three views: front, side, and back, standing neutrally. She wears the green hooded cloak and leather light armor, holding her oak bow. Plain clean light gray studio background. Masterpiece, 8k."
+        "prompt": "A professional character turnaround model sheet of the Moonshadow Ranger. Show three views: front, side, and back, standing neutrally with arms relaxed by her sides. She wears the green hooded cloak and leather light armor. No weapons or bow are held to ensure clean posture and anatomical accuracy. Plain clean light gray studio background. Masterpiece, 8k."
     },
     {
         "char_id": "char_0024_moonshadow_ranger",
@@ -5214,7 +5214,7 @@ moonshadow_ranger_plan = [
         "char_id": "char_0024_moonshadow_ranger",
         "char_name": "月影游侠",
         "img_type": "modelSheet",
-        "prompt": "Standard model sheet of the Moonshadow Ranger. Full-body front, side, and back views of her standing neutrally with her leather armor and green cloak. Even lighting, clean light gray background."
+        "prompt": "Character model sheet of the Moonshadow Ranger. Show a detailed full-body front view of her standing in her dark green cloak and leather armor, holding her signature full-sized leaf-carved oak bow (scaled proportionally to her body height). The side of the sheet shows detailed callouts of her bow and arrows. Even lighting, clean light gray background."
     },
     {
         "char_id": "char_0024_moonshadow_ranger",
@@ -5244,13 +5244,13 @@ moonshadow_ranger_plan = [
         "char_id": "char_0024_moonshadow_ranger",
         "char_name": "月影游侠",
         "img_type": "outfitBreakdown",
-        "prompt": "An outfit breakdown sheet showing the layers of the Moonshadow Ranger's gear: the green wind-cloak, the leather breastplate, the inner linen shirt, the utility belt with daggers, and the high leather boots. Clean light background."
+        "prompt": "An outfit breakdown sheet showing the layers of the Moonshadow Ranger's gear: the green wind-cloak, the leather breastplate, the inner linen shirt, the utility belt with daggers, and the high leather boots. No large oak bow or weapons are shown on this sheet to focus purely on the clothing layers. Clean light background."
     },
     {
         "char_id": "char_0024_moonshadow_ranger",
         "char_name": "月影游侠",
         "img_type": "damageState",
-        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with cloak torn and armor scuffed; right, heavily worn with cloak shredded, leather armor broken, oak bow cracked, and bleeding scratches on her cheek. Clean dark gray background."
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with cloak torn and armor scuffed; right, heavily worn with cloak shredded, leather armor broken, and bleeding scratches on her cheek. In all views, she holds her signature full-sized leaf-carved oak bow (scaled proportionally to her body height), which is clean on the left, slightly scuffed in the middle, and cracked on the right. Clean dark gray background."
     }
 ]
 
@@ -5277,7 +5277,7 @@ ancient_druid_plan = [
         "char_id": "char_0025_ancient_druid",
         "char_name": "森之大德鲁伊",
         "img_type": "turnaround",
-        "prompt": "A professional character turnaround model sheet of the Elven Druid. Show three views: front, side, and back, standing neutrally. She wears the white-and-green vine gown and holds her antler staff. Plain clean light gray studio background. Masterpiece, 8k."
+        "prompt": "A professional character turnaround model sheet of the Elven Druid. Show three views: front, side, and back, standing neutrally with arms relaxed by her sides. She wears the white-and-green vine gown. No staff or weapons are held to ensure clean posture and anatomical accuracy. Plain clean light gray studio background. Masterpiece, 8k."
     },
     {
         "char_id": "char_0025_ancient_druid",
@@ -5325,7 +5325,7 @@ ancient_druid_plan = [
         "char_id": "char_0025_ancient_druid",
         "char_name": "森之大德鲁伊",
         "img_type": "modelSheet",
-        "prompt": "Standard model sheet of the Elven Druid. Full-body front, side, and back views of her standing neutrally with her vine gown and antler staff. Even lighting, clean light gray background."
+        "prompt": "Character model sheet of the Elven Druid. Show a detailed full-body front view of her standing in her vine-woven white gown, holding her signature full-sized antler staff (scaled proportionally to her body height). The side of the sheet shows detailed callouts of her staff and green gemstone. Even lighting, clean light gray background."
     },
     {
         "char_id": "char_0025_ancient_druid",
@@ -5355,13 +5355,13 @@ ancient_druid_plan = [
         "char_id": "char_0025_ancient_druid",
         "char_name": "森之大德鲁伊",
         "img_type": "outfitBreakdown",
-        "prompt": "An outfit breakdown sheet showing the layers of the Elven Druid's gear: the ivy leaf crown, the white outer shroud, the inner green linen dress, the woven grass belt, and the bare feet. Clean light background."
+        "prompt": "An outfit breakdown sheet showing the layers of the Elven Druid's gear: the ivy leaf crown, the white outer shroud, the inner green linen dress, the woven grass belt, and the bare feet. No staff or weapons are shown on this sheet to focus purely on the clothing layers. Clean light background."
     },
     {
         "char_id": "char_0025_ancient_druid",
         "char_name": "森之大德鲁伊",
         "img_type": "damageState",
-        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with gown torn and staff glowing dimly; right, heavily worn with white gown shredded, wood staff cracked with green fluid leaking, and her hands wrapped in bandages, with a sad but resolute expression. Clean dark gray background."
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with gown torn; right, heavily worn with white gown shredded, and her hands wrapped in bandages, with a sad but resolute expression. In all views, she holds her signature full-sized antler staff (scaled proportionally to her body height), which is clean on the left, slightly scratched in the middle, and cracked on the right. Clean dark gray background."
     }
 ]
 
