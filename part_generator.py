@@ -6498,19 +6498,19 @@ cyber_corporate_plan = [
         "char_id": "char_0029_cyber_corporate",
         "char_name": "霓虹极道",
         "img_type": "detailSheet",
-        "prompt": "A detail sheet for the Neon Yakuza: close-ups of her bob haircut, the purple circuit tattoos on her neck, the monowire wrist launcher, and her cold crimson eyes. Clean light background."
+        "prompt": "A detail sheet for the Neon Corporate Agent: close-ups of her bob haircut, the purple circuit tattoos on her neck, the monowire wrist launcher, and her cold crimson eyes. Clean light background."
     },
     {
         "char_id": "char_0029_cyber_corporate",
         "char_name": "霓虹极道",
         "img_type": "materialPalette",
-        "prompt": "A material and color palette sheet. Show swatches of charcoal-gray suit wool, purple neon light, crimson red light, and sleek steel next to a front view of the Neon Yakuza. Plain background."
+        "prompt": "A material and color palette sheet. Show swatches of charcoal-gray suit wool, purple neon light, crimson red light, and sleek steel next to a front view of the Neon Corporate Agent. Plain background."
     },
     {
         "char_id": "char_0029_cyber_corporate",
         "char_name": "霓虹极道",
         "img_type": "outfitBreakdown",
-        "prompt": "An outfit breakdown sheet showing the layers of the Neon Yakuza's gear: the tech-suit jacket, the inner formal blouse, the fitted trousers, the waist holster belt, and high-tech leather shoes. Clean light background."
+        "prompt": "An outfit breakdown sheet showing the layers of the Neon Corporate Agent's gear: the tech-suit jacket, the inner formal blouse, the fitted trousers, the waist holster belt, and high-tech leather shoes. Clean light background."
     },
     {
         "char_id": "char_0029_cyber_corporate",
