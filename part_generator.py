@@ -229,7 +229,21 @@ class BrowserAgent:
             logging.info(f"smart_save: 回退到 download_via_blob，filename={filename}（原因：{reason}）")
             return await self.download_via_blob(url, filename)
 
-        return result
+    async def screenshot(self, dest_path: str, full_page: bool = False):
+        import base64, os
+        logging.info(f"正在捕获屏幕截图 并保存至: {dest_path}")
+        response = await self._send_command("screenshot", fullPage=full_page)
+        if not response or response.get("status") != "success":
+            error = response.get("error", "Unknown error") if response else "No response"
+            logging.error(f"截图失败: {error}")
+            return False
+        b64_data = response.get("base64", "")
+        raw_bytes = base64.b64decode(b64_data)
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        with open(dest_path, "wb") as f:
+            f.write(raw_bytes)
+        logging.info(f"已成功保存截图 ({len(raw_bytes):,} 字节) -> {dest_path}")
+        return True
 
     async def close(self):
         if self.websocket:
@@ -500,7 +514,7 @@ async def scan_existing_web_images(agent: BrowserAgent):
         return res
     return []
 
-async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, timeout_sec: int = 300):
+async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pre_assistant_count: int = 0, timeout_sec: int = 300):
     logging.info("开始监测 DOM 生成进度...")
     start_time = time.time()
     pre_srcs_json = json.dumps(list(pre_existing_srcs))
@@ -510,7 +524,10 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
     while time.time() - start_time < timeout_sec:
         js_poll = f"""
         (() => {{
-            const bodyText = document.body ? document.body.innerText : "";
+            const bodyText = (() => {{
+                const mainEl = document.querySelector('main');
+                return mainEl ? mainEl.innerText : (document.body ? document.body.innerText : "");
+            }})();
             
             // 1. 检测 ChatGPT 官方生图额度/使用频率上限，秒级拦截 (Smarter fuzzy check)
             const isLimit = (() => {{
@@ -543,7 +560,8 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
                 return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达今日上限（Rate Limit / Quota Exceeded）" }};
             }}
 
-            const lastTurn = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]')).pop();
+            const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+            const lastTurn = assistantTurns.length > {pre_assistant_count} ? assistantTurns[assistantTurns.length - 1] : null;
             if (lastTurn) {{
                 const turnText = lastTurn.innerText;
                 // 2. 检测 DALL-E 临时服务错误
@@ -555,7 +573,9 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
                 }}
 
                 // 检测 DALL-E 内容安全政策拦截
-                if (turnText.includes("违反了我们的内容政策") || 
+                if (turnText.includes("违反") || 
+                    turnText.includes("违反了") || 
+                    turnText.includes("违反了我们的内容政策") || 
                     turnText.includes("violates our content policy") ||
                     turnText.includes("违反内容政策") ||
                     turnText.includes("Content policy violation") ||
@@ -877,9 +897,12 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     matched_image_src = None
     max_sim = 0.0
     
-    # 临时旁路机制：将废铁重构师的重构设定类型强行重新生成，避开历史中带机械臂和动漫风格的旧图片
-    bypass_types = {"modelSheet", "poseSheet", "expressionSheet", "detailSheet", "materialPalette", "outfitBreakdown", "damageState"}
-    bypass_history = (char_id == "char_0006_rust_mechanic" and img_type in bypass_types)
+    # 临时旁路机制：将废铁重构师的重构设定类型强行重新生成，避开历史中带机械臂和动漫风格的旧图片；将皮影御灵师的战损和场景也强行重新生成
+    bypass_types = {"modelSheet", "poseSheet", "expressionSheet", "detailSheet", "materialPalette", "outfitBreakdown", "damageState", "scene"}
+    bypass_history = (
+        (char_id == "char_0006_rust_mechanic" and img_type in bypass_types) or
+        (char_id == "char_0021_shadow_puppeteer" and img_type in {"damageState", "scene"})
+    )
     
     target_first_word = get_first_significant_word(prompt)
     if not bypass_history:
@@ -913,6 +936,15 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     post_scroll_srcs = await scan_existing_web_images(agent)
     pre_srcs = set(pre_srcs) | set(post_scroll_srcs)
     
+    # 记录发送前的 assistant 回答数量，防范 polling 时误判旧会话中遗留的“内容安全政策拦截/生成失败”等错误提示
+    pre_assistant_count = 0
+    try:
+        count_res = await agent.evaluate('document.querySelectorAll(\'[data-message-author-role="assistant"]\').length')
+        if count_res is not None:
+            pre_assistant_count = int(count_res)
+    except Exception as ec:
+        logging.warning(f"获取发送前 assistant 回答数量失败: {ec}")
+    
     await trigger_dalle_generation(agent, prompt)
     
     # 4. 如果是新开启的会话，首次发送 Prompt 后立即轮询捕获会话 URL，确保即便后边绘图超时也能完美锁定本角色的专属会话！
@@ -927,7 +959,7 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
                 break
                 
     # 5. 等待完成
-    new_src = await poll_until_image_ready(agent, pre_srcs)
+    new_src = await poll_until_image_ready(agent, pre_srcs, pre_assistant_count=pre_assistant_count)
     if new_src == "quota_limit":
         logging.error(f"⚠️ [限额拦截] 检测到生图限额已满，停止当前角色的流水线生成以避免无谓重试。")
         screenshot_path = os.path.join(target_dir, "error_screenshot.png")
@@ -4808,7 +4840,7 @@ Solid clean dark gray background."""
             "char_id": "char_0021_shadow_puppeteer",
             "char_name": "皮影御灵师",
             "img_type": "damageState",
-            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Shadow Puppeteer (皮影御灵师)\nGender / age impression: young woman, mysterious and theatrical, 19-year appearance\nBody shape: slender, delicate, classical posture\nHair: black hair in classical opera updo, red hairpins\nEyes: glowing scarlet red eyes\nOutfit: black and crimson traditional Chinese opera costume with flowing water sleeves\nAccessories / weapon: crimson paper-cuts, glowing red silk threads, semi-translucent shadow screen\nColor palette: cinnabar red, opera black, screen white, moonlight grey\nFixed traits that must never change: scarlet glowing eyes, opera updo, black-and-red opera costume, glowing red silk threads, giant shadow screen\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character: clean/default; battle-worn with her opera sleeves torn, revealing scrapes on her arms, and her hairpins disheveled; and heavily damaged in her final theater collapse: her black-and-red costume torn and stained with blood, her white shadow screen shattered into pieces on the floor, and her hands bleeding as glowing red silk threads snap and scatter, while her shadow warriors dissolve into dark mist.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
+            "prompt": "Use case: stylized-concept\nAsset type: character asset for a reusable character pool\n\nPrimary request:\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\n\nCharacter lock:\nName: The Shadow Puppeteer (皮影御灵师)\nGender / age impression: young woman, mysterious and theatrical, 19-year appearance\nBody shape: slender, delicate, classical posture\nHair: black hair in classical opera updo, red hairpins\nEyes: glowing scarlet red eyes\nOutfit: black and crimson traditional Chinese opera costume with flowing water sleeves\nAccessories / weapon: crimson paper-cuts, glowing red silk threads, semi-translucent shadow screen\nColor palette: cinnabar red, opera black, screen white, moonlight grey\nFixed traits that must never change: scarlet glowing eyes, opera updo, black-and-red opera costume, glowing red silk threads, giant shadow screen\n\nCurrent asset goal:\nGenerate damage state variants. Show 3 full-body versions of the same character side-by-side: first, default state standing elegantly in her black and crimson Chinese opera dress; second, tired pose, standing while leaning slightly against a wooden theatrical prop, looking away thoughtfully, with red silk threads floating gently around her; third, resting pose, sitting gracefully on a low theatrical bench, her hands resting in her lap, with faint red sparks and soft mist in the background.\n\nStyle:\nEastern fantasy concept art, high-fidelity design sheet.\n\nComposition:\nShow three side-by-side full-body versions of the character.\n\nBackground:\nSolid clean dark gray background.\n\nConstraints:\nDo not change the costume into a new outfit. Keep the same identity.\nNo text, no labels, no words, no subtitles (do not write any text labels at all, such as 'Normal' or 'Damaged' or 'Condition'), no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."
         }
     ]
 
