@@ -429,6 +429,64 @@ async def trigger_dalle_generation(agent: BrowserAgent, prompt: str):
         
     logging.info("提示词已由虚拟鼠标模拟输入并触发发送，等待 DALL-E 绘图。")
 
+async def get_assistant_turn_count(agent: BrowserAgent) -> int:
+    """
+    返回当前页面中 assistant turn 的数量，用于生成前锚定位置，
+    生成后仅从编号更大的新 turn 里取图，彻底避免把历史图误判为新生成图。
+    """
+    js = """
+    (() => {
+        return document.querySelectorAll('[data-message-author-role="assistant"]').length;
+    })()
+    """
+    res = await agent.evaluate(js)
+    return res if isinstance(res, int) else 0
+
+async def get_image_from_newest_turns(agent: BrowserAgent, min_turn_count: int) -> str | None:
+    """
+    从第 min_turn_count 之后的新 assistant turn 中取最新图片 URL。
+    当 poll_until_image_ready 返回的 URL 疑似是历史缓存图时调用此函数作为修正。
+    """
+    js = f"""
+    (() => {{
+        const turns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+        const newTurns = turns.slice({min_turn_count});
+        for (let i = newTurns.length - 1; i >= 0; i--) {{
+            const imgs = Array.from(newTurns[i].querySelectorAll(
+                'img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'
+            ));
+            if (imgs.length > 0) return imgs[imgs.length - 1].src;
+        }}
+        return null;
+    }})()
+    """
+    res = await agent.evaluate(js)
+    return res if isinstance(res, str) and res.startswith('http') else None
+
+def get_first_significant_word(prompt: str) -> str:
+    """
+    提取 prompt 的第一个有意义的英文词（长度≥4，跳过介词、角色名等高频通用词），
+    用于历史配对时的跨类型误匹配防护。
+    """
+    # 跳过这些高频词，它们在几乎每个 prompt 里都会出现
+    SKIP = {
+        'this','that','with','from','show','have','been','will','draw','same',
+        'your','character','spirit','guardian','bioluminescent','crimson','midnight',
+        'neon','abyssal','stalker','siren','warlord','investigator','painter',
+        'keeper','walker','mechanic','sniper','apprentice','nomad','scavenger',
+        'queen','boundary','lantern','mirror','tide','rust','sand','astrolabe',
+        'also','their','using','into','each','side','both','three','front',
+        'back','view','image','picture','sheet','design','concept','style',
+        'detailed','detail','clean','clear','light','dark','color','white',
+        'black','gray','blue','pink','purple','glow','glowing','include',
+        'featuring','shows','shown','showing','professional','masterpiece',
+    }
+    words = re.findall(r'\b[A-Za-z]{4,}\b', prompt)
+    for w in words:
+        if w.lower() not in SKIP:
+            return w.lower()
+    return words[0].lower() if words else ''
+
 async def scan_existing_web_images(agent: BrowserAgent):
     js_get = """
     (() => {
@@ -454,26 +512,56 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
         (() => {{
             const bodyText = document.body ? document.body.innerText : "";
             
-            // 1. 检测 ChatGPT 官方生图额度/使用频率上限，秒级拦截
-            if (bodyText.includes("You've reached your limit") || 
-                bodyText.includes("reached your limit") || 
-                bodyText.includes("reached the limit") ||
-                bodyText.includes("Please try again") ||
-                bodyText.includes("You have reached your message limit") ||
-                bodyText.includes("额度已达上限") ||
-                bodyText.includes("达到生图额度极限") ||
-                bodyText.includes("生图额度") ||
-                bodyText.includes("生图限制") ||
-                bodyText.includes("使用上限")) {{
+            // 1. 检测 ChatGPT 官方生图额度/使用频率上限，秒级拦截 (Smarter fuzzy check)
+            const isLimit = (() => {{
+                const lowerText = bodyText.toLowerCase();
+                if (lowerText.includes("limit")) {{
+                    if (lowerText.includes("reset") || 
+                        lowerText.includes("hour") || 
+                        lowerText.includes("minute") || 
+                        lowerText.includes("try again") || 
+                        lowerText.includes("reached") || 
+                        lowerText.includes("hit") || 
+                        lowerText.includes("quota")) {{
+                        return true;
+                    }}
+                }}
+                if (lowerText.includes("quota") && (lowerText.includes("exceed") || lowerText.includes("limit") || lowerText.includes("reach"))) {{
+                    return true;
+                }}
+                if (bodyText.includes("额度已达上限") || 
+                    bodyText.includes("达到生图额度极限") || 
+                    bodyText.includes("生图额度") || 
+                    bodyText.includes("生图限制") || 
+                    bodyText.includes("使用上限")) {{
+                    return true;
+                }}
+                return false;
+            }})();
+
+            if (isLimit) {{
                 return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达今日上限（Rate Limit / Quota Exceeded）" }};
             }}
 
-            // 2. 检测 DALL-E 临时服务错误
-            if (bodyText.includes("wasn't able to generate") || 
-                bodyText.includes("encountered an error") || 
-                bodyText.includes("generation tool encountered") || 
-                bodyText.includes("Error generating image")) {{
-                return {{ "status": "error", "error": "OpenAI DALL-E 官方绘图服务发生临时错误" }};
+            const lastTurn = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]')).pop();
+            if (lastTurn) {{
+                const turnText = lastTurn.innerText;
+                // 2. 检测 DALL-E 临时服务错误
+                if (turnText.includes("wasn't able to generate") || 
+                    turnText.includes("encountered an error") || 
+                    turnText.includes("generation tool encountered") || 
+                    turnText.includes("Error generating image")) {{
+                    return {{ "status": "error", "error": "OpenAI DALL-E 官方绘图服务发生临时错误" }};
+                }}
+
+                // 检测 DALL-E 内容安全政策拦截
+                if (turnText.includes("违反了我们的内容政策") || 
+                    turnText.includes("violates our content policy") ||
+                    turnText.includes("违反内容政策") ||
+                    turnText.includes("Content policy violation") ||
+                    turnText.includes("content policy")) {{
+                    return {{ "status": "policy_violation", "error": "检测到 ChatGPT 官方内容安全政策拦截" }};
+                }}
             }}
 
             // 3. 检查是否有生图指示或停止按钮，代表生图已经在运行了
@@ -549,6 +637,9 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, ti
             elif status == "error":
                 logging.error(f"检测到 OpenAI 官方后台发生暂时性生成错误: {res.get('error')}")
                 return "error"
+            elif status == "policy_violation":
+                logging.error(f"⚠️ [内容安全策略拦截] {res.get('error')}")
+                return "policy_violation"
             elif status == "generating" or status == "rendering" or is_generating:
                 logging.info("图片生成中 / 页面排版中 / AI思考中，继续监控...")
             else:
@@ -766,7 +857,9 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     
     # 2. 扫描已有大图缓存（做为后面触发 DALL-E 之后寻找新生成图片的基准）
     pre_srcs = await scan_existing_web_images(agent)
-    logging.info(f"页面当前大图缓存量: {len(pre_srcs)} 张")
+    # 【修复】同时记录当前 assistant turn 数量，用于生成后的图片 turn 锚定校验
+    pre_turn_count = await get_assistant_turn_count(agent)
+    logging.info(f"页面当前大图缓存量: {len(pre_srcs)} 张 | assistant turn 基准索引: {pre_turn_count}")
     
     # 3. 运行防虚拟化滚动收集，提取已生成的历史图与 prompt 的对应关系，并进行 Prompt 相似度精准匹配
     # 如果是已有缓存的专属会话，历史记录绝不应为空。如果是空，则很有可能是因为加载延迟，我们将进行重试
@@ -788,8 +881,14 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     bypass_types = {"modelSheet", "poseSheet", "expressionSheet", "detailSheet", "materialPalette", "outfitBreakdown", "damageState"}
     bypass_history = (char_id == "char_0006_rust_mechanic" and img_type in bypass_types)
     
+    target_first_word = get_first_significant_word(prompt)
     if not bypass_history:
         for pair in history_pairs:
+            # 【修复】首词强校验：匹配 pair 的 prompt 首个有意义词必须与目标 prompt 相同，
+            # 防止「道具」类型因含 crystal lantern 而与「线稿」「破损」等 prompt 误匹配。
+            pair_first_word = get_first_significant_word(pair["prompt"])
+            if pair_first_word != target_first_word:
+                continue
             sim = get_prompt_similarity(prompt, pair["prompt"])
             if sim > 0.65 and sim >= max_sim: # 使用 >= 保证存在重生成时选取最新一张
                 max_sim = sim
@@ -831,10 +930,46 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     new_src = await poll_until_image_ready(agent, pre_srcs)
     if new_src == "quota_limit":
         logging.error(f"⚠️ [限额拦截] 检测到生图限额已满，停止当前角色的流水线生成以避免无谓重试。")
+        screenshot_path = os.path.join(target_dir, "error_screenshot.png")
+        os.makedirs(target_dir, exist_ok=True)
+        try:
+            await agent.screenshot(screenshot_path)
+            logging.info(f"📸 [限额现场] 已自动保存限额截图至: {screenshot_path}")
+        except Exception as se:
+            logging.error(f"📸 自动保存限额截图失败: {se}")
         return "quota_limit"
+    if new_src == "policy_violation":
+        logging.error(f"⚠️ [内容安全策略拦截] 检测到内容政策冲突，跳过此资产生成。")
+        screenshot_path = os.path.join(target_dir, "error_screenshot.png")
+        os.makedirs(target_dir, exist_ok=True)
+        try:
+            await agent.screenshot(screenshot_path)
+            logging.info(f"📸 [策略拦截现场] 已自动保存内容安全截图至: {screenshot_path}")
+        except Exception as se:
+            logging.error(f"📸 自动保存内容安全截图失败: {se}")
+        return "policy_violation"
     if new_src == "error" or not new_src:
         logging.error(f"绘图执行出现错误或超时，本次生成失败。")
+        screenshot_path = os.path.join(target_dir, "error_screenshot.png")
+        os.makedirs(target_dir, exist_ok=True)
+        try:
+            await agent.screenshot(screenshot_path)
+            logging.info(f"📸 [超时/错误现场] 已自动保存错误截图至: {screenshot_path}")
+        except Exception as se:
+            logging.error(f"📸 自动保存错误截图失败: {se}")
         return False
+
+    # 【修复】Turn 索引锚定校验：验证 poll 返回的图片是否真的来自新 turn（编号 > pre_turn_count）。
+    # 若 URL 集合差值检测到的图片实为被虚拟滚动重新载入的旧图，则从最新 turn 里重新取图修正。
+    anchored_src = await get_image_from_newest_turns(agent, pre_turn_count)
+    if anchored_src and anchored_src != new_src:
+        logging.warning(
+            f"⚠️ [Turn锚定修正] poll 检测到的图片 URL 与最新 turn 的图片不一致，"
+            f"疑似历史虚拟化重载图，已切换为最新 turn 图片。"
+        )
+        new_src = anchored_src
+    elif not anchored_src:
+        logging.warning("⚠️ [Turn锚定] 未找到新 turn 图片，继续使用 poll 返回的 URL。")
         
     # 6. 智能保存大图，绕过 FDM 拦截，直接存入目标文件夹
     logging.info(f"正在通过 smart_save 智能直存图片至: {target_path}")
@@ -4677,7 +4812,18 @@ Solid clean dark gray background."""
         }
     ]
 
-    full_plan = crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan + rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan + rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan + lantern_keeper_plan + mirror_walker_plan + ink_painter_plan + abyssal_zitherist_plan + talisman_weaver_plan + underworld_magistrate_plan + frost_sword_immortal_plan + zen_monk_plan + shadow_puppeteer_plan
+    full_plan = (
+        crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
+        rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan +
+        rust_warlord_plan + rust_scavenger_queen_plan + boundary_investigator_plan +
+        lantern_keeper_plan + mirror_walker_plan + ink_painter_plan +
+        abyssal_zitherist_plan + talisman_weaver_plan + underworld_magistrate_plan +
+        frost_sword_immortal_plan + zen_monk_plan + shadow_puppeteer_plan +
+        siren_plan + tide_warlord_plan + abyssal_stalker_plan +
+        bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
+        dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
+        ancient_druid_plan
+    )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
@@ -4733,6 +4879,9 @@ Solid clean dark gray background."""
                     if res == "quota_limit":
                         logging.critical("🚨 [额度已达上限] 触发 OpenAI 生图频率或额度限制，系统将直接强行终止并退出整个绘图流水线！")
                         return
+                    if res == "policy_violation":
+                        logging.critical("🚨 [内容安全策略拦截] 触发内容政策拦截，将直接跳过此项并不再重试。")
+                        break
                     if res:
                         success = True
                         break
@@ -4775,5 +4924,1120 @@ def main():
     except Exception as e:
         logging.critical(f"严重未捕获错误: {e}", exc_info=True)
 
+
+# ======================================================
+# 🦄 自动生成的角色生图方案 (Module Level)
+# ======================================================
+siren_plan = [
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "main",
+        "prompt": "A masterpiece marine fantasy concept art of the Abyssal Siren. An ethereal, beautiful young mermaid priestess with highly detailed expressive facial features and flowing, wavy bioluminescent aqua-blue hair floating in water. Her eyes are a pure, tear-blue. She wears a semi-translucent marine gown woven from sea-silk, pearls, and coral branches. Her lower body is a sleek, elegant fish tail with scales that shimmer with a gradient of cyan and deep blue bioluminescent light. She is underwater, holding a water-resonance harp that glows with soft teal energy. The background features a deep-sea coral forest with glowing jellyfish and schools of silver fish, lit by shafts of moonlight filtering down through the deep water, casting a magical rim light. Cinematic, hyper-realistic, 8k resolution."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "portrait",
+        "prompt": "Now, draw a close-up portrait of the exact same Abyssal Siren character from our conversation. Focus on her face and shoulders, capturing her flowing wavy aqua-blue bioluminescent hair, her pure tear-blue eyes with a gentle sad expression, and her white pearl shell earrings. She is floating underwater, with tiny bubbles rising around her. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "expression",
+        "prompt": "Now, draw an expression sheet of the exact same Abyssal Siren character from our conversation. Show her on a solid, clean dark gray background with three different facial expressions side-by-side: one serene and calm, one singing with her mouth gently open and sound waves floating around, and one showing a faint, gentle and warm smile. High-fidelity details, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "turnaround",
+        "prompt": "Now, draw a professional character turnaround model sheet of the exact same Abyssal Siren character. Show three views: front, side, and back, floating in a neutral pose. She is wearing her semi-translucent white-and-aqua gown and showing her elegant fish tail with scales shimmering. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "outfit",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nPrimary request:\\nCreate a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\nGender / age impression: young woman, ethereal, beautiful mermaid priestess\\nBody shape: slender and elegant mermaid build\\nFace: highly detailed features, pure tear-blue eyes showing gentle sadness\\nHair: wavy bioluminescent aqua-blue hair floating in water, glowing at the tips\\nOutfit: semi-translucent white-and-aqua gown woven from sea-silk, pearls, and coral branches\\nAccessories / weapon: water-resonance harp made of shipwreck wood and glowing water-flow strings, pearl shell earrings\\nColor palette: deep-sea blue, aqua-green, pearl white, bioluminescent cyan, coral pink\\nFixed traits that must never change: wavy aqua-blue bioluminescent hair, tear-blue eyes, pearl shell earrings, water-resonance harp\\n\\nCurrent asset goal:\\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, her default white-and-aqua gown; in the middle, her coral ritual gown (a majestic dress made of pink coral branches, pearl strings, and golden sea anemone silks); on the right, her battle tide armor (sleek pearl-white shell armor plates covering her torso and shoulders, with bioluminescent blue energy seams, and a silver trident at her side). Keep her pearl shell earrings in all three outfits.\\n\\nStyle:\\nFantasy character concept art, high-fidelity design sheet, detailed fabric and shell material rendering, coherent design language, consistent facial identity, production-ready asset.\\n\\nComposition:\\nShow three side-by-side full-body views of the same character standing/floating neutrally.\\n\\nBackground:\\nPlain clean dark gray background."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "prop",
+        "prompt": "Now, draw a high-fidelity detailed design sheet of the Abyssal Siren's signature gear: her water-resonance harp made of deep-sea shipwreck wood and glowing water-flow strings, and her white pearl shell earrings. Show them from multiple angles. Solid, clean dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "scene",
+        "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. A majestic, ancient tide temple ruins under deep water, surrounded by giant glowing deep-sea coral forests, luminous jellyfish floating, and moonlight beams filtering through the water surface. Cinematic, hyper-realistic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "fullBody",
+        "prompt": "Now, draw a full-body cinematic splash art of the exact same Abyssal Siren character. She floats gracefully in her white-and-aqua gown, holding her water-resonance harp, with schools of small silver fish swimming around her tail. Solid, extremely dark, low-contrast studio background. Masterpiece, highly detailed, 8k."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "cover",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nPrimary request:\\nCreate a high-quality character asset image for the following character.\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\nGender / age impression: young woman, ethereal, beautiful mermaid priestess\\nHair: wavy bioluminescent aqua-blue hair floating in water\\nEyes: pure tear-blue\\nOutfit: semi-translucent white-and-aqua gown\\nAccessories: water-resonance harp, pearl shell earrings\\n\\nCurrent asset goal:\\nGenerate a cover image. The Siren floats holding her glowing harp inside a majestic underwater tide temple ruins. Bioluminescent coral and drifting jellyfish create an ethereal, dreamlike atmosphere. High polish, vertical framing.\\n\\nStyle:\\nFantasy character concept art, cinematic poster, dramatic lighting, unreal engine 5 render style."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "moodboard",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\nHair: wavy bioluminescent aqua-blue hair\\n\\nCurrent asset goal:\\nGenerate a moodboard collage. Four panels: one showing glowing blue water-flow harp strings, one showing shimmering fish scales with cyan-blue gradient, one showing white pearl shell earrings on velvet, and one showing deep-sea coral forest under soft blue light. Ethereal mystery tone."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "sketch",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a concept sketch sheet. Traditional concept pencil sketches showing the Siren in 3 study poses: floating calmly, playing her water harp, and looking up towards the light. Clean hand-drawn lines."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "modelSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a standard model sheet. Full-body front, side, and back views of the Siren floating neutrally in her white-and-aqua gown."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "poseSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a pose sheet. Show 5 poses of the Siren on one clean sheet: playing her water harp, casting a tide-shield, swimming downwards, singing, and resting on a giant sea shell."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "expressionSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate an expression sheet. Show 8 bust portraits of the Siren in a clean grid: serene, singing with closed eyes, gentle smile, warning look, crying, focused, surprised, and tired/sad."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "detailSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a detail sheet. Close-up panels showing her aqua-blue bioluminescent hair strand glow, the shell and pearl details of her gown collar, the shipwreck wood grain of her harp, and the pearl shell pattern of her earrings."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "materialPalette",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate a material and color palette sheet. Show swatches of white sea-silk, aqua-blue bioluminescent hair, pink coral branch, and glowing blue water-flow beside a neutral front view of the character."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "outfitBreakdown",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate an outfit breakdown sheet. Show separate layers of her clothing: the outer white-and-aqua gown, the shell bodice, the coral branch sash, and the pearl string straps."
+    },
+    {
+        "char_id": "char_0016_deep_sea_siren",
+        "char_name": "深海歌姬",
+        "img_type": "damageState",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Siren (深海歌姬)\\n\\nCurrent asset goal:\\nGenerate damage state variants. Show 3 full-body versions of the Siren: clean/default; battle-worn with seaweed tangles and minor tail scratches; and heavily damaged with her gown torn, her bioluminescent hair dim, tail scales cracked and bleeding, and her water harp strings broken."
+    }
+]
+
+tide_warlord_plan = [
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "main",
+        "prompt": "A masterpiece marine fantasy concept art of the Abyssal Warlord. An ethereal, powerful mature mermaid warlord with highly detailed chiseled facial features, glowing golden-amber eyes, and messy sea-foam white-and-gray hair floating in water. He wears heavy dark marine armor plates forged from shipwreck iron and Leviathan bones. His lower body is a thick, sleek dark blue scaled tail. He is underwater, holding his massive Tide-shaking Trident, a classic three-pronged spear made of bone with exactly three prongs (one central vertical spike and two symmetrical side prongs curving slightly outward). The trident radiates vibrant cyan water currents. Background features deep ocean trench ruins with black smokers and hydrothermal vents glowing red, cinematic, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "portrait",
+        "prompt": "Now, draw a close-up portrait of the exact same Abyssal Warlord character from our conversation. Focus on his face and shoulders, capturing his chiseled chinned face with battle scars, his glowing golden-amber eyes, and his messy sea-foam hair floating in water. Simple dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "expression",
+        "prompt": "Now, draw an expression sheet of the exact same Abyssal Warlord character from our conversation. Show three facial expressions side-by-side: one stern and silent, one letting out a fierce battle shout with his mouth wide open, and one showing a grim, knowing half-smirk. Plain clean dark gray background. High-fidelity details, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "turnaround",
+        "prompt": "Now, draw a professional character turnaround model sheet of the exact same Abyssal Warlord character. Show three views: front, side, and back, floating in a neutral pose. Clear silhouette from head to tail tip. Plain clean dark gray background. High-fidelity details, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "outfit",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\nGender / age impression: mature man, fierce and commanding, weather-beaten fantasy mermaid presence\\nHair: messy, wavy white-and-gray hair\\nOutfit: heavy bone and shipwreck iron armor\\n\\nCurrent asset goal:\\nGenerate an outfit variant image. Show three different outfits side-by-side: on the left, his default heavy bone armor; in the middle, his ceremonial coral scale armor (shining gold-and-red coral scales with a royal crown-like helm); on the right, his deep-sea wanderer cloak (a flowing dark-green cloak woven from sea kelp and glowing deep-sea anemones). Keep all core features consistent. Any tridents shown must strictly have exactly three prongs (one central vertical spike and two symmetrical side prongs).\\n\\nStyle:\\nFantasy character concept art, high-fidelity design sheet."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "prop",
+        "prompt": "Now, draw a prop and weapon reference sheet of the Abyssal Warlord's gear: his massive Tide-shaking Trident forged from elder beast bone, flowing with bright bioluminescent cyan water energy (the trident must strictly have exactly three prongs: one long central spike and two symmetrical side prongs curving slightly outward. Avoid four or five prongs). Show the trident and a detailed close-up of his Leviathan bone chestplate from multiple angles. Clean dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "scene",
+        "prompt": "Now, draw a stunning, highly detailed landscape scene concept art. A deep ocean trench landscape showing towering black hydrothermal vents (black smokers), hydrothermal mineral chimneys glowing with faint red heat, surrounded by deep-sea bioluminescent sea creatures. No character figures. Cinematic, hyper-realistic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "fullBody",
+        "prompt": "Now, draw a full-body splash art of the Warlord visible from head to his tail tip, floating in an authoritative guardian stance, holding his massive Tide-shaking Trident with both hands. The trident must strictly have exactly three prongs (one central vertical spike and two symmetrical side prongs). Plain clean dark gray background. Masterpiece, highly detailed, 8k."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "cover",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\nWeapon: Tide-shaking Trident\\n\\nCurrent asset goal:\\nGenerate a cover image. The Warlord floats in front of a giant kraken silhouette in the dark deep ocean, his trident glowing brightly (the trident must strictly have exactly three prongs: one central vertical spike and two symmetrical side prongs), creating high contrast. Strong vertical framing.\\n\\nStyle:\\nEpic vertical cover poster, dramatic cinematic lighting, unreal engine 5 render style."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "moodboard",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a moodboard collage. Four panels: one showing bioluminescent cyan water bubbles, one showing chiseled dark ship iron textures with barnacles, one showing white fossil bone teeth, and one showing deep ocean vents under soft blue light. Ethereal abyssal mystery tone."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "sketch",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a concept sketch sheet. Monochrome pencil drawings, clean traditional sketch style showing the Warlord in 3 study sketches: thrusting his trident (the trident must strictly have exactly three prongs: one central vertical spike and two symmetrical side prongs), roaring, and crossing his arms in defense."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "modelSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a standard model sheet. Full-body front, side, and back views of the Warlord floating neutrally in his bone armor. Plain clean light gray studio background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "poseSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a pose sheet. Show 5 poses on one clean sheet: guard stance, trident thrusting, swimming downward fast, calling tidal wave, and resting on an iron anchor. In all poses, his trident must strictly have exactly three prongs (one central spike, two side spikes). Solid clean dark gray background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "expressionSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate an expression sheet. Show 8 bust portraits in a grid: calm, silent rage, battle roar, grim smirk, exhausted, warning glare, eye closed in pain, focused determination. Clean dark gray background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "detailSheet",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a detail sheet. Close-up panels showing his shoulder scar markings, the bone trident grip wrapping, the leviathan bone chestplate joints, and his glowing eyes close-up. Clean light gray background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "materialPalette",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate a material and color palette sheet. Show swatches of bone white, ship iron gray, bioluminescent cyan energy, and deep blue scales next to a neutral front view of the character. If he holds his trident, it must strictly have exactly three prongs (one central spike, two side spikes). Plain gray background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "outfitBreakdown",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate an outfit breakdown sheet. Separate layers of his gear: bone chestplate, iron shoulder guards, tide-washed ropes sash, waist scale armor, and trident (the trident must strictly have exactly three prongs: one central vertical spike and two symmetrical side prongs). Plain light background."
+    },
+    {
+        "char_id": "char_0017_tide_warlord",
+        "char_name": "渊海狂澜",
+        "img_type": "damageState",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Warlord (渊海狂澜)\\n\\nCurrent asset goal:\\nGenerate damage state variants. Show 3 full-body versions: default; battle-worn with cracked armor and kelp tangles; heavily damaged with bone chestplate shattered, tail scales cracked and scarred, trident cracked, and glowing eyes dimming. The trident in all views must strictly have exactly three prongs (one central spike, two side spikes)."
+    }
+]
+
+abyssal_stalker_plan = [
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "main",
+        "prompt": "A masterpiece marine fantasy concept art of the Abyssal Stalker. An ethereal, stealthy young shark-mermaid hunter with highly detailed sharp facial features, glowing emerald-green eyes, and messy black hair floating in water. She wears a light chestplate made of black sea-shell plates. Her lower body is a sleek, powerful silver-gray shark tail with a distinct dorsal fin. She is underwater in a dark ocean trench, holding dual curved daggers forged from black obsidian that glow with vibrant bioluminescent lime-green energy. The background features deep sea ruins, hydrothermal vents, and glowing jellyfish filtering soft light through the water, cinematic, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Abyssal Stalker, face clearly visible. Focus on her sharp facial features, slanted shark-like ears, messy black hair floating in water, and piercing emerald-green eyes. Minimalist dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Abyssal Stalker. Show three facial expressions side-by-side: one calm and calculating with closed lips, one snarling with rows of sharp teeth visible, and one focused with narrowed emerald-green eyes during combat. Maintain the same hair and face structure. Plain dark background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Abyssal Stalker. Show three views: front, side, and back, floating neutrally. Her eyes glow emerald, and her silver-gray shark tail with its dorsal fin is clearly visible. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "outfit",
+        "prompt": "Use case: stylized-concept\\nAsset type: character asset for a reusable character pool\\n\\nCharacter lock:\\nName: The Abyssal Stalker (逆潮之锋)\\n\\nCurrent asset goal:\\nGenerate an outfit variant image showing three outfits side-by-side: left, her default light shell armor; middle, a ritual scale dress made of iridescent dark-blue fish scales; right, a scout wrap made of dark green kelp ribbons and leather straps. All maintain her silver-gray shark tail and glowing green eyes. Clean background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Abyssal Stalker's gear: her dual curved daggers forged from black obsidian. Show the daggers from multiple angles, highlighting the sharp jagged obsidian edges, the leather cord wrapping on the hilts, and how they connect at the handles to form a double-ended glaive. The blades glow with vibrant lime-green energy lines. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of a deep-sea hydrothermal trench field. Show active vents venting black smoke, hydrothermal chimneys glowing dull orange-red at their cracks, surrounded by bioluminescent underwater flora and corals. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Abyssal Stalker. She floats neutrally, holding her dual obsidian daggers in a reverse grip. Her sleek silver-gray shark tail, sharp dorsal fin, light black shell breastplate, and glowing emerald-green eyes are fully visible. Clean light gray background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Abyssal Stalker. She is shown in a dynamic floating pose in the foreground, dual daggers glowing bright lime-green. The background is the dark abyss of a deep-sea trench with silhouettes of giant kraken tentacles looming. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Abyssal Stalker. Four panels: one showing bioluminescent lime-green fluid flowing over black obsidian glass; one showing silver-gray shark scales texture; one showing deep-sea hydrothermic smoke vents; and one showing dense underwater kelp forests in shadows."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Abyssal Stalker. Show 3 quick study sketches: lunging forward with daggers; hiding behind a coral rock; and standing neutrally holding her connected double-glaive. Clean white studio background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Abyssal Stalker. Full-body front, side, and back views of her floating neutrally with her dual obsidian daggers in hip sheaths. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Abyssal Stalker showing 5 poses on one sheet: swimming downwards rapidly; dual daggers crossed in defense; dashing forward in a hunting pose; connecting her daggers into a double-ended glaive; and crouching stealthily on a dark sea rock. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Abyssal Stalker showing 8 bust portraits in a grid: calm, calculating, aggressive snarl with sharp shark teeth visible, warning glare, exhausted, breathing heavily in pain, smirking, and deep focus. Clean background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Abyssal Stalker: close-ups of her slanted ears, the jagged teeth patterns on her chestplate armor joints, the textured silver-gray scales of her shark tail, and the glowing green toxin trail on the obsidian blade."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of black shell plates, silver-gray scales, glowing lime-green poison, and dark seaweed ropes next to a front view of the Abyssal Stalker. Plain background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Abyssal Stalker's gear: the chestplate shell pieces, the waist seaweed sashes, the forearm spike wraps, and the dagger thigh sheaths. Clean light background."
+    },
+    {
+        "char_id": "char_0018_abyssal_stalker",
+        "char_name": "逆潮之锋",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with shell armor cracked and seaweed wraps torn; right, heavily worn with tail scales fractured and leaking glowing green energy, chestplate cracked, and one dagger broken in half. Clean dark gray background."
+    }
+]
+
+bioluminescent_spirit_plan = [
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "main",
+        "prompt": "A masterpiece marine fantasy concept art of the Bioluminescent Spirit. An ethereal, beautiful young mermaid-jellyfish spirit with highly detailed expressive facial features, glowing pink-blue eyes, and wavy lavender hair floating in water. She wears a translucent pale pink-purple dome veil resembling a jellyfish hood. Her lower body is a sleek dark blue tail with several glowing, translucent pink-purple tentacles drifting. She is underwater, holding a delicate crystal lantern housing a glowing bioluminescent jellyfish. The background features deep-sea ruins with glowing anemones and schools of floating tiny jellyfish, lit by soft shafts of bioluminescent light, cinematic, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Bioluminescent Spirit, face clearly visible. Focus on her sharp yet delicate facial features, glowing pink-blue eyes, wavy lavender hair floating in water, and the translucent pale pink-purple dome veil over her head. Minimalist dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Bioluminescent Spirit. Show three facial expressions side-by-side: one serene and calm with closed eyes, one surprised and curious with eyes wide open, and one showing a gentle, warm smile. Maintain the same lavender hair, translucent dome veil, and face structure. Plain dark background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Bioluminescent Spirit. Show three views: front, side, and back, floating neutrally. Her eyes glow pink-blue, and her dark blue fish tail with long, glowing pink-purple tentacles is clearly visible. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Bioluminescent Spirit. Show three outfit designs side-by-side: left, her default lavender gown; middle, a formal white ceremonial gown; right, a travel wrap of ocean silk. All designs maintain her lavender hair and pink-blue eyes. Solid light gray background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Bioluminescent Spirit's gear: her signature crystal lantern. Show the lantern from multiple angles, highlighting the intricate carvings on the dark crystal frame, the bronze hanging chain, and the glowing bioluminescent jellyfish floating inside. The lantern casts a warm teal-purple light. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Tide Temple无光区 (dark zone). Show ancient underwater ruins and archways, filled with giant glowing coral trees, bioluminescent sea anemones, and schools of glowing jellyfish filtering light through the dark water. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Bioluminescent Spirit. She floats gracefully in the water, holding her glowing crystal lantern in front of her. Her sleek dark blue fish tail, long pink-purple translucent tentacles, light marine gown, and glowing pink-blue eyes are fully visible. Clean light gray background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Bioluminescent Spirit. She is shown in a dynamic floating pose in the foreground, holding her glowing crystal lantern which casts a bright light. The background is a mysterious deep-sea temple with silhouettes of giant ancient ruins. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Bioluminescent Spirit. Four panels: one showing glowing pink-purple jellyfish tentacles underwater; one showing deep-sea dark crystal texture; one showing soft glowing neon teal light in dark water; and one showing delicate white pearls and pink coral grains."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Bioluminescent Spirit. Show 3 quick study sketches: floating peacefully with her lantern; casting a light barrier with her hand; and curling her fish tail neutrally. Clean white studio background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Bioluminescent Spirit. Full-body front, side, and back views of her floating neutrally with her crystal lantern. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Bioluminescent Spirit showing 5 poses on one sheet: floating vertically holding her lantern; casting a micro-glow barrier; swimming downwards with tentacles trailing; sitting on a glowing coral; and curling up defensively. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Bioluminescent Spirit showing 8 bust portraits in a grid: serene, surprised, gentle smile, worried frown, closed-eyes meditation, focused spellcasting, shy look, and exhausted/tired. Clean background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Bioluminescent Spirit: close-ups of the translucent texture of her jellyfish dome veil, the detailed glowing patterns in her pink-blue eyes, the pearlescent surface of her dark blue tail scales, and the crystal frame joints of her lantern."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of translucent pink-purple veil fabric, dark blue scales, glowing teal-purple light, and white coral beads next to a front view of the Bioluminescent Spirit. Plain background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Bioluminescent Spirit's gear: the translucent dome veil, the shell bodice, the light silk gown layers, the seaweed waist sash, and the lantern handle attachment. Clean light background."
+    },
+    {
+        "char_id": "char_0019_bioluminescent_spirit",
+        "char_name": "幽萤之灵",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with dome veil slightly torn and lantern dim; right, heavily worn with veil ripped, tail tentacles fractured and leaking glowing blue energy, gown torn, and her crystal lantern cracked with the inner flame dim. Clean dark gray background."
+    }
+]
+
+rule_weaver_plan = [
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "main",
+        "prompt": "A masterpiece modern urban mystery concept art of the Rule Weaver. A slender, elegant young East Asian woman with highly refined focused facial features, long dark gray hair, wearing a gold-rimmed monocle over one eye, a sleek double-breasted black trench coat, and a dark purple tie. She holds a glowing crimson fountain pen in one hand, writing glowing red rules in the air onto a heavy black leather ledger in her other hand. Ethereal glowing red text runes hover and chain around her in the dark. The background is a dimly lit, atmospheric investigation office with glowing red computer screens and crime files. High-contrast cinematic lighting, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Rule Weaver, face clearly visible. Focus on her sharp facial features, long dark gray hair, a gold-rimmed monocle over one eye, and her dark purple tie under a black trench coat. She looks cold and focused. Minimalist dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Rule Weaver. Show three facial expressions side-by-side: one cold and emotionless, one speaking a stern command with eyes narrowed, and one showing a faint tired smirk. Maintain the same dark gray hair, monocle, and face structure. Plain dark background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Rule Weaver. Show three views: front, side, and back, standing neutrally. She wears the double-breasted black trench coat, dark purple tie, and gold monocle. Her long dark gray hair falls down her back. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Rule Weaver. Show three outfit designs side-by-side: left, her default black trench coat uniform; middle, a formal dark gray investigator blazer; right, a casual black sweater with purple accent scarf. All designs maintain her long dark gray hair and gold monocle. Solid light gray background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Rule Weaver's gear: her signature glowing crimson fountain pen and heavy black leather ledger. Show the pen and the ledger from multiple angles, highlighting the intricate gold engravings on the pen body, the glowing crimson ink at the nib, and the embossed silver symbol on the ledger cover. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Paranormal Special Investigation Office. Show a spacious office in deep shadows at midnight, with tables covered in crime files, glowing red screens displaying bizarre data, and floating red neon warning signs. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Rule Weaver. She stands tall and elegant, holding her glowing crimson fountain pen and writing on her open black leather ledger. She wears her double-breasted black trench coat, dark purple tie, and gold monocle. Glowing red runes hover around her. Clean light gray background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Rule Weaver. She is shown in a dynamic pose in the foreground, pointing her glowing crimson fountain pen forward as red glowing chains of text weave around her. The background features a distorted, surreal urban skyline under a blood-red moon. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Rule Weaver. Four flat panels showing: one of glowing crimson ink droplets spreading in dark water; one of a close-up of a vintage gold-rimmed monocle; one of textured black leather with silver engravings; and one of neon red glowing text runes shining in shadows. Clean grid layout, no borders, no text, no labels, plain background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Rule Weaver. Show 3 quick study sketches: standing and writing on her ledger; pointing her pen to cast a rule-lock; and standing neutrally looking over her shoulder. Clean white studio background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Rule Weaver. Full-body front, side, and back views of her standing neutrally with her black ledger and red pen. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Rule Weaver showing 5 poses on one sheet: standing vertically writing rules in the air; pointing her glowing red pen forward; holding the closed ledger against her chest; inspecting a floating red rune; and standing in a defense stance with red chains of text surrounding her. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Rule Weaver showing 8 bust portraits in a grid: cold/emotionless, speaking a command, faint tired smirk, focused concentration, eyes closed in meditation, analytical frown, startled look, and exhausted/fatigued. Clean background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Rule Weaver: close-ups of the gold-rimmed monocle, the glowing crimson fountain pen nib with red energy, the embossed silver seal on the black ledger, and the dark purple tie knot on the black trench coat collar. Clean light background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of black trench coat fabric, gold metal monocle frame, glowing crimson ink, and dark purple tie silk next to a front view of the Rule Weaver. Plain background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Rule Weaver's gear: the black trench coat, the investigator shirt, the dark purple tie, the silver badge, and the leather holster. Clean light background."
+    },
+    {
+        "char_id": "char_0020_rule_weaver",
+        "char_name": "规则编织者",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with trench coat slightly torn and pen glowing dimly; right, heavily worn with trench coat shredded, monocle cracked, ledger torn with burning red pages, and red glowing rules leaking chaotically around her. Clean dark gray background."
+    }
+]
+
+sand_sailor_plan = [
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "main",
+        "prompt": "A masterpiece modern wasteland concept art of the Sand Helmsman. A grizzled young man with wind-blown silver hair and brass navigator goggles over his eyes, his skin weathered to a rugged bronze. He wears a dust-caked dark brown captain's coat with a high collar, and a heavy utility harness rigged with ropes and pulleys. He stands at the wooden wheel of a scrap-metal land sailer with patched canvas sails, steering through rolling golden desert dunes under a hazy storm-swept sky. He holds a glowing anemometer, while in the background, the colossal half-buried rusty skeleton of an ancient cargo ship looms on the horizon. Cinematic, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Sand Helmsman, face clearly visible. Focus on his wind-blown silver hair, brass navigator goggles, rugged bronze skin, and the high collar of his dark captain's coat. He looks determined and focused. Minimalist dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Sand Helmsman. Show three facial expressions side-by-side: one calm and squinting into the wind, one laughing heartily, and one battle-hardened with gritted teeth. Maintain the same silver hair, goggles, and captain's coat. Plain dark background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Sand Helmsman. Show three views: front, side, and back, standing neutrally. He wears the captain's coat, goggles, and utility harness. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Sand Helmsman. Show three outfit designs side-by-side: left, his default captain's coat; middle, a lighter sleeveless utility vest; right, a heavy protective sand-storm poncho. All designs maintain his silver hair and goggles. Solid light gray background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Sand Helmsman's gear: his signature brass anemometer and pneumatic harpoon gun. Show the anemometer and the harpoon gun from multiple angles, highlighting the intricate pressure gauges, copper coils, and rusty scrap metal joints. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Dune Ocean (无尽沙丘). Show rolling golden desert sand dunes stretching to the horizon under a dusty, orange-tinted storm sky, with half-buried metal ruins of ancient skyscrapers and rusted cargo ships. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Sand Helmsman. He stands heroically, holding his brass wind-gauge and resting his other hand on a heavy pneumatic harpoon gun. He wears his Captain's coat, goggles, and utility harness. Clean light gray background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Sand Helmsman. He is shown in a dynamic pose in the foreground, steering his land sailer as sand sprays around him. The background features a massive sandstorm wall and a blazing desert sun. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Sand Helmsman. Four flat panels showing: one of dry golden desert sand texture; one of detailed brass gears and navigator goggles; one of weathered dark brown leather captain's coat fabric; and one of a rusty metal ship hull. Clean grid layout, no borders, no text, no labels, plain background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Sand Helmsman. Show 3 quick study sketches: standing at the ship wheel; aiming his harpoon gun; and resting on a scrap pile looking at the sky. Clean white studio background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Sand Helmsman. Full-body front, side, and back views of him standing neutrally with his captain's coat. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Sand Helmsman showing 5 poses on one sheet: steering the wheel actively; aiming the harpoon gun; looking through a brass telescope; climbing a rope ladder; and standing defiantly against a sandstorm. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Sand Helmsman showing 8 bust portraits in a grid: calm, laughing, gritted teeth, thoughtful frown, squinting eyes, surprised look, shouting commands, and fatigued. Clean background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Sand Helmsman: close-ups of the brass navigator goggles, the pneumatic valve on his harpoon gun, the leather captain's coat stitching, and the anemometer's spinning cups. Clean light background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of dark captain's coat wool, weathered brown leather, shiny brass plating, and coarse golden sand next to a front view of the Sand Helmsman. Plain background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Sand Helmsman's gear: the captain's coat, the inner utility shirt, the leather harness, the heavy cargo pants, and the combat boots. Clean light background."
+    },
+    {
+        "char_id": "char_0021_sand_sailor",
+        "char_name": "尘沙领航员",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with coat torn and goggles cracked; right, heavily worn with captain's coat shredded, harness broken, harpoon gun dented, and bleeding scratches on his face. Clean dark gray background."
+    }
+]
+
+dome_botanist_plan = [
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "main",
+        "prompt": "A masterpiece modern wasteland sci-fi concept art of the Dome Botanist. A young female researcher with messy dark green hair, wearing thick round glasses, a researcher lab coat stained with dirt and green botanical fluids over cargo pants. She carries a large, spherical glass bio-dome backpack housing a single glowing green seedling floating in nutrient gel. She wears heavy protective gloves, using a modified brass watering sprayer to nurture a small glowing blue mutant flower growing from a crack in the concrete wasteland. Vines and patches of glowing green moss drape over the decaying concrete ruins around her. Cinematic, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Dome Botanist, face clearly visible. Focus on her messy dark green hair, thick round glasses, and the collar of her soiled white lab coat. She looks focused and gentle. Minimalist dark gray background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Dome Botanist. Show three facial expressions side-by-side: one serene with a gentle smile, one focused and squinting through glasses, and one worried with a slight frown. Maintain the same dark green hair, glasses, and lab coat. Plain dark background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Dome Botanist. Show three views: front, side, and back, standing neutrally. She wears the white lab coat and carries the spherical glass bio-dome backpack. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Dome Botanist. Show three outfit designs side-by-side: left, her default lab coat; middle, a heavy protective bio-suit; right, a casual green sweater and work apron. All designs maintain her dark green hair and glasses. Solid light gray background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Dome Botanist's gear: her signature bio-dome backpack and modified brass watering sprayer. Show the backpack and the sprayer from multiple angles, highlighting the glowing green seedling in the glass orb, pressure tubes, and brass nozzle details. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Overgrown Concrete Ruins. Show decaying concrete building ruins overgrown with thick vines, patches of glowing green moss, and strange mutant glowing blue flowers under a gray post-apocalyptic sky. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Dome Botanist. She stands carefully, holding her modified brass watering sprayer in front of her. She wears her soiled white lab coat, cargo pants, and carries the glowing glass bio-dome backpack. Clean light gray background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Dome Botanist. She is shown in a dynamic pose in the foreground, shielding her bio-dome backpack from a toxic green acid rain storm. The background features decaying overgrown factory towers. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Dome Botanist. Four flat panels showing: one of glowing green seedlings in nutrient gel; one of textured concrete ruins with moss; one of a close-up of vintage round glasses; and one of glowing blue mutant flower petals. Clean grid layout, no borders, no text, no labels, plain background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Dome Botanist. Show 3 quick study sketches: kneeling and tending to a plant; checking the bio-dome gauges; and standing neutrally looking at a leaf. Clean white studio background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Dome Botanist. Full-body front, side, and back views of her standing neutrally with her bio-dome backpack. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Dome Botanist showing 5 poses on one sheet: kneeling to water a plant; running with her backpack secured; looking at a leaf with a magnifying glass; adjusting dials on her pack; and standing defensively shielding a seedling. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Dome Botanist showing 8 bust portraits in a grid: gentle smile, focused squint, worried frown, closed-eyes meditation, surprised gasp, happy grin, tired sigh, and determined look. Clean background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Dome Botanist: close-ups of the thick round glasses, the floating seedling inside the glass backpack, the dirty collar of her lab coat, and the brass nozzle of her sprayer. Clean light background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of white lab coat fabric, transparent glass, glowing green fluid, and rough concrete next to a front view of the Dome Botanist. Plain background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Dome Botanist's gear: the white lab coat, the cargo shirt, the utility belt, the cargo pants, and the high rain boots. Clean light background."
+    },
+    {
+        "char_id": "char_0022_dome_botanist",
+        "char_name": "穹顶植物学家",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with lab coat torn and glasses cracked; right, heavily worn with lab coat shredded, glass backpack dome cracked with glowing fluid leaking, and her hands wrapped in bandages. Clean dark gray background."
+    }
+]
+
+astral_mage_plan = [
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "main",
+        "prompt": "A masterpiece modern Western fantasy concept art of the Astral Archmage. A handsome young man with dark navy-blue curly hair and eyes reflecting faint blue starlight. He wears a heavy, deep blue velvet wizard robe intricately embroidered with golden zodiac star charts, the collar and trim glowing with faint starlight embers. He stands on the open balcony of a high Gothic observatory tower under a brilliant, hyper-detailed starry night sky with subtle aurora bands. He holds a rotating, multi-ringed golden brass astrolabe in one hand, projecting a miniature glowing blue galaxy at its center. A few torn parchment scroll sheets with glowing star orbits float around him. High-contrast cinematic lighting, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Astral Archmage, face clearly visible. Focus on his dark navy-blue curly hair, eyes reflecting faint blue starlight, and the high collar of his starry velvet robe. He looks calm and focused. Minimalist dark background, 8k."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Astral Archmage. Show three facial expressions side-by-side: one calm and calculating, one chanting spell with glowing eyes, and one showing a gentle, knowing smile. Maintain his blue curly hair and starry robe. Solid dark background, 8k."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Astral Archmage. Show three views: front, side, and back, standing neutrally. He wears the starry navy-blue velvet robe and holds his astrolabe. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Astral Archmage. Show three outfit designs side-by-side: left, his default velvet wizard robe; middle, a lighter academic research vest and shirt; right, an ornate celestial high ceremonial robe with large wing-like sleeves. All designs maintain his blue curly hair. Solid light gray background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Astral Archmage's gear: his signature rotating golden brass astrolabe and a leather-bound grimoire. Show the astrolabe and the book from multiple angles, highlighting the intricate stellar engravings, glowing gears, and parchment textures. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Starry Observatory Deck (观星露台). Show a high gothic tower balcony overlooking a vast sea of clouds under a breathtaking, cosmic night sky filled with nebulae, shooting stars, and deep blue constellations. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Astral Archmage. He stands holding his golden astrolabe in one hand and a glowing parchment sheet in the other. He wears his starry velvet robe and wizard hood. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Astral Archmage. He is shown in a dynamic pose in the foreground, raising his astrolabe as a massive beam of cosmic starlight strikes down from the sky. The background features giant celestial rings and starry portals. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Astral Archmage. Four flat panels showing: one of sparkling gold stars on deep blue fabric; one of vintage brass astrolabe gear details; one of glowing blue galaxy vortex; and one of ancient parchment papers with hand-drawn constellations. Clean grid layout, no borders, no text, plain background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Astral Archmage. Show 3 quick study sketches: standing at the telescope; holding a glowing parchment scroll; and sitting at a desk surrounded by astronomical charts. Clean white studio background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "modelSheet",
+        "prompt": "Standard model sheet of the Astral Archmage. Full-body front, side, and back views of him standing neutrally with his starry velvet robe. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Astral Archmage showing 5 poses on one sheet: chanting a star spell; pointing his astrolabe forward; examining a glowing map; looking through a telescope; and standing defiantly with wind-blown robes. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Astral Archmage showing 8 bust portraits in a grid: calm calculation, chanting spell with glowing blue eyes, serene smile, worried frown, surprised look, shouting commands, fatigue, and intense focus. Clean background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Astral Archmage: close-ups of the rotating rings of his astrolabe, the golden constellation embroidery on his collar, his starlight-reflecting eyes, and the glowing runes on a parchment page. Clean light background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of deep blue velvet, polished yellow brass, glowing blue galaxy dust, and ancient dry parchment next to a front view of the Astral Archmage. Plain background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Astral Archmage's gear: the velvet outer robe, the inner tunic, the wizard sash, the leather boots, and the astrolabe holster. Clean light background."
+    },
+    {
+        "char_id": "char_0023_astral_mage",
+        "char_name": "秘术观星者",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with robe torn and astrolabe glowing dimly; right, heavily worn with robes tattered, astrolabe cracked with leaking blue energy, and bleeding scratches on his face. Clean dark gray background."
+    }
+]
+
+moonshadow_ranger_plan = [
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "main",
+        "prompt": "A masterpiece modern forest fantasy concept art of the Moonshadow Ranger. A beautiful young half-elf woman with long silver hair in a high ponytail, wearing a dark green hooded wind-cloak and form-fitting leather armor. She stands on a branch of a massive ancient redwood tree, drawing a glowing oak longbow. The arrow tip radiates soft blue starlight. The background is a dense, atmospheric mystical forest bathed in silver moonlight, with glowing cyan mushrooms and drifting gold fireflies. High-contrast cinematic lighting, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Moonshadow Ranger, face clearly visible. Focus on her long silver hair in a high ponytail, glowing light-green eyes, and the hood of her dark green wind-cloak. She looks calm and alert. Minimalist dark green background, 8k."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Moonshadow Ranger. Show three facial expressions side-by-side: one calm and quiet, one shouting with focused eyes, and one displaying a rare, serene and gentle smile. Maintain her silver hair and green cloak. Plain dark background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Moonshadow Ranger. Show three views: front, side, and back, standing neutrally with arms relaxed by her sides. She wears the green hooded cloak and leather light armor. No weapons or bow are held to ensure clean posture and anatomical accuracy. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Moonshadow Ranger. Show three outfit designs side-by-side: left, her default leather armor and cloak; middle, a lighter ranger scouting outfit without the cloak; right, an ornate ceremonial elven leather guardian armor with gold leaf filigree. All designs maintain her silver ponytailed hair. Solid light gray background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Moonshadow Ranger's gear: her leaf-carved oak bow and a leather quiver with moonstone-tipped arrows. Show the bow and the quiver from multiple angles, highlighting the intricate wood grain, leather straps, and glowing blue arrow tip details. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Moonlit Pool (月光池塘) in the forest. Show a serene pond reflecting a massive full moon, surrounded by giant ancient weeping trees with glowing leaves and patches of cyan bioluminescent flowers. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Moonshadow Ranger. She stands balanced on a mossy log, holding her oak bow in one hand. She wears her dark green hooded cloak, light leather armor, and high leather boots. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Moonshadow Ranger. She is shown in a dynamic mid-air pose in the foreground, firing a glowing blue moonstone arrow down from the canopy. The background features giant redwood branches, swirling glowing leaves, and a huge silver full moon. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Moonshadow Ranger. Four flat panels showing: one of glowing mint-green leaves; one of weathered brown leather straps; one of glowing blue moonstone texture; and one of a dark misty forest canopy under moonlight. Clean grid layout, no borders, no text, plain background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Moonshadow Ranger. Show 3 quick study sketches: drawing her bow; tracking a footprint on the ground; and resting against a giant root looking at the moon. Clean white studio background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Moonshadow Ranger. Show a detailed full-body front view of her standing in her dark green cloak and leather armor, holding her signature full-sized leaf-carved oak bow (scaled proportionally to her body height). The side of the sheet shows detailed callouts of her bow and arrows. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Moonshadow Ranger showing 5 poses on one sheet: drawing the bow to fire; crouching on a high branch; sliding under a root; aiming a dagger; and standing defiantly with wind-blown hair. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Moonshadow Ranger showing 8 bust portraits in a grid: calm alert, shouting command, gentle smile, focused squint, surprised look, pain, fatigued, and intense focus. Clean background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Moonshadow Ranger: close-ups of the leaf carving on her oak bow, the glowing moonstone arrow tip, the leather stitching on her shoulder guards, and her starlight-reflecting green eyes. Clean light background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of dark green wool cloak fabric, weathered brown leather, glowing blue moonstone, and mossy ancient bark next to a front view of the Moonshadow Ranger. Plain background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Moonshadow Ranger's gear: the green wind-cloak, the leather breastplate, the inner linen shirt, the utility belt with daggers, and the high leather boots. No large oak bow or weapons are shown on this sheet to focus purely on the clothing layers. Clean light background."
+    },
+    {
+        "char_id": "char_0024_moonshadow_ranger",
+        "char_name": "月影游侠",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with cloak torn and armor scuffed; right, heavily worn with cloak shredded, leather armor broken, and bleeding scratches on her cheek. In all views, she holds her signature full-sized leaf-carved oak bow (scaled proportionally to her body height), which is clean on the left, slightly scuffed in the middle, and cracked on the right. Clean dark gray background."
+    }
+]
+
+ancient_druid_plan = [
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "main",
+        "prompt": "A masterpiece modern forest fantasy concept art of the Elven Druid. A beautiful high elf priestess with long flowing platinum hair, wearing an elegant white gown woven with green vines and leaves. She stands barefoot on a glowing emerald sacred spring, holding a twisted wooden staff topped with antlers and a glowing gemstone. Mystical glowing butterflies and deer float around her. The background features giant ancient trees with glowing moss and soft morning light beams filtering through the canopy. High-contrast cinematic lighting, hyper-realistic, 8k."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Elven Druid, face clearly visible. Focus on her flowing platinum hair, flower-and-leaf crown, small white antlers, and gentle green eyes. She looks serene and divine. Minimalist light green background, 8k."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Elven Druid. Show three facial expressions side-by-side: one serene and smiling, one chanting spell with closed eyes, and one showing a sad, compassionate gaze. Maintain her platinum hair and leaf crown. Plain dark background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Elven Druid. Show three views: front, side, and back, standing neutrally with arms relaxed by her sides. She wears the white-and-green vine gown. No staff or weapons are held to ensure clean posture and anatomical accuracy. Plain clean light gray studio background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Elven Druid. Show three outfit designs side-by-side: left, her default vine white gown; middle, a simpler linen ritual robe; right, an elaborate golden-leaf elder priestess gown with a long flowing train. All designs maintain her platinum hair. Solid light gray background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Elven Druid's gear: her antler staff and a carved wooden cup filled with sacred spring water. Show the staff and the cup from multiple angles, highlighting the organic bark textures, glowing green gemstone, and floating water ripples. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Sacred Elven Spring (圣泉祭坛). Show a crystal-clear glowing green pool under a giant hollow ancient tree trunk, with soft golden Tyndall light rays filtering down, creating mist and floating light spores. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Elven Druid. She stands barefoot on mossy grass, holding her antler staff. She wears her elegant white vine-woven gown and a leaf crown. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Elven Druid. She stands in the center of the frame, raising her glowing staff to summon a protective barrier of giant redwood roots. Bioluminescent green energy waves ripple across the ground. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Elven Druid. Four flat panels showing: one of glowing green spring water; one of soft white flower petals with dew; one of twisted ancient tree roots; and one of bright green moss with glowing fireflies. Clean grid layout, no borders, no text, plain background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Elven Druid. Show 3 quick study sketches: tending to a wounded deer; holding her staff to grow a flower; and kneeling in prayer by the sacred spring. Clean white studio background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Elven Druid. Show a detailed full-body front view of her standing in her vine-woven white gown, holding her signature full-sized antler staff (scaled proportionally to her body height). The side of the sheet shows detailed callouts of her staff and green gemstone. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Elven Druid showing 5 poses on one sheet: raising her staff to heal; kneeling to touch the moss; whispering to a butterfly; defending with a root barrier; and standing serenely on water. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Elven Druid showing 8 bust portraits in a grid: serene smile, chanting with closed eyes, compassionate sadness, surprise, warning frown, fatigue, joyous laughter, and intense focus. Clean background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Elven Druid: close-ups of the leaf crown, the antler shape on her staff, the delicate glowing runes on her wrist, and her gentle light-green eyes. Clean light background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of soft white silk, green ivy leaves, rough oak wood, and glowing green emerald crystal next to a front view of the Elven Druid. Plain background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Elven Druid's gear: the ivy leaf crown, the white outer shroud, the inner green linen dress, the woven grass belt, and the bare feet. No staff or weapons are shown on this sheet to focus purely on the clothing layers. Clean light background."
+    },
+    {
+        "char_id": "char_0025_ancient_druid",
+        "char_name": "森之大德鲁伊",
+        "img_type": "damageState",
+        "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with gown torn; right, heavily worn with white gown shredded, and her hands wrapped in bandages, with a sad but resolute expression. In all views, she holds her signature full-sized antler staff (scaled proportionally to her body height), which is clean on the left, slightly scratched in the middle, and cracked on the right. Clean dark gray background."
+    }
+]
+
 if __name__ == "__main__":
     main()
+
