@@ -103,6 +103,116 @@ TYPE_LABEL = {
     'damageState': '破损状态'
 }
 
+LOCKS = {
+    "char_0001_crimson_guardian": {
+        "name": "The Crimson Wall Guardian (赤衣守城者)",
+        "features": "slender young East Asian swordsman with handsome refined features, long wind-blown black hair, and unyielding dark red eyes. He wears a flowing crimson silk robe with golden ancient engravings and silver armor plates.",
+        "prop": "his divine sword that glows with faint red aura and intricate runes",
+        "prop_desc": "a beautifully detailed divine sword with a red aura and ancient runes glowing on the blade",
+        "scene": "a massive ancient stone fortress wall under a dramatic sunset with golden and fiery orange light rays piercing through epic clouds, casting a warm glow over a mystical wasteland",
+        "outfit_alt": "combat armor plates over a fitted black leather robe with crimson sashes",
+        "colors": "crimson silk red, ancient gold, steel silver, sunset orange, graphite grey",
+        "materials": "crimson silk fabric, polished silver armor, gold embroidery thread, steel blade",
+        "damage": "his crimson robe's sleeves are frayed and torn at the cuffs, and the silver armor plates are scratched and dented, with soot marks on his face and chest. For the heavily damaged state, he stands defiantly next to a cracked and broken stone battlement, his robe shredded, and his divine sword's red glow is dim and flickering."
+    },
+    "char_0002_midnight_warden": {
+        "name": "The Midnight Warden (午夜值守员)",
+        "features": "slender young East Asian woman with tired yet sharp dark brown eyes, half-pinned pitch-black mid-length hair, wearing a buttoned deep navy blue duty uniform with a glowing silver badge on her chest.",
+        "prop": "her vintage metallic flashlight and silver duty badge",
+        "prop_desc": "a detailed vintage metallic flashlight and a bright silver duty badge that glows with warm amber light",
+        "scene": "a quiet, dimly lit corridor at night, with a mysterious wooden door that glows brightly from its cracks with warm golden-amber light",
+        "outfit_alt": "a casual civilian outfit consisting of a dark grey knit sweater, fitted black trousers, and heavy boots",
+        "colors": "navy blue, silver glow, amber gold, corridor grey, moonlight white",
+        "materials": "navy blue uniform wool, polished silver badge metal, metallic flashlight shell, polished marble floor",
+        "damage": "her navy duty uniform is dusty and slightly torn at the shoulder, and her hair is disheveled. For the heavily damaged state, she stands next to a cracked wooden door, her uniform's sleeves frayed, and her flashlight's beam is dim and flickering."
+    },
+    "char_0003_sandstorm_pilgrim": {
+        "name": "The Sandstorm Pilgrim (风沙朝圣者)",
+        "features": "mature weathered East Asian ascetic monk with short grizzled hair tied with a faded red band, deep wise facial lines, and grey eyes. He wears a coarse, heavily patched sand-swept gray linen cloak over survival garments.",
+        "prop": "his heavy brass staff adorned with ancient bronze wind chimes",
+        "prop_desc": "a heavy brass staff with ancient bronze wind chimes, wrapped leather grip, and weathered metal textures",
+        "scene": "an ancient, half-buried sand temple ruins under a massive brewing amber dust storm, with columns glowing with faint gold runes",
+        "outfit_alt": "heavy sand-shielding leather armor, thick thermal wraps around his torso, and a protective respirator mask hanging around his neck",
+        "colors": "sand-swept grey, bronze brown, brass gold, amber dust yellow, faded red",
+        "materials": "coarse grey linen, weathered brass, worn leather wraps, bronze chimes",
+        "damage": "his gray linen cloak is frayed and torn, with thick sand and dust covering his face and survival garments. For the heavily damaged state, he stands defiantly in the desert wind next to a cracked stone pillar, his cloak shredded into tattered rags, and his brass staff scratched and dented."
+    },
+    "char_0004_neon_hacker": {
+        "name": "The Neon Shadow Hacker (霓虹潜行者)",
+        "features": "cool young East Asian female hacker with asymmetrical glowing pink and purple hair, a translucent yellow holographic tactical visor over her right eye, wearing a matte-black technical raincoat over a dark bodysuit with glowing circuit lines.",
+        "prop": "her carbon-fiber cybernetic prosthetic arm releasing glowing blue neural cables",
+        "prop_desc": "a black carbon-fiber cybernetic prosthetic arm with glowing blue neural cables, and a yellow translucent holographic visor",
+        "scene": "a towering cyberpunk city street at night under heavy rain, with massive glowing pink, purple, and cyan holographic advertisements reflecting on wet asphalt",
+        "outfit_alt": "a tight, high-mobility matte-black stealth bodysuit with glowing violet energy seams, and sleek tactical boots",
+        "colors": "neon pink, electric purple, matte black, cyan blue, holographic yellow",
+        "materials": "matte-black technical fabric, carbon-fiber prosthetic shell, holographic light, wet concrete",
+        "damage": "her technical raincoat is torn and scuffed, with cybernetic arm exposing minor wiring, and glowing circuits flickering. For the heavily damaged state, she stands next to a shattered holographic advertisement panel, her raincoat shredded, and the blue neural cables on her prosthetic arm broken and sparking."
+    }
+}
+
+def expand_character_plan(plan, char_id, char_name):
+    existing_types = {item["img_type"] for item in plan}
+    if len(existing_types) == 18:
+        return plan
+        
+    lock = LOCKS.get(char_id)
+    if not lock:
+        return plan
+        
+    expanded = list(plan)
+    
+    all_types = [
+        "main", "portrait", "expression", "turnaround", "outfit", "prop", 
+        "scene", "fullBody", "cover", "moodboard", "sketch", "modelSheet", 
+        "poseSheet", "expressionSheet", "detailSheet", "materialPalette", 
+        "outfitBreakdown", "damageState"
+    ]
+    
+    for t in all_types:
+        if t in existing_types:
+            continue
+            
+        prompt = ""
+        if t == "turnaround":
+            prompt = f"Now, draw a professional character turnaround model sheet of the exact same {lock['name']} character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her signature costume. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        elif t == "outfit":
+            prompt = f"Now, draw the exact same {lock['name']} character from our conversation, but wearing an alternative outfit: {lock['outfit_alt']}. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+        elif t == "prop":
+            prompt = f"Now, draw a high-fidelity detailed design sheet of the {lock['name']}\\'s gear: {lock['prop_desc']}. Show it from multiple angles. Solid, clean dark gray background. Masterpiece, 8k."
+        elif t == "scene":
+            prompt = f"Now, draw a stunning, highly detailed landscape scene concept art of the setting: {lock['scene']}. Cinematic, hyper-realistic, masterpiece, 8k."
+        elif t == "fullBody":
+            prompt = f"Now, draw a full-body standing art of the exact same {lock['name']} character. She stands in a neutral pose, holding {lock['prop']}. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+        elif t == "cover":
+            prompt = f"Epic vertical cover art of the exact same {lock['name']} character in a dynamic pose. She stands in the center of the frame, with dramatic particles and lighting. High contrast cinematic lighting, 8k."
+        elif t == "moodboard":
+            prompt = f"A moodboard collage of 4 panels for the {lock['name']}: one of close-up {lock['colors']}, one of textures of {lock['materials']}, and two of atmosphere elements matching her lore. Clean grid layout, no borders, no text, plain background."
+        elif t == "sketch":
+            prompt = f"Monochrome pencil sketch sheet of the {lock['name']} showing 3 study sketches of her in different poses and study details. Clean hand-drawn lines, traditional sketch style, plain light background."
+        elif t == "modelSheet":
+            prompt = f"Character model sheet of the {lock['name']} showing a detailed full-body front view of her standing in her default costume, holding her signature {lock['prop']}. Even lighting, clean light gray background."
+        elif t == "poseSheet":
+            prompt = f"Show 5 poses of the {lock['name']} on one sheet: performing action, walking, sitting, defending, and standing battle-worn. Solid clean dark gray background."
+        elif t == "expressionSheet":
+            prompt = f"An expression sheet showing 8 bust portraits of the {lock['name']} in a grid: serene smile, chanting, sadness, surprise, frown, fatigue, laughter, and intense focus. Clean dark gray background."
+        elif t == "detailSheet":
+            prompt = f"A clean detail sheet showing close-up panels of the {lock['name']}\\'s features: her hair details, her face, her costume embroidery, and her signature {lock['prop']} texture. Clean light gray background."
+        elif t == "materialPalette":
+            prompt = f"A material and color palette sheet. Show swatches of materials: {lock['materials']} next to a front view of the {lock['name']}. Plain background."
+        elif t == "outfitBreakdown":
+            prompt = f"An outfit breakdown sheet showing the layers of the {lock['name']}\\'s gear: the main robe, outer armor/garment, belt, and shoes. Clean light background."
+        elif t == "damageState":
+            prompt = f"A damage state sheet showing 3 views of {lock['name']} side-by-side: left, default; middle, battle-worn with clothing frayed showing soot; right, extreme battle-damaged state: standing next to a cracked/shattered prop, her clothing dramatically ripped, covered in scorch marks. Clean dark gray background."
+            
+        expanded.append({
+            "char_id": char_id,
+            "char_name": char_name,
+            "img_type": t,
+            "prompt": prompt
+        })
+        
+    return expanded
+
 # ======================================================
 # 2. 轻量级 BrowserAgent WebSocket 控制 SDK
 # ======================================================
@@ -4844,6 +4954,12 @@ Solid clean dark gray background."""
         }
     ]
 
+    # Apply dynamic expander to first 4 plans
+    crimson_plan = expand_character_plan(crimson_plan, 'char_0001_crimson_guardian', '赤衣守城者')
+    midnight_plan = expand_character_plan(midnight_plan, 'char_0002_midnight_warden', '午夜值守员')
+    sandstorm_plan = expand_character_plan(sandstorm_plan, 'char_0003_sandstorm_pilgrim', '风沙朝圣者')
+    neon_plan = expand_character_plan(neon_plan, 'char_0004_neon_hacker', '霓虹潜行者')
+
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
         rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan +
@@ -4854,7 +4970,7 @@ Solid clean dark gray background."""
         siren_plan + tide_warlord_plan + abyssal_stalker_plan +
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
-        ancient_druid_plan
+        ancient_druid_plan + frost_necromancer_plan + sun_knight_plan + cyber_samurai_plan + cyber_corporate_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -5956,6 +6072,450 @@ moonshadow_ranger_plan = [
         "char_name": "月影游侠",
         "img_type": "damageState",
         "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with cloak torn and armor scuffed; right, heavily worn with cloak shredded, leather armor broken, and bleeding scratches on her cheek. In all views, she holds her signature full-sized leaf-carved oak bow (scaled proportionally to her body height), which is clean on the left, slightly scuffed in the middle, and cracked on the right. Clean dark gray background."
+    }
+]
+
+frost_necromancer_plan = [
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "main",
+        "prompt": "A masterpiece modern western fantasy concept art of the Frost Necromancer. A beautiful, pale-skinned young woman with flowing silver-white hair and glowing ice-blue eyes, wearing a detailed dark grey necromancer robe. She holds a staff of eternal ice topped with a floating skull enveloped in blue frost flames. Cold mist and glowing snowflakes swirl around her in an ancient gothic icy tomb with rune-carved pillars. Cinematic lighting, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Frost Necromancer, face clearly visible. Focus on her sharp yet delicate facial features, glowing ice-blue eyes, silver-white hair, and the dark silver bone headpiece. Minimalist dark grey background, 8k."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Frost Necromancer. Show three facial expressions side-by-side: one cold and calm, one reciting spell with focused lips, and one showing a sad, compassionate gaze. Maintain her silver-white hair and bone headpiece. Plain dark background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Frost Necromancer. Show three views: front, side, and back, standing neutrally with arms relaxed. She wears the dark grey-and-silver robe. No weapons are held to ensure clean posture. Plain clean light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Frost Necromancer. Show three outfit designs side-by-side: left, her default dark grey necromancer robe; middle, a simpler grey linen ritual robe; right, an elaborate dark silver-plated bone armor tunic with a long flowing train. Solid light gray background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Frost Necromancer's gear: her ice staff and floating skull. Show the staff and the skull from multiple angles, highlighting the icy crystals, glowing runes, and blue frost fire. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Icy Tomb. Show ancient stone archways covered in thick white frost, with glowing blue runes on the walls and a central frozen ice pedestal. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Frost Necromancer. She stands on a frosted stone path, holding her glowing ice staff. She wears her dark grey necromancer robe. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Frost Necromancer. She stands in the center of the frame, raising her glowing staff to summon a swirling frost vortex. Shards of ice float in the air. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Frost Necromancer. Four flat panels showing: one of glowing blue ice crystals; one of dark grey textured fabric; one of white bone carvings; and one of a frozen misty tomb. Clean grid layout, no borders, no text."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Frost Necromancer. Show 3 quick study sketches: reciting spell over the staff; meditating with the skull; and standing calmly in the wind. Clean white studio background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Frost Necromancer. Show a detailed full-body front view of her standing in her dark grey robe, holding her signature frost staff. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Frost Necromancer showing 5 poses on one sheet: raising her staff to freeze; summoning a bone shield; levitating the skull; walking over ice; and standing battle-worn. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Frost Necromancer showing 8 bust portraits in a grid: serene look, chanting with closed eyes, cold glare, slight smile, shock, fatigue, grim look, and intense focus. Clean background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Frost Necromancer: close-ups of the bone headpiece, the ice textures on the staff, the runic glow on her sleeve, and her cold ice-blue eyes. Clean light background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of dark grey silk, polished silver bone metal, translucent blue ice, and white bone grain next to a front view of the Frost Necromancer. Plain background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Frost Necromancer's gear: the bone headpiece, the dark grey outer robe, the inner silver dress, the leather belt, and the black shoes. Clean light background."
+    },
+    {
+        "char_id": "char_0026_frost_necromancer",
+        "char_name": "霜寒通灵师",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, battle-worn with robe sleeves slightly frayed and minor soot; right, extreme battle-damaged state: standing defiantly next to a cracked and shattered ice throne, her robe's sleeves and hem heavily ripped and shredded, covered in dark ash and scorch marks, and her frost staff cracked with its blue flame dim. Clean dark gray background."
+    }
+]
+
+sun_knight_plan = [
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "main",
+        "prompt": "A masterpiece modern western fantasy concept art of the Sun Knight. A handsome young man with clean golden hair and warm amber eyes, clad in glowing gold-and-steel plate armor with intricate sun reliefs. He holds a massive two-handed greatsword engulfed in bright golden solar flames. A heavy golden shield shaped like a rising sun stands beside him. The background features the grand entrance of a medieval cathedral with golden sunbeams filtering through mist. Cinematic lighting, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Sun Knight, face clearly visible. Focus on his golden hair, warm amber eyes, and the golden gorget of his plate armor. He looks heroic and noble. Minimalist light gray background, 8k."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Sun Knight. Show three facial expressions side-by-side: one calm and noble, one shouting in battle, and one displaying a rare, serene and warm smile. Maintain his golden hair. Plain dark background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Sun Knight. Show three views: front, side, and back, standing neutrally with arms relaxed. He wears the gold plate armor and white cape. No weapons are held. Plain clean light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Sun Knight. Show three armor designs side-by-side: left, his default gold-and-steel plate armor; middle, a simpler steel guard tunic; right, an elaborate grand paladin armor with golden phoenix engravings and a long white cloak. Solid light gray background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Sun Knight's gear: his flame greatsword and solar shield. Show them from multiple angles, highlighting the gold reliefs, glowing blade, and metallic textures. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Cathedral Entrance (圣光殿堂). Show a grand gothic archway with stained glass windows, and soft golden light filtering down through forest mist. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Sun Knight. He stands on stone pavement, holding his greatsword. He wears his gold plate armor and white cape. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Sun Knight. He stands in the center of the frame, raising his greatsword to summon a radiant shield of sunbeams. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Sun Knight. Four flat panels showing: one of glowing gold sunbeams; one of white velvet fabric; one of polished gold steel; and one of bright solar flames. Clean grid layout."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Sun Knight. Show 3 study sketches: holding his sword upright; holding his shield defensively; and standing calmly. Clean white studio background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Sun Knight. Show a detailed full-body front view of him standing in his plate armor, holding his sun shield. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Sun Knight showing 5 poses on one sheet: swinging his greatsword; raising his shield to block; walking forward; saluting; and standing battle-worn. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Sun Knight showing 8 bust portraits in a grid: heroic smile, battle roar, calm look, warning frown, surprise, fatigue, joyous look, and intense focus. Clean background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Sun Knight: close-ups of the sun engraving on his armor, the hilt of his sword, his warm amber eyes, and the white cloak weave. Clean light background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of gold plate metal, white velvet fabric, amber light, and steel next to a front view of the Sun Knight. Plain background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Sun Knight's armor: the pauldrons, breastplate, white cloak, arm guards, and greaves. Clean light background."
+    },
+    {
+        "char_id": "char_0027_sun_knight",
+        "char_name": "烈阳圣骑士",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, battle-worn with golden armor scratched and cape frayed with minor ash; right, extreme battle-damaged state: standing defiantly next to a broken stone wall, his golden plate armor fractured and missing pieces, his white cape torn to shreds, and his greatsword chipped with its solar flames dim. Clean dark gray background."
+    }
+]
+
+cyber_samurai_plan = [
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "main",
+        "prompt": "A masterpiece modern cyberpunk concept art of the Street Cyber-Samurai. A cool, rebellious young man with a bright pink Mohawk haircut and glowing electric-green cybernetic eyes. He wears a matte-black technical leather jacket with glowing neon green accent strips. His right arm is a detailed mechanical carbon-fiber prosthesis. He holds a high-frequency cybernetic katana radiating glowing orange thermal energy. He stands in a rain-drenched cyberpunk alleyway reflecting vibrant pink, cyan, and violet neon billboard lights. Cinematic, photorealistic, 8k."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Cyber-Samurai, face clearly visible. Focus on his pink Mohawk hair, green cybernetic eye, holographic visor, and high collar leather jacket. Minimalist neon-lit background, 8k."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Cyber-Samurai. Show three facial expressions side-by-side: one cool smirk, one battle grit with teeth bared, and one focused, alert look. Maintain his pink hair. Plain dark background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Cyber-Samurai. Show three views: front, side, and back, standing neutrally with arms relaxed. He wears the black leather jacket and green cybernetic arm. No weapons held. Plain clean light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Cyber-Samurai. Show three outfit designs side-by-side: left, his default black leather jacket and harness; middle, a stealth black skin-tight tech-suit with violet seams; right, high-tech armored street Ronin gears with gold armor plates and a visor. Solid light gray background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Cyber-Samurai's gear: his thermal katana and holographic visor. Show them from multiple angles, highlighting the orange glow, circuitry, and metal textures. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Neon Alleyway (霓虹小巷). Show a rain-slicked city alley with glowing pink, purple, and green advertisements, puddles reflecting lights, and cybernetic wiring along the walls. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Cyber-Samurai. He stands in a cool street pose, holding his high-frequency orange katana. He wears his black leather jacket and holographic visor. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Cyber-Samurai. He stands in the center of the frame, slicing his orange katana down, creating a bright thermal slash in the air. Neon city skyline background. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Cyber-Samurai. Four flat panels showing: one of glowing green neon strips; one of carbon-fiber weave; one of bright orange thermal heat; and one of rain-slicked asphalt reflecting lights. Clean grid layout."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Cyber-Samurai. Show 3 study sketches: holding his katana in a dynamic strike; adjusting his visor; and leaning against a neon post. Clean white studio background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Cyber-Samurai. Show a detailed full-body front view of him standing in his leather jacket, holding his signature thermal katana. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Cyber-Samurai showing 5 poses on one sheet: dashing with katana trailing; blocking with a cybernetically-glowing barrier; jumping downward; sheathing his katana; and standing battle-worn. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Cyber-Samurai showing 8 bust portraits in a grid: smirking, shouting in battle, calm look, warning frown, surprise, fatigue, laughing, and intense focus. Clean background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Cyber-Samurai: close-ups of the莫霍克 hair details, the carbon-fiber joints on his arm, the micro-chips on his visor, and his green cybernetic eye. Clean light background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of black leather, carbon-fiber armor, neon green glow, and orange heat next to a front view of the Cyber-Samurai. Plain background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Cyber-Samurai's gear: the black technical jacket, the inner stealth shirt, the high-polymer pants, the utility harness, and the high-top boots. Clean light background."
+    },
+    {
+        "char_id": "char_0028_cyber_samurai",
+        "char_name": "街头义体武士",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, battle-worn with leather jacket torn showing wires and minor dust; right, extreme battle-damaged state: standing defiantly next to a broken neon billboard, his carbon-fiber prosthetic arm shell shattered exposing sparking wires, his jacket torn, and his thermal katana's orange blade cracked and flickering. Clean dark gray background."
+    }
+]
+
+cyber_corporate_plan = [
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "main",
+        "prompt": "A masterpiece modern cyberpunk concept art of the Neon Yakuza. A beautiful, high-cold young woman with a straight black bob and cold crimson eyes, wearing a fitted charcoal-gray corporate tech-suit. Luminous purple digital circuit tattoos glow on her neck and cuffs. She channels glowing purple monowire filaments from her wrists, wrapping around the air. A compact submachine gun with a holographic sight is held in her other hand. The background is a luxury glass-walled high-rise office overlooking a vast night skyline of neon skyscrapers. Cinematic, photorealistic, 8k."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Neon Yakuza, face clearly visible. Focus on her straight black bob hair, cold crimson eyes, high-tech suit collar, and purple circuit tattoos on her neck. Minimalist corporate glass background, 8k."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Neon Yakuza. Show three facial expressions side-by-side: one cold and expressionless, one with eyes slightly narrowed in warning, and one showing a subtle, dangerous smile. Maintain her black bob hair. Plain dark background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Neon Yakuza. Show three views: front, side, and back, standing neutrally with arms relaxed. She wears the charcoal-gray high-tech suit. No weapons held. Plain clean light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Neon Yakuza. Show three outfit designs side-by-side: left, her default charcoal-gray corporate tech-suit; middle, a stealthy dark micro-tunic trench coat; right, an elegant purple-trimmed silk kimono dress with integrated cybernetic light lines. Solid light gray background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Neon Yakuza's gear: her monowire whip and compact submachine gun. Show them from multiple angles, highlighting the purple light lines, holographic sight, and metallic textures. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Luxury Penthouse Office (公司高层办公室). Show a grand room with minimalist design, dark marble floor, a glass desk, and a giant floor-to-ceiling window overlooking a massive night skyline of a neon city. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Neon Yakuza. She stands in a calm, lethal pose, holding her submachine gun, with purple monowire filaments extending from her wrist. She wears her charcoal-gray corporate suit. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Neon Yakuza. She is shown in a dynamic action pose, whipping her glowing purple monowire in a sweeping arc. Broken glass shards float in the air. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Neon Yakuza. Four flat panels showing: one of glowing purple monowire filaments; one of sleek charcoal-gray suit fabric; one of cold crimson red light; and one of neon skyscrapers seen through glass. Clean grid layout."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Neon Yakuza. Show 3 study sketches: whipping the monowire; aiming her submachine gun; and standing calmly in a corporate setting. Clean white studio background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Neon Yakuza. Show a detailed full-body front view of her standing in her corporate suit, holding her monowire whip. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Neon Yakuza showing 5 poses on one sheet: whipping monowire; aiming submachine gun silently; sliding under fire; standing in a defensive stance; and standing battle-worn. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Neon Yakuza showing 8 bust portraits in a grid: cold calm, warning glare, dangerous smile, focused alarm, pain, meditation, slight frown, and intense concentration. Clean background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Neon Yakuza: close-ups of her bob haircut, the purple circuit tattoos on her neck, the monowire wrist launcher, and her cold crimson eyes. Clean light background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of charcoal-gray suit wool, purple neon light, crimson red light, and sleek steel next to a front view of the Neon Yakuza. Plain background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Neon Yakuza's gear: the tech-suit jacket, the inner formal blouse, the fitted trousers, the waist holster belt, and high-tech leather shoes. Clean light background."
+    },
+    {
+        "char_id": "char_0029_cyber_corporate",
+        "char_name": "霓虹极道",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, battle-worn with suit sleeves torn showing wires and minor dust; right, extreme battle-damaged state: standing defiantly next to a shattered glass window, her tech-suit torn and scorched, her monowire whip broken and sparking purple fire, and her submachine gun damaged. Clean dark gray background."
     }
 ]
 
