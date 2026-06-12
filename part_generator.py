@@ -4970,7 +4970,7 @@ Solid clean dark gray background."""
         siren_plan + tide_warlord_plan + abyssal_stalker_plan +
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
-        ancient_druid_plan + frost_necromancer_plan + sun_knight_plan + cyber_samurai_plan + cyber_corporate_plan
+        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -6404,7 +6404,7 @@ cyber_samurai_plan = [
         "char_id": "char_0028_cyber_samurai",
         "char_name": "街头义体武士",
         "img_type": "damageState",
-        "prompt": "A damage state sheet showing 3 views: left, default; middle, battle-worn with leather jacket torn showing wires and minor dust; right, extreme battle-damaged state: standing defiantly next to a broken neon billboard, his carbon-fiber prosthetic arm shell shattered exposing sparking wires, his jacket torn, and his thermal katana's orange blade cracked and flickering. Clean dark gray background."
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with leather jacket sleeves slightly frayed and minor dust; right, extreme combat-worn state: standing defiantly next to a broken neon billboard, his carbon-fiber forearm armor plating cracked showing glowing circuit lines, his jacket sleeves tattered, and his thermal katana's orange blade cracked and flickering. Clean dark gray background."
     }
 ]
 
@@ -6515,7 +6515,7 @@ cyber_corporate_plan = [
         "char_id": "char_0029_cyber_corporate",
         "char_name": "霓虹极道",
         "img_type": "damageState",
-        "prompt": "A damage state sheet showing 3 views: left, default; middle, battle-worn with suit sleeves torn showing wires and minor dust; right, extreme battle-damaged state: standing defiantly next to a shattered glass window, her tech-suit torn and scorched, her monowire whip broken and sparking purple fire, and her submachine gun damaged. Clean dark gray background."
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with suit sleeves frayed and minor dust; right, extreme combat-worn state: standing defiantly next to a cracked glass window, her tech-suit fabric torn and scorched at the hem, her monowire whip broken and sparking purple fire. Clean dark gray background."
     }
 ]
 
