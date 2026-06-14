@@ -4971,7 +4971,7 @@ Solid clean dark gray background."""
         siren_plan + tide_warlord_plan + abyssal_stalker_plan +
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
-        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan
+        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -6628,6 +6628,229 @@ ancient_druid_plan = [
         "char_name": "森之大德鲁伊",
         "img_type": "damageState",
         "prompt": "A damage state variant sheet showing 3 views: left, default; middle, battle-worn with gown torn; right, heavily worn with white gown shredded, and her hands wrapped in bandages, with a sad but resolute expression. In all views, she holds her signature full-sized antler staff (scaled proportionally to her body height), which is clean on the left, slightly scratched in the middle, and cracked on the right. Clean dark gray background."
+    }
+]
+
+
+dragon_berserker_plan = [
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "main",
+        "prompt": "A masterpiece modern western fantasy concept art of the Dragonblood Berserker. A beautiful young woman with refined East Asian facial features, flowing fiery-red hair, and glowing golden dragon slit eyes. Fine dark-red dragon scales adorn her cheeks and arms. She wears custom dark dragon-leather armor with a majestic golden scaled tail. She wields twin axes glowing with molten flame. She stands in a volcanic cavern with slow-flowing lava rivers and floating sparks. Cinematic lighting, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Dragonblood Berserker, face clearly visible. Focus on her refined East Asian features, glowing golden dragon eyes, fiery-red hair, and fine red dragon scales on her cheeks. Minimalist dark volcanic cave background, 8k."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Dragonblood Berserker showing three facial expressions side-by-side: one cold and calm, one with a fierce battle expression showing small fangs, and one tired with a proud smile. Maintain her red hair and gold eyes. Plain dark background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Dragonblood Berserker. Show three views: front, side, and back, standing neutrally with arms relaxed. She wears the dark dragon-leather armor. No weapons held. Plain clean light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Dragonblood Berserker. Show three outfit designs side-by-side: left, her default dark dragon-leather armor; middle, a simpler red dragon-nest tunic; right, a ceremonial dragon-scale plate armor with gold ornaments. Solid light gray background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Dragonblood Berserker's gear: her two heavy twin dragon-tooth axes with glowing volcanic lava runes on the blades, and her dragon-scale arm guards. Show them from multiple angles. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Volcanic Dragon Lair (巨龙熔岩古道). Show a volcanic cavern with glowing red lava streams, dark volcanic rock pillars, floating embers, and crystal ore deposits. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Dragonblood Berserker. She stands in a powerful, ready stance holding her dragon-tooth axes. She wears her dark dragon-leather armor with the gold-scaled tail visible. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Dragonblood Berserker in a dynamic combat pose, swinging her fiery axes in a sweeping arc. Molten rock shards float in the air. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Dragonblood Berserker. Four flat panels showing: one of flowing red lava; one of black dragon leather fabric; one of glowing amber gold light; and one of volcanic rock crystals. Clean grid layout."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Dragonblood Berserker. Show 3 study sketches: swinging her axes in battle; resting on a volcanic rock; and looking over a lava cliff. Clean white studio background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Dragonblood Berserker. Show a detailed full-body front view of her standing in her dragon-leather armor, holding one axe. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Dragonblood Berserker showing 5 poses on one sheet: leaping to strike; defending with crossed axes; standing in a wind-blown pose; crouching to trace a lava flow; and standing battle-worn. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Dragonblood Berserker showing 8 bust portraits in a grid: cold calm, war shout, proud smile, alarm, battle fatigue, meditation, slight frown, and intense concentration. Clean background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Dragonblood Berserker: close-ups of her gold dragon eyes, the red dragon scales on her arm, the lava runes on her axe, and her black leather shoulder guards. Clean light background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of black dragon-leather, glowing molten lava red, shiny gold scale metal, and dark volcanic rock next to a front view of the Dragonblood Berserker. Plain background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Dragonblood Berserker's gear: the leather breastplate, the inner tunic, the dragon-scale belt, the iron arm bracers, and the dragon-leather boots. Clean light background."
+    },
+    {
+        "char_id": "char_0030_dragon_berserker",
+        "char_name": "龙血狂战士",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with leather armor scuffed and hair slightly messy; right, extreme combat-worn state: standing next to a cracked volcanic wall, her dragon-leather armor torn and scorched, her dragon tail scales chipped, and her axes cracked and glowing with weak sparks. Clean dark gray background."
+    }
+]
+
+brass_alchemist_plan = [
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "main",
+        "prompt": "A masterpiece modern western fantasy concept art of the Alchemist of Brass. A beautiful young woman with auburn hair in a high ponytail and a single brass monocle over her left eye. Her right arm is a highly detailed, intricate brass mechanical prosthesis venting light steam. She wears a sturdy leather apron with slots for chemical vials. She holds a glowing neon-green potion vial. She stands in a Victorian-style steam lab with copper pipes and boiling retorts. Cinematic lighting, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Alchemist of Brass, face clearly visible. Focus on her focused expression, single brass monocle, green eye, and auburn ponytail. Minimalist steam laboratory background, 8k."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Alchemist of Brass showing three facial expressions side-by-side: one calm and focused, one looking through her lens with a surprised grin, and one tired but satisfied with a smudge of soot on her cheek. Plain dark background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Alchemist of Brass. Show three views: front, side, and back, standing neutrally with arms relaxed. She wears the leather apron over a white shirt. No weapons held. Plain clean light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Alchemist of Brass. Show three outfit designs side-by-side: left, her default leather work apron; middle, a simpler linen scholar gown; right, a formal academic tunic with intricate brass embroidery and gear-shaped medals. Solid light gray background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Alchemist of Brass's gear: her intricate brass mechanical arm showing rotating gear details, and a set of glowing green potion vials. Show them from multiple angles. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Steampunk Brass Workshop (黄铜工坊). Show a room filled with copper pipes, bubbling glass boilers, pressure gauges, steam valves, and brass gears. No characters. Cinematic, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Alchemist of Brass. She stands in a focused pose holding a potion vial. She wears her leather apron with her brass mechanical arm visible. Clean light gray background, 8k."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Alchemist of Brass in a dynamic pose, throwing a potion vial that explodes into colorful glowing steam. High contrast cinematic lighting, 8k."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Alchemist of Brass. Four flat panels showing: one of glowing green liquid; one of polished brass gears; one of dark brown work leather; and one of white steam escaping a valve. Clean grid layout."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Alchemist of Brass. Show 3 study sketches: adjusting her mechanical arm; pouring a potion carefully; and writing equations on a blackboard. Clean white studio background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Alchemist of Brass. Show a detailed full-body front view of her standing in her apron, showing details of her brass mechanical arm. Even lighting, clean light gray background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Alchemist of Brass showing 5 poses on one sheet: throwing a flask; adjusting her monocle lens; checking a gauge; standing in a defensive pose; and standing battle-worn. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Alchemist of Brass showing 8 bust portraits in a grid: deep focus, surprised grin, satisfied smile, alarm, exhaustion, meditation, slight frown, and intense concentration. Clean background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Alchemist of Brass: close-ups of her brass monocle, the gear mechanism of her elbow joint, the chemical tubes in her apron, and her green eye. Clean light background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of polished brass, dark leather, glowing green liquid, and white cotton fabric next to a front view of the Alchemist of Brass. Plain background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Alchemist of Brass's gear: the leather work apron, the inner white shirt, the trousers, the utility belt, and the high-top work boots. Clean light background."
+    },
+    {
+        "char_id": "char_0031_brass_alchemist",
+        "char_name": "机械义肢炼金师",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with apron scuffed and minor soot stains; right, extreme combat-worn state: standing next to a broken glass boiler, her leather apron torn, her white shirt sleeves scorched, and her brass mechanical arm showing cracked metal plating and venting white steam. Clean dark gray background."
     }
 ]
 
