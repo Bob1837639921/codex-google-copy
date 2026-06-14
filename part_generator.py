@@ -4971,7 +4971,7 @@ Solid clean dark gray background."""
         siren_plan + tide_warlord_plan + abyssal_stalker_plan +
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
-        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan
+        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -6727,7 +6727,7 @@ dragon_berserker_plan = [
         "char_id": "char_0030_dragon_berserker",
         "char_name": "龙血狂战士",
         "img_type": "materialPalette",
-        "prompt": "A material and color palette sheet. Show swatches of black dragon-leather, glowing molten lava red, shiny gold scale metal, and dark volcanic rock next to a front view of the Dragonblood Berserker. Plain background."
+        "prompt": "A material and color palette sheet. Show swatches of black dragon-leather, glowing molten lava red, shiny gold scale metal, and dark volcanic rock next to a front view of the Dragonblood Berserker (a beautiful young woman with refined East Asian features, fiery-red hair, and glowing golden dragon slit eyes). Plain background."
     },
     {
         "char_id": "char_0030_dragon_berserker",
@@ -6851,6 +6851,229 @@ brass_alchemist_plan = [
         "char_name": "机械义肢炼金师",
         "img_type": "damageState",
         "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with apron scuffed and minor soot stains; right, extreme combat-worn state: standing next to a broken glass boiler, her leather apron torn, her white shirt sleeves scorched, and her brass mechanical arm showing cracked metal plating and venting white steam. Clean dark gray background."
+    }
+]
+
+
+azure_dragon_maiden_plan = [
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "main",
+        "prompt": "A masterpiece of Eastern fantasy concept art of the Azure Waves Dragon Maiden. A beautiful young Eastern dragon princess with delicate light-cyan dragon horns on her head, and glowing turquoise eyes. She is dressed in an elegant white-and-sky-blue gradient flowing silk robe with long water-sleeves. She holds a glowing cyan dragon pearl in her hands, casting soft light ripples. She stands on a cliff overlooking a mystical churning jade ocean with sea mist and clouds. Cinematic rim light, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Azure Waves Dragon Maiden, face clearly visible. Focus on her delicate light-cyan dragon horns, glowing turquoise eyes, long wavy blue hair, and gentle princess expression. Soft mist background, 8k."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Azure Waves Dragon Maiden showing three facial expressions side-by-side: one calm and gentle, one showing a soft warm smile, and one with a focused determined look. Maintain her blue horns and blue hair. Solid gray background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Azure Waves Dragon Maiden. Show three views: front, side, and back, standing neutrally with arms relaxed. She wears the white-and-sky-blue flowing silk robe. Plain light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Azure Waves Dragon Maiden. Show three outfits side-by-side: left, her default gradient flowing robe; middle, a formal sea-palace ritual gown with shell embroidery; right, a lightweight dragon-scale leather battle suit. Solid light gray background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Azure Waves Dragon Maiden's gear: her glowing cyan dragon pearl, her white jade hair crown, and her flowing silk ribbons. Show them from multiple angles. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the East Sea Dragon Palace (东海龙宫). Show a majestic undersea palace made of coral reefs and glowing pearls, with schools of fish swimming around and light beams filtering from the surface. Cinematic, 8k."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Azure Waves Dragon Maiden. She stands elegantly holding her glowing dragon pearl. She wears her white-and-blue gradient flowing robe with her long blue hair blowing in a sea breeze. Plain light gray background, 8k."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Azure Waves Dragon Maiden in a dynamic pose, waving her long water-sleeves to summon a giant water dragon rising from a churning sea. High contrast dramatic lighting, 8k."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Azure Waves Dragon Maiden. Four flat panels showing: one of sparkling sea waves; one of white silk fabric; one of glowing cyan pearls; and one of ocean corals. Clean grid layout."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Azure Waves Dragon Maiden. Show 3 study sketches: meditating under water; floating on waves; and holding her dragon pearl. Clean white studio background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Azure Waves Dragon Maiden. Show a detailed full-body front view of her standing in her default gradient robe, holding her dragon pearl. Clean light gray background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Azure Waves Dragon Maiden showing 5 poses on one sheet: summoning waves; dancing with silk ribbons; floating in water; standing in a wind-blown pose; and looking serene. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Azure Waves Dragon Maiden showing 8 bust portraits in a grid: gentle smile, surprise, serious concentration, laughter, fatigue, meditation, slight frown, and deep focus. Clean background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Azure Waves Dragon Maiden: close-ups of her dragon horns, the glowing water ripples around her dragon pearl, the jade crown in her hair, and the embroidery on her collar. Clean background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of white silk fabric, turquoise silk fabric, glowing water element light, and polished jade stones next to a front view of the Azure Waves Dragon Maiden. Plain background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Azure Waves Dragon Maiden's gear: the outer flowing robe, the inner tunic, the jade waist belt, and the soft silk shoes. Clean light background."
+    },
+    {
+        "char_id": "char_0032_azure_dragon_maiden",
+        "char_name": "青澜龙女",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with her robe slightly torn and hair messy; right, extreme combat-worn state: standing in front of a cracked ocean coral, her gradient robe torn, her dragon pearl glowing with dim sparks, and minor scuffs on her face. Clean dark gray background."
+    }
+]
+
+crane_celestial_plan = [
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "main",
+        "prompt": "A masterpiece of Eastern fantasy concept art of the Celestial Crane Ascetic. An elegant young Taoist immortal with long black hair secured by a white jade crown. He wears a flowing white-and-light-blue Taoist robe. He holds a glowing white jade fly-whisk in his left hand, and a majestic red-crowned crane stands beside him. They are standing on a pine-decked stone platform above a vast sea of clouds with mist-shrouded mountain peaks at sunrise. Warm golden lighting, masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Celestial Crane Ascetic, face clearly visible. Focus on his refined immortal features, calm black eyes, long black hair secured by a jade crown, and clean white collar. Soft mountain mist background, 8k."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Celestial Crane Ascetic showing three facial expressions side-by-side: one serene and calm, one with a gentle warm smile, and one showing focused concentration. Maintain his white-and-blue robe and jade crown. Solid gray background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Celestial Crane Ascetic. Show three views: front, side, and back, standing neutrally with arms relaxed. He wears the white-and-light-blue Taoist robe. No fly-whisk held. Plain light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Celestial Crane Ascetic. Show three outfits side-by-side: left, his default white-and-blue Taoist robe; middle, a formal crane-embroidered cassock; right, a simpler white cultivation tunic. Solid light gray background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Celestial Crane Ascetic's gear: his white jade fly-whisk, his jade hairpin, and his ancient bagua compass. Show them from multiple angles. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Qingwei Celestial Mountain (清微仙山). Show high mist-shrouded mountain peaks with ancient pine trees, cloud waterfalls, and a soaring red-crowned crane under a soft morning sun. Cinematic, 8k."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Celestial Crane Ascetic. He stands calmly holding his white jade fly-whisk, with a majestic red-crowned crane standing beside him on a stone ledge. Plain light gray background, 8k."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Celestial Crane Ascetic in a dynamic pose, swinging his fly-whisk to summon a giant glowing yin-yang taiji diagram in the sky above a sea of clouds. High contrast dramatic lighting, 8k."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Celestial Crane Ascetic. Four flat panels showing: one of soft white crane feathers; one of light-blue Taoist silk; one of polished white jade; and one of mist-covered pine needles. Clean grid layout."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Celestial Crane Ascetic. Show 3 study sketches: meditating under a pine tree; playing go; and riding on the back of a giant crane. Clean white studio background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Celestial Crane Ascetic. Show a detailed full-body front view of him standing in his default Taoist robe, holding his fly-whisk. Clean light gray background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Celestial Crane Ascetic showing 5 poses on one sheet: swinging his fly-whisk; meditating in mid-air; playing go; standing with hands behind back; and standing in a wind-blown pose. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Celestial Crane Ascetic showing 8 bust portraits in a grid: calm peace, gentle smile, deep focus, surprise, fatigue, meditation, slight frown, and intense concentration. Clean background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Celestial Crane Ascetic: close-ups of his jade hairpin, the soft fly-whisk bristles, the water-ink crane embroidery on his robe, and his star-like eyes. Clean background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of white cotton fabric, light-blue silk fabric, polished white jade, and weathered dark wood next to a front view of the Celestial Crane Ascetic. Plain background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Celestial Crane Ascetic's gear: the outer Taoist robe, the inner tunic, the jade sash belt, and the black cotton shoes. Clean light background."
+    },
+    {
+        "char_id": "char_0033_crane_celestial",
+        "char_name": "九霄鹤仙人",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with his robe slightly dusty and hair a bit loose; right, extreme combat-worn state: standing in front of a shattered stone altar, his Taoist robe torn and scorched, his white fly-whisk broken, and minor scratches on his face. Clean dark gray background."
     }
 ]
 
