@@ -4971,7 +4971,7 @@ Solid clean dark gray background."""
         siren_plan + tide_warlord_plan + abyssal_stalker_plan +
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
-        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan
+        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -7074,6 +7074,118 @@ crane_celestial_plan = [
         "char_name": "九霄鹤仙人",
         "img_type": "damageState",
         "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with his robe slightly dusty and hair a bit loose; right, extreme combat-worn state: standing in front of a shattered stone altar, his Taoist robe torn and scorched, his white fly-whisk broken, and minor scratches on his face. Clean dark gray background."
+    }
+]
+
+
+stag_priestess_plan = [
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "main",
+        "prompt": "A masterpiece of mystical forest fantasy concept art of the Green-vow Stag Priestess. A beautiful young half-elf priestess with delicate pointed ears and small golden deer horns adorned with tiny glowing leaves. She has long curly light-golden hair woven with small wildflowers and vines. Her eyes are a warm, gentle emerald green. She is dressed in an elegant white-and-mint-green gradient flowing robe with a gold vine belt. She stands in a mystical ancient forest beside a tall, majestic starlight white stag whose horns glow softly. She holds a natural oak branch staff with a glowing green crystal at its tip. Soft sunbeams filter down through giant tree canopies, illuminating glowing leaf particles. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Green-vow Stag Priestess, face clearly visible. Focus on her delicate pointed ears, small golden horns, warm emerald green eyes, and light-golden hair woven with wildflowers. Minimalist soft green forest mist background, 8k."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Green-vow Stag Priestess showing three facial expressions side-by-side: one serene and calm, one with a soft warm smile, and one showing focused determination. Maintain her gold horns and gold hair. Solid gray background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Green-vow Stag Priestess. Show three views: front, side, and back, standing neutrally with arms relaxed. She wears the white-and-mint-green gradient robe. Plain light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "outfit",
+        "prompt": "An outfit sheet of the Green-vow Stag Priestess. Show three outfits side-by-side: left, her default gradient ceremonial robe; middle, a simpler green linen woodland tunic; right, a formal leaf-patterned golden plate armor for sacred guardian rituals. Solid light gray background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Green-vow Stag Priestess's gear: her natural oak branch staff with a glowing green crystal, her gold vine belt, and her wildflower hair ornaments. Show them from multiple angles. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Green-vow Sacred Grove (绿誓圣所). Show a clearing in a giant ancient forest with sunbeams filtering down, a crystal-clear spring pool, glowing forest flowers, and ancient mossy stone pillars. No characters. Cinematic, 8k."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Green-vow Stag Priestess. She stands elegantly holding her oak staff, with a majestic white stag standing beside her on a mossy ledge. Plain light gray background, 8k."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Green-vow Stag Priestess in a dynamic pose, raising her glowing staff to summon a protective barrier of giant glowing green leaves and vine roots around her. High contrast dramatic lighting, 8k."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Green-vow Stag Priestess. Four flat panels showing: one of glowing mint-green moss; one of white linen fabric; one of polished gold tree leaves; and one of rough ancient oak bark. Clean grid layout."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Green-vow Stag Priestess. Show 3 study sketches: meditating on a mossy rock; healing a small forest bird; and riding her starlight white stag. Clean white studio background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Green-vow Stag Priestess. Show a detailed full-body front view of her standing in her default gradient robe, holding her oak staff. Clean light gray background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Green-vow Stag Priestess showing 5 poses on one sheet: casting a healing spell; whispering to her stag; walking gracefully; kneeling to touch a sprout; and standing in a wind-blown pose. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Green-vow Stag Priestess showing 8 bust portraits in a grid: gentle smile, surprised delight, serious focus, warm laughter, fatigue, meditation, slight frown, and intense concentration. Clean background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Green-vow Stag Priestess: close-ups of her gold deer horns with glowing leaves, the jade crystal on her staff tip, her pointed elf ear, and the vine belt embroidery. Clean background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet. Show swatches of white cotton fabric, mint-green silk fabric, glowing emerald light, and natural oak wood next to a front view of the Green-vow Stag Priestess. Plain background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Green-vow Stag Priestess's gear: the outer gradient robe, the inner leaf-pattern tunic, the gold vine sash, and the soft leather sandals. Clean light background."
+    },
+    {
+        "char_id": "char_0034_stag_priestess",
+        "char_name": "绿誓神鹿祭司",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with her robe slightly torn and hair messy; right, extreme combat-worn state: standing in front of a scorched tree stump, her green robe torn and dirty, her oak staff cracked with dim green light, and minor scratches on her cheek. Clean dark gray background."
     }
 ]
 
