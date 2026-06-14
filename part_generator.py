@@ -4971,7 +4971,7 @@ Solid clean dark gray background."""
         siren_plan + tide_warlord_plan + abyssal_stalker_plan +
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
-        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan
+        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -7186,6 +7186,117 @@ stag_priestess_plan = [
         "char_name": "绿誓神鹿祭司",
         "img_type": "damageState",
         "prompt": "A damage state sheet showing 3 views: left, default; middle, combat-worn with her robe slightly torn and hair messy; right, extreme combat-worn state: standing in front of a scorched tree stump, her green robe torn and dirty, her oak staff cracked with dim green light, and minor scratches on her cheek. Clean dark gray background."
+    }
+]
+
+nine_tailed_fox_plan = [
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "main",
+        "prompt": "A masterpiece of Eastern fantasy concept art of the Nine-tailed Scarlet Fox. A beautiful and enchanting young fox lady with fluffy red fox ears and nine majestic scarlet tails unfolding like a fan. She has long flowing black hair styled with golden hairpins. Her eyes are a captivating bright gold with slit pupils. She is dressed in an elegant off-shoulder red-and-black ancient Chinese flowing robe with a gold vine belt. She stands on a crimson stone bridge at night under a full moon, holding a glowing red-lotus lantern that emits warm orange-red light. Scattered autumn red maple leaves drift in the gentle breeze around her, with traditional dark tiled Chinese roofs in the foggy background. Masterpiece, 8k."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "portrait",
+        "prompt": "Bust portrait of the Nine-tailed Scarlet Fox, face clearly visible. Focus on her enchanting face, bright gold eyes with slit pupils, and fluffy red fox ears. Her black hair is pinned with a delicate gold hairpin. Solid dark gray studio background with a hint of warm red backlight, 8k."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "expression",
+        "prompt": "An expression sheet of the Nine-tailed Scarlet Fox showing three facial expressions side-by-side: left, a mysterious gentle smile; middle, an angry glare with faint red aura; right, a curious head-tilt with a playful wink. Keep her fox ears and gold hairpins consistent. Solid light gray background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "turnaround",
+        "prompt": "A professional character turnaround model sheet of the Nine-tailed Scarlet Fox. Show three views: front, side, and back, standing neutrally with arms relaxed. She wears the red-and-black ceremonial ancient robe, and her nine red tails are visible. Plain light gray studio background, 8k."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "outfit",
+        "prompt": "An outfit reference sheet of the Nine-tailed Scarlet Fox. Show three outfits side-by-side: left, her default red-and-black wide-sleeve robe; middle, a simpler dark red linen traveling tunic; right, a formal gold-embroidered battle robe with scale armor plates. Solid light gray background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "prop",
+        "prompt": "Prop reference sheet of the Nine-tailed Scarlet Fox's gear: her red-lotus (red lotus fox-fire lantern), her gold hairpins with crimson silk tassels, and her jade-tasseled black belt. Show them from multiple angles. Clean studio background, 8k."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "scene",
+        "prompt": "Landscape scene concept art of the Tushan Secret Sanctuary (涂山秘境). Show a mystical valley under a starry night sky with a huge glowing ancient peach tree in full pink blossom, floating red-lotus lanterns drifting down a sparkling river, and mist-shrouded traditional pavilions. No characters. Cinematic, 8k."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "fullBody",
+        "prompt": "Full-body standing art of the Nine-tailed Scarlet Fox. She stands elegantly holding her red-lotus lantern, with her nine red tails fanned out majestically behind her. Plain light gray background, 8k."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "cover",
+        "prompt": "Epic vertical cover art of the Nine-tailed Scarlet Fox in a dynamic pose, raising her hands to summon a giant swirling vortex of crimson fox-fire and flying red maple leaves. High contrast dramatic theatrical lighting, 8k."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "moodboard",
+        "prompt": "A moodboard collage of the Nine-tailed Scarlet Fox's aesthetic. Four flat panels showing: one of glowing red-lotus fox-fire; one of fine black silk fabric with gold dragon embroidery; one of falling autumn red maple leaves; and one of smooth black river pebbles. Clean grid layout."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "sketch",
+        "prompt": "Monochrome pencil sketch sheet of the Nine-tailed Scarlet Fox. Show 3 study sketches: meditating under a peach blossom tree; releasing a small fox-fire spark; and sitting gracefully on a stone wall. Clean white studio background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "modelSheet",
+        "prompt": "Character model sheet of the Nine-tailed Scarlet Fox. Show a detailed full-body front view of her standing in her default red-and-black robe, holding her lotus lantern. Clean light gray background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "poseSheet",
+        "prompt": "A pose sheet of the Nine-tailed Scarlet Fox showing 5 poses on one sheet: floating gracefully; conjuring a spell; walking with a sly smile; kneeling to offer the lantern; and standing in a dynamic wind-blown combat pose. Solid dark gray background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "expressionSheet",
+        "prompt": "An expression sheet of the Nine-tailed Scarlet Fox showing 8 bust portraits in a grid: confident smirk, shocked anger, playful wink, calm focus, cold glare, joyful smile, absolute sorrow, and mysterious fatigue. Clean background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "detailSheet",
+        "prompt": "A detail sheet for the Nine-tailed Scarlet Fox: close-ups of her gold-inlaid red-lotus lantern, her fluffy red fox ears, her glowing gold eye, and the gold-threaded embroidery on her black sash. Clean background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "materialPalette",
+        "prompt": "A material and color palette sheet next to a front view of the Nine-tailed Scarlet Fox. Show swatches of crimson silk, dark gold metal, black brocade with gold threads, and a glowing red fox-fire particle. Plain background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "outfitBreakdown",
+        "prompt": "An outfit breakdown sheet showing the layers of the Nine-tailed Scarlet Fox's gear: the outer red wide-sleeved coat, the inner black wrap dress, the black-and-gold sash, and the black leather shoes. Clean light background."
+    },
+    {
+        "char_id": "char_0035_nine_tailed_fox",
+        "char_name": "九尾赤狐",
+        "img_type": "damageState",
+        "prompt": "A damage state sheet showing 3 views of the Nine-tailed Scarlet Fox: left, default; middle, combat-worn: her sleeve slightly torn, hair messy, and a scratch on her shoulder; right, extreme combat-worn: standing in front of a ruined stone archway, her red-and-black dress heavily torn and soiled with ash, her tails singed and dusty, her lantern broken but holding a flickering red fire in her bare hand. Clean dark gray background."
     }
 ]
 
