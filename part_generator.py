@@ -147,6 +147,28 @@ LOCKS = {
         "colors": "neon pink, electric purple, matte black, cyan blue, holographic yellow",
         "materials": "matte-black technical fabric, carbon-fiber prosthetic shell, holographic light, wet concrete",
         "damage": "her technical raincoat is torn and scuffed, with cybernetic arm exposing minor wiring, and glowing circuits flickering. For the heavily damaged state, she stands next to a shattered holographic advertisement panel, her raincoat shredded, and the blue neural cables on her prosthetic arm broken and sparking."
+    },
+    "char_0036_red_umbrella_entity": {
+        "name": "The Red Umbrella Entity (红伞执念体)",
+        "features": "slender young East Asian woman with long flowing black hair, gentle but vacant dark red eyes, wearing an elegant dark red vintage dress, holding a glowing red oil-paper umbrella. Her figure appears slightly translucent.",
+        "prop": "her glowing red oil-paper umbrella",
+        "prop_desc": "a detailed vintage red oil-paper umbrella that glows with a warm, soft scarlet radiance",
+        "scene": "a modern metropolis street at night under heavy rain, with towering skyscrapers covered in vibrant blue and cyan neon advertisements reflecting on the wet asphalt and puddles",
+        "outfit_alt": "a dark blue modern raincoat over a simple black dress, and red boots, while holding her red umbrella",
+        "colors": "crimson red, deep night black, neon blue, cyan glow, misty white",
+        "materials": "vintage red silk umbrella paper, dark red dress fabric, wet asphalt, glowing neon light",
+        "damage": "her vintage red dress is torn at the hem and scuffed, and her hair is slightly messy. For the heavily damaged state, she stands next to a shattered glass storefront, her dress tattered, and her red oil-paper umbrella's scarlet glow is dim and flickering."
+    },
+    "char_0037_stele_pathfinder": {
+        "name": "The Stele Rubbing Pathfinder (残碑拓荒人)",
+        "features": "handsome young East Asian scholar with silver-and-black hair tied up in a simple wooden hairpin, wearing a simple gray-and-white scholar robe smudged with ink stains, carrying a rustic leather scroll-case on his back.",
+        "prop": "his giant iron calligraphy brush",
+        "prop_desc": "a giant iron calligraphy brush as tall as himself, with its bristles dripping with glowing black ink, and a rustic leather scroll-case",
+        "scene": "a desolate ancient ruined field of massive wind-eroded crumbling stone steles and monuments under an overcast sky with sun rays piercing through heavy gray clouds",
+        "outfit_alt": "a fitted black martial artist robe with leather arm guards, carrying his giant iron brush on his back",
+        "colors": "ink black, scholar robe white, iron grey, crumbling stone beige, sky grey",
+        "materials": "wide-sleeved linen fabric, polished iron brush body, leather scroll-case, ancient weathered stone",
+        "damage": "his gray-and-white scholar robe is torn and tattered, with thick dust and ink smudges on his face and chest. For the heavily damaged state, he stands defiantly in the ruins next to a shattered stone monument, his robe shredded, and his giant iron brush cracked and worn."
     }
 }
 
@@ -161,6 +183,46 @@ def expand_character_plan(plan, char_id, char_name):
         
     expanded = list(plan)
     
+    # Character Lock setup based on guidelines
+    if char_id == 'char_0036_red_umbrella_entity':
+        gender_age = "young woman, ethereal and mysterious presence, 19-year appearance"
+        body_shape = "slender and delicate silhouette, elegant posture"
+        face = "pale delicate face, gentle but vacant dark red eyes, serene expression"
+        hair = "long flowing black hair cascading to her waist"
+        eyes = "gentle but vacant dark red eyes"
+        outfit = "elegant vintage dark crimson silk dress with subtle glowing spider lily patterns embroidered on the hem"
+        accessories_weapon = "glowing red oil-paper umbrella casting warm scarlet light"
+        fixed_traits = "long black hair, vacant dark red eyes, vintage dark crimson dress, glowing red oil-paper umbrella"
+        style_desc = "Eastern fantasy character concept art"
+    elif char_id == 'char_0037_stele_pathfinder':
+        gender_age = "young man, handsome, scholarly and calm presence"
+        body_shape = "slender, tall, graceful scholarly posture"
+        face = "handsome refined features, focused expression, smudged with ink stains"
+        hair = "silver-and-black hair tied up in a simple wooden hairpin"
+        eyes = "focused dark eyes"
+        outfit = "simple gray-and-white scholar robe smudged with ink stains, carrying a rustic leather scroll-case on his back"
+        accessories_weapon = "giant iron calligraphy brush as tall as himself dripping with glowing black ink, and a leather scroll-case"
+        fixed_traits = "silver-and-black hair in wooden hairpin, gray-and-white robe, giant iron calligraphy brush, leather scroll-case"
+        style_desc = "Eastern fantasy character concept art"
+    else:
+        gender_age = "young appearance"
+        body_shape = "slender build"
+        face = "detailed facial features"
+        hair = "detailed hair"
+        eyes = "expressive eyes"
+        outfit = lock.get('features', '')
+        accessories_weapon = lock.get('prop_desc', '')
+        fixed_traits = f"{lock['name']}, {lock['prop']}"
+        style_desc = "Character concept art"
+
+    prop_desc = lock['prop_desc']
+    scene = lock['scene']
+    outfit_alt = lock['outfit_alt']
+    colors = lock['colors']
+    materials = lock['materials']
+    damage = lock['damage']
+    name = lock['name']
+
     all_types = [
         "main", "portrait", "expression", "turnaround", "outfit", "prop", 
         "scene", "fullBody", "cover", "moodboard", "sketch", "modelSheet", 
@@ -172,37 +234,137 @@ def expand_character_plan(plan, char_id, char_name):
         if t in existing_types:
             continue
             
-        prompt = ""
-        if t == "turnaround":
-            prompt = f"Now, draw a professional character turnaround model sheet of the exact same {lock['name']} character from our conversation. Show three full-body views: front, side, and back, standing in a neutral pose. She is wearing her signature costume. Solid, clean dark gray background. High-fidelity details, masterpiece, 8k."
+        # Focus and composition based on type
+        if t == "main":
+            focus = "strong first impression, world mood, signature outfit, weapon, and emotional identity"
+            composition = "Full-body or three-quarter character view, cinematic but readable, the character is the clear focal point"
+            background = f"Atmospheric scene related to the character's world: {scene}"
+            asset_label = "main visual key art image"
+        elif t == "portrait":
+            focus = "facial identity, eyes, hair, expression, collar and shoulder outfit details"
+            composition = "Bust portrait, face clearly visible, centered or slightly turned, clean framing"
+            background = "Simple soft background matching her palette, no busy scenery"
+            asset_label = "portrait / bust image"
+        elif t == "expression":
+            focus = "show three different facial expressions side-by-side: one serene and calm, one with a subtle focused look, and one showing a faint, gentle smile. Keep the face structure, hair, and eyes identical"
+            composition = "Three side-by-side bust views of the same character showing different emotions, clean alignment"
+            background = "Plain clean dark gray studio background"
+            asset_label = "expression variant sheet"
+        elif t == "turnaround":
+            focus = "clear turnaround views (front view, side view, back view) standing neutrally to show outfit construction and hair layout from all sides"
+            composition = "Three side-by-side full-body views of the same character standing neutrally: front view, side view, back view. Even lighting"
+            background = "Plain clean dark gray studio background"
+            asset_label = "clean turnaround / angle reference model sheet"
         elif t == "outfit":
-            prompt = f"Now, draw the exact same {lock['name']} character from our conversation, but wearing an alternative outfit: {lock['outfit_alt']}. Full-body view, standing on a solid clean dark gray background. High-fidelity details, masterpiece, 8k."
+            focus = f"show an alternate outfit: {outfit_alt} while preserving the same face, hairstyle, body shape, and color palette logic"
+            composition = f"Show three different outfits side-by-side: on the left, her default outfit; in the middle, her alternative outfit ({outfit_alt}); on the right, a stylized secondary variant. Keep face and hair identical"
+            background = "Plain clean dark gray background"
+            asset_label = "outfit variant reference sheet"
         elif t == "prop":
-            prompt = f"Now, draw a high-fidelity detailed design sheet of the {lock['name']}\\'s gear: {lock['prop_desc']}. Show it from multiple angles. Solid, clean dark gray background. Masterpiece, 8k."
+            focus = f"detailed design of the signature gear: {prop_desc}, shown from multiple angles"
+            composition = "Multi-angle views and close-ups of the signature prop on a clean board layout"
+            background = "Plain clean dark gray background"
+            asset_label = "prop and weapon reference sheet"
         elif t == "scene":
-            prompt = f"Now, draw a stunning, highly detailed landscape scene concept art of the setting: {lock['scene']}. Cinematic, hyper-realistic, masterpiece, 8k."
+            focus = f"the environment and setting: {scene}"
+            composition = "Wide shot scenic view of the location, character is not present or very small to establish scale"
+            background = f"{scene}"
+            asset_label = "scene landscape concept art"
         elif t == "fullBody":
-            prompt = f"Now, draw a full-body standing art of the exact same {lock['name']} character. She stands in a neutral pose, holding {lock['prop']}. Solid, extremely dark, low-contrast studio background. Masterpiece, 8k."
+            focus = "complete outfit, body proportions, weapon scale, and clear design details"
+            composition = "Full body visible from head to toe, neutral standing pose, clear silhouette, no cropping"
+            background = "Plain clean dark gray studio background"
+            asset_label = "full-body standing character art"
         elif t == "cover":
-            prompt = f"Epic vertical cover art of the exact same {lock['name']} character in a dynamic pose. She stands in the center of the frame, with dramatic particles and lighting. High contrast cinematic lighting, 8k."
+            focus = "iconic character presence in a dynamic pose, high emotional hook, dramatic lighting, and vertical composition suitable for a card banner or cover poster"
+            composition = "Strong vertical cover framing, centered character, highly detailed, dynamic lighting"
+            background = f"Atmospheric background matching {scene}"
+            asset_label = "cover image"
         elif t == "moodboard":
-            prompt = f"A moodboard collage of 4 panels for the {lock['name']}: one of close-up {lock['colors']}, one of textures of {lock['materials']}, and two of atmosphere elements matching her lore. Clean grid layout, no borders, no text, plain background."
+            focus = f"atmosphere, color swatches of {colors}, texture details of {materials}, and symbolic elements related to the character's lore"
+            composition = "Clean 4-panel grid layout collage of textures, patterns, colors, and environment elements, no text"
+            background = "Plain dark gray velvet background"
+            asset_label = "moodboard collage"
         elif t == "sketch":
-            prompt = f"Monochrome pencil sketch sheet of the {lock['name']} showing 3 study sketches of her in different poses and study details. Clean hand-drawn lines, traditional sketch style, plain light background."
+            focus = "pencil sketch drawings showing 3 study sketches of the character in different poses and structural details"
+            composition = "Multiple drawings arranged on a sheet showing structural details"
+            background = "Plain light background"
+            asset_label = "sketch sheet / line art reference"
         elif t == "modelSheet":
-            prompt = f"Character model sheet of the {lock['name']} showing a detailed full-body front view of her standing in her default costume, holding her signature {lock['prop']}. Even lighting, clean light gray background."
+            focus = "authoritative design reference showing the character standing neutrally in her default costume"
+            composition = "Detailed full-body front view of the character standing in her default costume holding her signature prop"
+            background = "Clean light gray background"
+            asset_label = "character model sheet / standard character design reference"
         elif t == "poseSheet":
-            prompt = f"Show 5 poses of the {lock['name']} on one sheet: performing action, walking, sitting, defending, and standing battle-worn. Solid clean dark gray background."
+            focus = "show 5 poses of the same character on one sheet: performing action, walking, sitting, defending, and standing battle-worn. Keep face, hair, and costume identical"
+            composition = "5 full-body figures arranged on a single sheet, showing motion and weight"
+            background = "Solid clean dark gray background"
+            asset_label = "pose sheet"
         elif t == "expressionSheet":
-            prompt = f"An expression sheet showing 8 bust portraits of the {lock['name']} in a grid: serene smile, chanting, sadness, surprise, frown, fatigue, laughter, and intense focus. Clean dark gray background."
+            focus = "show 8 bust portraits of the character in a clean grid: serene smile, chanting/speaking, sadness, surprise, frown, fatigue, laughter, and intense focus. Keep face, hair, and costume collar identical"
+            composition = "8 bust portraits arranged in a clean grid layout"
+            background = "Clean dark gray background"
+            asset_label = "expression sheet"
         elif t == "detailSheet":
-            prompt = f"A clean detail sheet showing close-up panels of the {lock['name']}\\'s features: her hair details, her face, her costume embroidery, and her signature {lock['prop']} texture. Clean light gray background."
+            focus = f"close-up panels of the character's features: hair details, face, costume embroidery, and signature prop texture"
+            composition = "Close-up panels arranged neatly on a plain background"
+            background = "Clean light gray background"
+            asset_label = "detail sheet / close-up reference"
         elif t == "materialPalette":
-            prompt = f"A material and color palette sheet. Show swatches of materials: {lock['materials']} next to a front view of the {lock['name']}. Plain background."
+            focus = f"swatches of materials: {materials} next to a front view of the character to lock color and surface properties"
+            composition = "The character standing alongside neatly arranged color and material blocks"
+            background = "Plain light gray background"
+            asset_label = "material and color palette sheet"
         elif t == "outfitBreakdown":
-            prompt = f"An outfit breakdown sheet showing the layers of the {lock['name']}\\'s gear: the main robe, outer armor/garment, belt, and shoes. Clean light background."
+            focus = "layers of the character's gear: the main robe, outer armor/garment, belt, and shoes shown separately"
+            composition = "Separated clothing layers and items laid out clearly on a board"
+            background = "Clean light background"
+            asset_label = "outfit breakdown sheet"
         elif t == "damageState":
-            prompt = f"A damage state sheet showing 3 views of {lock['name']} side-by-side: left, default; middle, battle-worn with clothing frayed showing soot; right, extreme battle-damaged state: standing next to a cracked/shattered prop, her clothing dramatically ripped, covered in scorch marks. Clean dark gray background."
+            focus = f"progressive clothing damage and weathering: {damage}. Show 3 views side-by-side: left, default; middle, battle-worn; right, extreme damaged state"
+            composition = "Show three side-by-side full-body views of the same character standing, showing wear and tear progression"
+            background = "Solid clean dark gray background"
+            asset_label = "damage state variants"
+        else:
+            focus = "character details"
+            composition = "full body"
+            background = "plain background"
+            asset_label = t
+
+        prompt = f"""Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: {name}
+Gender / age impression: {gender_age}
+Body shape: {body_shape}
+Face: {face}
+Hair: {hair}
+Eyes: {eyes}
+Outfit: {outfit}
+Accessories / weapon: {accessories_weapon}
+Color palette: {colors}
+Fixed traits that must never change: {fixed_traits}
+
+Current asset goal:
+Generate a {asset_label}. Focus on {focus}.
+
+Style:
+{style_desc}, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+
+Composition:
+{composition}. Keep the character clearly readable. Avoid unnecessary extra characters.
+
+Background:
+{background}
+
+Constraints:
+Keep the same face, hairstyle, outfit logic, color palette, body shape, and signature accessories.
+Do not redesign the character.
+No text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."""
             
         expanded.append({
             "char_id": char_id,
@@ -4960,6 +5122,11 @@ Solid clean dark gray background."""
     midnight_plan = expand_character_plan(midnight_plan, 'char_0002_midnight_warden', '午夜值守员')
     sandstorm_plan = expand_character_plan(sandstorm_plan, 'char_0003_sandstorm_pilgrim', '风沙朝圣者')
     neon_plan = expand_character_plan(neon_plan, 'char_0004_neon_hacker', '霓虹潜行者')
+    
+    # Apply dynamic expander to the new characters
+    global red_umbrella_plan, stele_pathfinder_plan
+    red_umbrella_plan = expand_character_plan(red_umbrella_plan, 'char_0036_red_umbrella_entity', '红伞执念体')
+    stele_pathfinder_plan = expand_character_plan(stele_pathfinder_plan, 'char_0037_stele_pathfinder', '残碑拓荒人')
 
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
