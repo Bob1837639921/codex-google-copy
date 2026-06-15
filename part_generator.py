@@ -7514,7 +7514,122 @@ stele_pathfinder_plan = [
         "char_id": "char_0037_stele_pathfinder",
         "char_name": "残碑拓荒人",
         "img_type": "main",
-        "prompt": "A breathtaking, masterfully crafted epic fantasy concept art of the Stele Rubbing Pathfinder. A handsome young East Asian scholar with messy silver-and-black hair tied up with a simple wooden hairpin. He is wearing a flowing, wide-sleeved gray and white scholar robe beautifully stained with artistic splashes of black ink. He stands in a scenic, ancient ruined field of massive wind-eroded crumbling stone steles and monuments. On his back, he carries a rustic leather scroll-case overflowing with parchment rubbings. In one hand, he holds a majestic, giant iron calligraphy brush as tall as himself, its bristles dripping with glowing black ink. Shimmering, floating calligraphy characters and dust particles float in the wind around him. The background shows a dramatic, overcast sky with sun rays piercing through heavy gray clouds, casting a majestic and historic lighting onto the desolate landscape. Cinematic lighting, octane render, photorealistic textures, 8k resolution."
+        "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Stele Rubbing Pathfinder (残碑拓荒人)
+Gender / age impression: young man, handsome, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, focused expression, smudged with ink stains
+Hair: silver-and-black hair tied up in a simple wooden hairpin
+Eyes: focused dark eyes
+Outfit: simple gray-and-white scholar robe smudged with ink stains, carrying a rustic leather scroll-case on his back
+Accessories / weapon: giant iron calligraphy brush as tall as himself dripping with glowing black ink, and a leather scroll-case
+Color palette: ink black, scholar robe white, iron grey, crumbling stone beige, sky grey
+Fixed traits that must never change: silver-and-black hair in wooden hairpin, gray-and-white robe, giant iron calligraphy brush, leather scroll-case
+
+Current asset goal:
+Generate a main visual key art image. Focus on strong first impression, world mood, signature outfit, weapon, and emotional identity.
+
+Style:
+Eastern fantasy character concept art, cinematic fantasy concept art, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+
+Composition:
+Cinematic action pose. The scholar is dynamically waving his giant iron calligraphy brush in a sweeping motion, releasing a beautiful arc of flowing wet black calligraphy ink across the air. He is looking ahead with a focused, sharp gaze. Full-body or three-quarter character view, cinematic but readable, the character is the clear focal point.
+
+Background:
+An atmospheric desolate ancient ruined field of massive wind-eroded crumbling stone steles and monuments. Sun rays pierce through heavy overcast clouds, casting a majestic and historic lighting onto the desolate landscape.
+
+Constraints:
+Keep the same face, hairstyle, outfit logic, color palette, body shape, and signature accessories.
+Do not redesign the character.
+No text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."""
+    },
+    {
+        "char_id": "char_0037_stele_pathfinder",
+        "char_name": "残碑拓荒人",
+        "img_type": "cover",
+        "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Stele Rubbing Pathfinder (残碑拓荒人)
+Gender / age impression: young man, handsome, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, focused expression, smudged with ink stains
+Hair: silver-and-black hair tied up in a simple wooden hairpin
+Eyes: focused dark eyes
+Outfit: simple gray-and-white scholar robe smudged with ink stains, carrying a rustic leather scroll-case on his back
+Accessories / weapon: giant iron calligraphy brush as tall as himself dripping with glowing black ink, and a leather scroll-case
+Color palette: ink black, scholar robe white, iron grey, crumbling stone beige, sky grey
+Fixed traits that must never change: silver-and-black hair in wooden hairpin, gray-and-white robe, giant iron calligraphy brush, leather scroll-case
+
+Current asset goal:
+Generate a cover image. Focus on iconic character presence in a dynamic pose, high emotional hook, dramatic lighting, and vertical composition suitable for a card banner or cover poster.
+
+Style:
+Eastern fantasy character concept art, cinematic promotional key art, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+
+Composition:
+Strong vertical cover framing. The scholar is captured in a dynamic action pose in the center of the frame, drawing massive floating calligraphy characters in mid-air with his giant calligraphy brush. Flowing ink particles and glowing dust swirl around him. High contrast cinematic lighting, highly detailed, 8k.
+
+Background:
+Desolate ancient ruined field under a dramatic stormy sky, matching the world mood.
+
+Constraints:
+Keep the same face, hairstyle, outfit logic, color palette, body shape, and signature accessories.
+Do not redesign the character.
+No text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."""
+    },
+    {
+        "char_id": "char_0037_stele_pathfinder",
+        "char_name": "残碑拓荒人",
+        "img_type": "outfit",
+        "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Stele Rubbing Pathfinder (残碑拓荒人)
+Gender / age impression: young man, handsome, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, focused expression, smudged with ink stains
+Hair: silver-and-black hair tied up in a simple wooden hairpin
+Eyes: focused dark eyes
+Outfit: simple gray-and-white scholar robe smudged with ink stains, carrying a rustic leather scroll-case on his back
+Accessories / weapon: giant iron calligraphy brush as tall as himself dripping with glowing black ink, and a leather scroll-case
+Color palette: ink black, scholar robe white, iron grey, crumbling stone beige, sky grey
+Fixed traits that must never change: silver-and-black hair in wooden hairpin, gray-and-white robe, giant iron calligraphy brush, leather scroll-case
+
+Current asset goal:
+Generate an outfit variant reference sheet. Focus on showing three very different outfits side-by-side while preserving the same face and hairstyle.
+
+Style:
+Eastern fantasy character concept art, high-fidelity design sheet, detailed fabric material rendering, coherent design language, consistent facial identity, production-ready asset.
+
+Composition:
+Show three different outfits side-by-side of the exact same character standing neutrally:
+1. On the left: His default outfit (simple gray-and-white scholar robe smudged with black ink stains, leather scroll-case on back).
+2. In the middle: His martial scouting outfit (fitted black martial artist robe with leather arm guards, carrying his giant brush on his back).
+3. On the right: His pristine court scholar gown (a high-status pure white and silver silk robe with fine crane embroidery, completely clean without any ink stains).
+Keep the character's face, silver-and-black hair, and body proportions identical across all three views.
+
+Background:
+Plain clean dark gray background.
+
+Constraints:
+Keep the same face, hairstyle, outfit logic, color palette, body shape, and signature accessories.
+Do not redesign the character.
+No text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."""
     }
 ]
 
