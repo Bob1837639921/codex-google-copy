@@ -378,11 +378,35 @@ class BrowserAgent:
             return result
 
         reason = result.get("reason", "")
-        # 如果是不支持的文件类型或文件过大，自动回退到 download_via_blob
+        # 如果是不支持的文件类型或文件过大，自动回退到 download_via_blob并搬移
         if reason in ("unsupported_mime", "file_too_large"):
             filename = os.path.basename(dest_path)
             logging.info(f"smart_save: 回退到 download_via_blob，filename={filename}（原因：{reason}）")
-            return await self.download_via_blob(url, filename)
+            res = await self.download_via_blob(url, filename)
+            if res and res.get("status") == "success":
+                download_id = res.get("downloadId")
+                if download_id:
+                    import time, shutil, asyncio
+                    start_poll = time.time()
+                    download_success = False
+                    while time.time() - start_poll < 60:
+                        await asyncio.sleep(1.0)
+                        search_res = await self.search_downloads({"id": download_id})
+                        if search_res and search_res.get("status") == "success":
+                            items = search_res.get("results", [])
+                            if items and items[0].get("state") == "complete":
+                                download_success = True
+                                break
+                    if download_success:
+                        download_dir = os.path.join(os.path.expanduser("~"), "Downloads")
+                        src_file = os.path.join(download_dir, filename)
+                        if os.path.exists(src_file):
+                            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                            shutil.move(src_file, dest_path)
+                            logging.info(f"smart_save: 成功从 Downloads 移动到目标路径 {dest_path}")
+                            return {"status": "success", "path": dest_path}
+            return res or {"status": "error", "error": "Blob download failed"}
+        return result
 
     async def smart_click(self, selector: str):
         """

@@ -920,7 +920,8 @@ async function executeFetchAsBase64(url, msgId) {
         }
 
         // 文件类型检查（仅在 HEAD 成功拿到 MIME 时校验）
-        if (mime && !ALLOWED_MIME_PREFIXES.some(prefix => mime.startsWith(prefix))) {
+        const isChatGPTFile = url.includes('/estuary/content') || url.includes('/backend-api/files') || url.includes('files.oaiusercontent.com');
+        if (mime && !isChatGPTFile && !ALLOWED_MIME_PREFIXES.some(prefix => mime.startsWith(prefix))) {
             socket.send(JSON.stringify({
                 id: msgId,
                 status: 'error',
