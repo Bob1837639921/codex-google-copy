@@ -1185,7 +1185,7 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
             if pair_first_word != target_first_word:
                 continue
             sim = get_prompt_similarity(prompt, pair["prompt"])
-            if sim > 0.65 and sim >= max_sim: # 使用 >= 保证存在重生成时选取最新一张
+            if sim > 0.95 and sim >= max_sim: # 使用 >= 保证存在重生成时选取最新一张
                 max_sim = sim
                 matched_image_src = pair["image"]
             
