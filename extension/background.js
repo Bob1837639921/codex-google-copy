@@ -221,7 +221,7 @@ function handleReconnect() {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
     console.log('[Event] HTTP/HTTPS tab updated, triggering reconnect check...');
-    triggerConnect();
+    triggerConnect(true);
   }
   // 核心：若接管的代理标签页发生了重载、刷新或单页应用（SPA）历史路由变更，强制瞬间隐藏鼠标！
   if (tabId === agentTabId && (changeInfo.status === 'complete' || changeInfo.url)) {
@@ -241,7 +241,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
     const tab = await chrome.tabs.get(activeInfo.tabId);
     if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
       console.log('[Event] HTTP/HTTPS tab activated, triggering reconnect check...');
-      triggerConnect();
+      triggerConnect(true);
     }
   } catch (e) {}
 });

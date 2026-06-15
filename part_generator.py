@@ -7662,6 +7662,46 @@ Constraints:
 Keep the same face, hairstyle, outfit logic, color palette, body shape, and signature accessories.
 Do not redesign the character.
 No text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."""
+    },
+    {
+        "char_id": "char_0037_stele_pathfinder",
+        "char_name": "残碑拓荒人",
+        "img_type": "detailSheet",
+        "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Stele Rubbing Pathfinder (残碑拓荒人)
+Gender / age impression: young man, handsome, scholarly and calm presence
+Body shape: slender, tall, graceful scholarly posture
+Face: handsome refined features, focused expression, smudged with ink stains
+Hair: silver-and-black hair tied up in a simple wooden hairpin
+Eyes: focused dark eyes
+Outfit: simple gray-and-white scholar robe smudged with ink stains, carrying a rustic leather scroll-case on his back
+Accessories / weapon: giant iron calligraphy brush as tall as himself dripping with glowing black ink, and a leather scroll-case
+Color palette: ink black, scholar robe white, iron grey, crumbling stone beige, sky grey
+Fixed traits that must never change: silver-and-black hair in wooden hairpin, gray-and-white robe, giant iron calligraphy brush, leather scroll-case
+
+Current asset goal:
+Generate a fully colored detail sheet / close-up reference. Focus on close-up panels of the character's features: colored hair details, colored face close-up, colored costume embroidery, and realistic signature prop texture.
+
+Style:
+Eastern fantasy character concept art, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+
+Composition:
+Close-up panels arranged neatly on a plain background. All panels must be fully colored, rendered, and detailed.
+
+Background:
+Clean light gray background.
+
+Constraints:
+Keep the same face, hairstyle, outfit logic, color palette, body shape, and signature accessories.
+Do not redesign the character.
+All panels must be fully colored and rendered. Avoid line art, monochrome sketches, outline drawings, and black and white diagrams.
+No text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."""
     }
 ]
 
