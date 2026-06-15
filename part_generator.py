@@ -6203,7 +6203,40 @@ moonshadow_ranger_plan = [
         "char_id": "char_0024_moonshadow_ranger",
         "char_name": "月影游侠",
         "img_type": "modelSheet",
-        "prompt": "Character model sheet of the Moonshadow Ranger. Show a detailed full-body front view of her standing in her dark green cloak and leather armor, holding her signature full-sized leaf-carved oak bow (scaled proportionally to her body height). The side of the sheet shows detailed callouts of her bow and arrows. Even lighting, clean light gray background."
+        "prompt": """Use case: stylized-concept
+Asset type: character asset for a reusable character pool
+
+Primary request:
+Create a high-quality character asset image for the following character. The goal is consistency and future reuse, not a one-off random illustration.
+
+Character lock:
+Name: The Moonshadow Ranger (月影游侠)
+Gender / age impression: young half-elf woman, calm and alert, 22-year appearance
+Body shape: slender and athletic build, elegant posture
+Face: beautiful delicate face, glowing light-green eyes, calm expression
+Hair: long silver hair tied in a high ponytail
+Eyes: glowing light-green eyes
+Outfit: dark green hooded wind-cloak over form-fitting leather armor, high leather boots
+Accessories / weapon: leaf-carved oak bow, leather quiver with moonstone-tipped arrows
+Color palette: dark green, silver white, leather brown, glowing starlight blue, mint green
+Fixed traits that must never change: silver high-ponytail hair, light-green eyes, dark green hooded cloak, leaf-carved oak bow
+
+Current asset goal:
+Generate a character model sheet / standard character design reference. Focus on authoritative design reference showing the character standing neutrally in her default costume.
+
+Style:
+Modern forest fantasy concept art, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+
+Composition:
+Detailed full-body front view of the character standing in her default costume holding her signature full-sized leaf-carved oak bow (scaled proportionally to her body height). The side of the sheet shows detailed callouts of her bow and arrows. Even lighting, clean light gray background.
+
+Background:
+Clean light gray background.
+
+Constraints:
+Keep the same face, hairstyle, outfit logic, color palette, body shape, and signature accessories.
+Do not redesign the character.
+No text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."""
     },
     {
         "char_id": "char_0024_moonshadow_ranger",
