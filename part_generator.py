@@ -4971,7 +4971,7 @@ Solid clean dark gray background."""
         siren_plan + tide_warlord_plan + abyssal_stalker_plan +
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
-        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan
+        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -7297,6 +7297,24 @@ nine_tailed_fox_plan = [
         "char_name": "九尾赤狐",
         "img_type": "damageState",
         "prompt": "A damage state sheet showing 3 views of the Nine-tailed Scarlet Fox: left, default; middle, combat-worn: her sleeve slightly torn, hair messy, and a scratch on her shoulder; right, extreme combat-worn: standing in front of a ruined stone archway, her red-and-black dress heavily torn and soiled with ash, her tails singed and dusty, her lantern broken but holding a flickering red fire in her bare hand. Clean dark gray background."
+    }
+]
+
+red_umbrella_plan = [
+    {
+        "char_id": "char_0036_red_umbrella_entity",
+        "char_name": "红伞执念体",
+        "img_type": "main",
+        "prompt": "A masterpiece cinematic concept art of the Red Umbrella Entity. A beautiful slender young East Asian woman with delicate handsome facial features and long, flowing pitch-black hair cascading to her waist. She wears an elegant vintage dark crimson silk dress with subtle glowing spider lily patterns embroidered on the hem. She stands on a wet, rain-slicked street in a modern metropolis under a dark rainy night. In one hand, she holds a highly detailed, glowing red oil-paper umbrella that casts a warm, soft scarlet radiance onto her serene face and slightly translucent ethereal figure. The background features towering skyscrapers with vibrant blue and cyan neon advertisements reflecting beautifully on the wet asphalt and puddles. Delicate rain drops shimmer in the air, creating a rich Tyndall lighting effect. Photorealistic textures, octane render, 8k resolution."
+    }
+]
+
+stele_pathfinder_plan = [
+    {
+        "char_id": "char_0037_stele_pathfinder",
+        "char_name": "残碑拓荒人",
+        "img_type": "main",
+        "prompt": "A breathtaking, masterfully crafted epic fantasy concept art of the Stele Rubbing Pathfinder. A handsome young East Asian scholar with messy silver-and-black hair tied up with a simple wooden hairpin. He is wearing a flowing, wide-sleeved gray and white scholar robe beautifully stained with artistic splashes of black ink. He stands in a scenic, ancient ruined field of massive wind-eroded crumbling stone steles and monuments. On his back, he carries a rustic leather scroll-case overflowing with parchment rubbings. In one hand, he holds a majestic, giant iron calligraphy brush as tall as himself, its bristles dripping with glowing black ink. Shimmering, floating calligraphy characters and dust particles float in the wind around him. The background shows a dramatic, overcast sky with sun rays piercing through heavy gray clouds, casting a majestic and historic lighting onto the desolate landscape. Cinematic lighting, octane render, photorealistic textures, 8k resolution."
     }
 ]
 
