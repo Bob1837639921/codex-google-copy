@@ -169,6 +169,28 @@ LOCKS = {
         "colors": "ink black, scholar robe white, iron grey, crumbling stone beige, sky grey",
         "materials": "wide-sleeved linen fabric, polished iron brush body, leather scroll-case, ancient weathered stone",
         "damage": "his gray-and-white scholar robe is torn and tattered, with thick dust and ink smudges on his face and chest. For the heavily damaged state, he stands defiantly in the ruins next to a shattered stone monument, his robe shredded, and his giant iron brush cracked and worn."
+    },
+    "char_0040_fungal_apothecary": {
+        "name": "The Fungal Grove Apothecary (蕈林秘医)",
+        "features": "beautiful young elf woman with translucent pale skin and glowing mint-green eyes. She wears an elegant dark-green herbalist robe woven with moss and vines, and a unique hood shaped like a giant glowing, semi-translucent purple mushroom cap.",
+        "prop": "her wooden mortar and pestle and glowing glass flasks",
+        "prop_desc": "a wooden mortar and pestle, and several glowing glass flasks filled with colorful spores",
+        "scene": "a mystical dark cave filled with massive glowing bioluminescent mushrooms and drifting cyan spores",
+        "outfit_alt": "an elegant light green herbalist gown with a floral crown instead of a mushroom hood, and a wicker basket on her back",
+        "colors": "glowing purple, mint green, moss dark green, cyan glow, leather brown",
+        "materials": "woven moss and vine fabric, semi-translucent glowing mushroom skin, polished wood mortar, glass flasks",
+        "damage": "her dark-green robe is torn and stained with colorful glowing fungal juices, and her mushroom hood is slightly chipped. For the heavily damaged state, she stands in front of a shattered giant mushroom stalk, her robe heavily tattered, and her glass flasks broken, leaving glowing spore dust swirling around her."
+    },
+    "char_0041_book_wraith": {
+        "name": "The Bound Book-Wraith (禁忌书魂)",
+        "features": "ethereal, semi-translucent spectral figure floating in the air, wearing tattered, dusty dark archivist robes with a deep hood obscuring its face, showing only two glowing golden eyes. Swirling in a chaotic vortex around its body are hundreds of floating, aged parchment book pages.",
+        "prop": "hundreds of floating book pages and an ancient locked chain",
+        "prop_desc": "hundreds of floating parchment pages inscribed with glowing gold and blue runes, and an ancient rusted lock chain around its waist",
+        "scene": "a massive, cavernous ancient library vault with towering dark wooden bookshelves stretching into the shadows and dust motes catching shafts of magical light",
+        "outfit_alt": "a dark blue spectral priest robe with silver embroidery and a glowing open grimoire floating in front of it",
+        "colors": "magical blue, glowing gold, parchment beige, dusty dark grey, ink black",
+        "materials": "semi-translucent spectral energy, tattered linen fabric, aged parchment paper, rusted iron chains",
+        "damage": "its dark robes are heavily shredded, and the floating book pages around its body are singed and torn, with flickering spectral light. For the heavily damaged state, it floats next to a collapsed burning bookshelf, its robes mostly disintegrated into smoke, and its pages scattering into ashes in the air."
     }
 }
 
@@ -204,6 +226,26 @@ def expand_character_plan(plan, char_id, char_name):
         accessories_weapon = "giant iron calligraphy brush as tall as himself dripping with glowing black ink, and a leather scroll-case"
         fixed_traits = "silver-and-black hair in wooden hairpin, gray-and-white robe, giant iron calligraphy brush, leather scroll-case"
         style_desc = "Eastern fantasy character concept art"
+    elif char_id == 'char_0040_fungal_apothecary':
+        gender_age = "young elf woman, beautiful and mysterious presence"
+        body_shape = "slender build, delicate posture, light footed"
+        face = "translucent pale skin, glowing mint-green eyes, calm expression"
+        hair = "long light-blue glowing hair, slightly wavy"
+        eyes = "glowing mint-green eyes"
+        outfit = "elegant dark-green herbalist robe woven with moss and vines, and a unique hood shaped like a giant glowing, semi-translucent purple mushroom cap"
+        accessories_weapon = "wooden mortar and pestle, glowing glass flasks filled with colorful spores"
+        fixed_traits = "semi-translucent mushroom cap hood, glowing mint-green eyes, long light-blue hair, wooden mortar"
+        style_desc = "modern forest fantasy character concept art"
+    elif char_id == 'char_0041_book_wraith':
+        gender_age = "ancient ethereal presence, no defined gender"
+        body_shape = "semi-translucent floating spectral form, no solid feet"
+        face = "dark shadow silhouette obscured under a deep hood, showing only two glowing golden eyes"
+        hair = "none, completely obscured by hood"
+        eyes = "glowing golden eyes"
+        outfit = "tattered, dusty dark archivist robes with a deep hood, with a rusted iron chain around its waist"
+        accessories_weapon = "hundreds of floating aged parchment pages inscribed with glowing gold and blue runes"
+        fixed_traits = "floating spectral form, deep hood with golden eyes, swirling book pages, magical runes"
+        style_desc = "epic fantasy character concept art"
     else:
         gender_age = "young appearance"
         body_shape = "slender build"
@@ -5156,9 +5198,11 @@ Solid clean dark gray background."""
     neon_plan = expand_character_plan(neon_plan, 'char_0004_neon_hacker', '霓虹潜行者')
     
     # Apply dynamic expander to the new characters
-    global red_umbrella_plan, stele_pathfinder_plan
+    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan
     red_umbrella_plan = expand_character_plan(red_umbrella_plan, 'char_0036_red_umbrella_entity', '红伞执念体')
     stele_pathfinder_plan = expand_character_plan(stele_pathfinder_plan, 'char_0037_stele_pathfinder', '残碑拓荒人')
+    fungal_apothecary_plan = expand_character_plan(fungal_apothecary_plan, 'char_0040_fungal_apothecary', '蕈林秘医')
+    book_wraith_plan = expand_character_plan(book_wraith_plan, 'char_0041_book_wraith', '禁忌书魂')
 
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
@@ -5170,7 +5214,8 @@ Solid clean dark gray background."""
         siren_plan + tide_warlord_plan + abyssal_stalker_plan +
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
-        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan
+        ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
+        fungal_apothecary_plan + book_wraith_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -7702,6 +7747,24 @@ Keep the same face, hairstyle, outfit logic, color palette, body shape, and sign
 Do not redesign the character.
 All panels must be fully colored and rendered. Avoid line art, monochrome sketches, outline drawings, and black and white diagrams.
 No text, no watermark, no logo, no extra limbs, no bad hands, no distorted face, no random new weapons."""
+    }
+]
+
+fungal_apothecary_plan = [
+    {
+        "char_id": "char_0040_fungal_apothecary",
+        "char_name": "蕈林秘医",
+        "img_type": "main",
+        "prompt": "A masterpiece cinematic concept art of the Fungal Grove Apothecary. A beautiful young elf woman with translucent pale skin and glowing mint-green eyes. She wears an elegant dark-green herbalist robe woven with moss and vines, and a unique hood shaped like a giant glowing, semi-translucent purple mushroom cap. She stands in a mystical dark cave filled with massive glowing bioluminescent mushrooms and drifting cyan spores. In her hands, she carefully holds a wooden mortar and pestle, grinding a luminous purple fungus that emits a soft mist. A leather bandoleer across her shoulder holds several glowing glass flasks filled with colorful spores. Ethereal forest lighting, highly detailed textures of bark, moss, and glowing gills, octane render, 8k resolution."
+    }
+]
+
+book_wraith_plan = [
+    {
+        "char_id": "char_0041_book_wraith",
+        "char_name": "禁忌书魂",
+        "img_type": "main",
+        "prompt": "A breathtaking epic fantasy concept art of the Bound Book-Wraith. An ethereal, semi-translucent spectral figure floating in the air of a massive, cavernous ancient library vault. The figure wears tattered, dusty dark archivist robes with a deep hood obscuring its face, showing only two glowing golden eyes. Swirling in a chaotic vortex around its body are hundreds of floating, aged parchment book pages inscribed with glowing gold and blue runes and ink calligraphy. The library background features towering dark wooden bookshelves stretching into the shadows, with dust motes catching shaft of magical light from high stained-glass windows. Octane render, cinematic fantasy illustration, 8k."
     }
 ]
 
