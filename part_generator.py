@@ -191,6 +191,17 @@ LOCKS = {
         "colors": "magical blue, glowing gold, parchment beige, dusty dark grey, ink black",
         "materials": "semi-translucent spectral energy, tattered linen fabric, aged parchment paper, rusted iron chains",
         "damage": "its dark robes are heavily shredded, and the floating book pages around its body are singed and torn, with flickering spectral light. For the heavily damaged state, it floats next to a collapsed burning bookshelf, its robes mostly disintegrated into smoke, and its pages scattering into ashes in the air."
+    },
+    "char_0042_radio_host": {
+        "name": "The Midnight Radio Host (午夜电台主播)",
+        "features": "streetwear girl with an oversized black windbreaker, whose head is replaced by a vintage retro cassette tape-player helmet with spinning reels glowing with radioactive neon green and hot pink light inside, glass visor displaying two green soundwave lines as eyes",
+        "prop": "a heavy vintage silver condenser microphone and a glowing neon-pink cassette tape",
+        "prop_desc": "a heavy vintage silver condenser microphone in her hand, and a glowing neon-pink cassette tape in the other",
+        "scene": "a cozy dimly lit radio booth surrounded by vinyl records, glowing audio mixers, and soundproofing foam, window showing a dark misty city with blue and warm amber neon glows",
+        "outfit_alt": "a reflective neon-green oversized hoodie with street art prints and headphones resting around her neck",
+        "colors": "radioactive neon green, hot pink, charcoal black, neon blue, warm amber",
+        "materials": "matte black plastic casing of helmet, glossy glass visor, nylon windbreaker fabric, silver metal mic, spinning plastic tape reels",
+        "damage": "her helmet casing is cracked with escaping neon light and small sparks, and her nylon jacket is torn. For the heavily damaged state, her tape helmet is partially broken revealing inner circuit boards, and the cassette tape is shattered on the floor, surrounded by flickering sparks."
     }
 }
 
@@ -246,6 +257,16 @@ def expand_character_plan(plan, char_id, char_name):
         accessories_weapon = "hundreds of floating aged parchment pages inscribed with glowing gold and blue runes"
         fixed_traits = "floating spectral form, deep hood with golden eyes, swirling book pages, magical runes"
         style_desc = "epic fantasy character concept art"
+    elif char_id == 'char_0042_radio_host':
+        gender_age = "young woman, cool streetwear aesthetic"
+        body_shape = "tall slender silhouette, slouching lazily"
+        face = "a vintage black cassette tape-player helmet with spinning reels glowing with radioactive neon green and hot pink light, glass visor displaying two green soundwave lines as eyes"
+        hair = "no hair, helmet casing with two extendable metal antennas on the sides"
+        eyes = "two glowing green soundwave lines displayed on the glass visor of her helmet"
+        outfit = "oversized black nylon windbreaker jacket over a radioactive neon-green hoodie, neon striped sneakers"
+        accessories_weapon = "a vintage silver condenser microphone, a glowing neon-pink cassette tape, and headphones resting around her neck"
+        fixed_traits = "cassette tape helmet, spinning reels glowing green/pink, green soundwave eyes, oversized black windbreaker jacket, vintage microphone"
+        style_desc = "modern cyberpunk urban mystery concept art"
     else:
         gender_age = "young appearance"
         body_shape = "slender build"
@@ -5198,11 +5219,12 @@ Solid clean dark gray background."""
     neon_plan = expand_character_plan(neon_plan, 'char_0004_neon_hacker', '霓虹潜行者')
     
     # Apply dynamic expander to the new characters
-    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan
+    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan, radio_host_plan
     red_umbrella_plan = expand_character_plan(red_umbrella_plan, 'char_0036_red_umbrella_entity', '红伞执念体')
     stele_pathfinder_plan = expand_character_plan(stele_pathfinder_plan, 'char_0037_stele_pathfinder', '残碑拓荒人')
     fungal_apothecary_plan = expand_character_plan(fungal_apothecary_plan, 'char_0040_fungal_apothecary', '蕈林秘医')
     book_wraith_plan = expand_character_plan(book_wraith_plan, 'char_0041_book_wraith', '禁忌书魂')
+    radio_host_plan = expand_character_plan(radio_host_plan, 'char_0042_radio_host', '午夜电台主播')
 
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
@@ -5215,7 +5237,7 @@ Solid clean dark gray background."""
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
-        fungal_apothecary_plan + book_wraith_plan
+        fungal_apothecary_plan + book_wraith_plan + radio_host_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -7765,6 +7787,15 @@ book_wraith_plan = [
         "char_name": "禁忌书魂",
         "img_type": "main",
         "prompt": "A breathtaking epic fantasy concept art of the Bound Book-Wraith. An ethereal, semi-translucent spectral figure floating in the air of a massive, cavernous ancient library vault. The figure wears tattered, dusty dark archivist robes with a deep hood obscuring its face, showing only two glowing golden eyes. Swirling in a chaotic vortex around its body are hundreds of floating, aged parchment book pages inscribed with glowing gold and blue runes and ink calligraphy. The library background features towering dark wooden bookshelves stretching into the shadows, with dust motes catching shaft of magical light from high stained-glass windows. Octane render, cinematic fantasy illustration, 8k."
+    }
+]
+
+radio_host_plan = [
+    {
+        "char_id": "char_0042_radio_host",
+        "char_name": "午夜电台主播",
+        "img_type": "main",
+        "prompt": "A masterpiece cinematic concept art of the Midnight Radio Host. A young woman in oversized futuristic streetwear and a black windbreaker. Her head is replaced by a vintage retro cassette tape-player helmet with spinning reels glowing with radioactive neon green and hot pink light inside. She sits in a cozy, dimly lit radio booth surrounded by vinyl records, glowing audio mixers, and dark soundproofing foam. In her right hand, she holds a heavy vintage silver condenser microphone, and in her left, a glowing neon-pink cassette tape. Outside the window, a dark moody city is shrouded in misty blue and warm amber neon glows. Atmospheric fog, Octane render, highly detailed, 8k resolution."
     }
 ]
 
