@@ -394,6 +394,29 @@ def expand_character_plan(plan, char_id, char_name):
             background = "plain background"
             asset_label = t
 
+        # Special override for radio host helmet removal on certain views
+        current_face = face
+        current_hair = hair
+        current_eyes = eyes
+        current_focus = focus
+        current_composition = composition
+        current_fixed_traits = fixed_traits
+        
+        if char_id == 'char_0042_radio_host' and t in ['portrait', 'expression', 'expressionSheet', 'damageState']:
+            current_face = "a cool young woman's face, pretty but slightly tired/sleepy, with a small glowing neon-pink band-aid on her cheek. She is holding her vintage cassette helmet under her arm or placing it next to her."
+            current_hair = "messy short silver-gray hair with neon-green dyed ends"
+            current_eyes = "sleepy emerald-green eyes"
+            current_fixed_traits = "messy short silver-gray hair with neon-green tips, cool pretty face with sleepiness, vintage cassette tape helmet held in hand or next to her, oversized black windbreaker jacket, vintage microphone."
+            
+            if t == 'portrait':
+                current_focus = "facial identity, sleepy emerald-green eyes, messy short silver-gray hair with neon-green tips, collar and shoulder outfit details, holding her cassette helmet under her arm"
+            elif t == 'expression':
+                current_focus = "show three different facial expressions side-by-side: one yawning lazily, one blowing a pink bubblegum bubble, and one showing a faint sleepy smile. She is holding her cassette helmet under her arm. Keep the face structure and hair identical"
+            elif t == 'expressionSheet':
+                current_focus = "show 8 bust portraits of the character in a clean grid: serene sleepy face, yawning, blowing bubblegum, minor fatigue, surprise, slight frown, small smile, and focused. Keep face and hair identical. She is not wearing the helmet."
+            elif t == 'damageState':
+                current_focus = "progressive clothing and helmet damage: her black windbreaker is torn, her face has minor soot smudges, and her short hair is messy. Show 3 views side-by-side: left, default holding helmet; middle, battle-worn with tattered jacket; right, extreme damaged state standing next to her shattered cassette helmet on the ground"
+
         prompt = f"""Use case: stylized-concept
 Asset type: character asset for a reusable character pool
 
@@ -404,22 +427,22 @@ Character lock:
 Name: {name}
 Gender / age impression: {gender_age}
 Body shape: {body_shape}
-Face: {face}
-Hair: {hair}
-Eyes: {eyes}
+Face: {current_face}
+Hair: {current_hair}
+Eyes: {current_eyes}
 Outfit: {outfit}
 Accessories / weapon: {accessories_weapon}
 Color palette: {colors}
-Fixed traits that must never change: {fixed_traits}
+Fixed traits that must never change: {current_fixed_traits}
 
 Current asset goal:
-Generate a {asset_label}. Focus on {focus}.
+Generate a {asset_label}. Focus on {current_focus}.
 
 Style:
 {style_desc}, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
 
 Composition:
-{composition}. Keep the character clearly readable. Avoid unnecessary extra characters.
+{current_composition}. Keep the character clearly readable. Avoid unnecessary extra characters.
 
 Background:
 {background}
