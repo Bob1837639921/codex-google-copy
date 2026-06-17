@@ -205,15 +205,15 @@ LOCKS = {
     }
 ,
     "char_0043_blade_wraith": {
-        "name": "The Soul-Devouring Blade-Wraith (噬魂剑魅)",
-        "features": "shattered ancient bronze longsword floating in the air, glowing with sinister blood-red veins of light, with a tall shadowy phantom of a general in dilapidated black iron armor emerging from the hilt, two chilling green flames glowing inside its helmet as eyes",
+        "name": "The Soul-Devouring Blade-Wraith (噬魂刀魅)",
+        "features": "shattered ancient bronze curved saber floating in the air, glowing with sinister blood-red veins of light, with a tall shadowy phantom of a general in dilapidated black iron armor emerging from the hilt, two chilling green flames glowing inside its helmet as eyes",
         "prop": "swirling torn white talisman bands and broken weapons",
         "prop_desc": "swirling torn white talisman paper bands with gold scriptures, and a devastated battlefield with broken weapons scattered around",
         "scene": "a devastated ancient battlefield under a blood-red sunset with ruined stone walls and dark smoke",
         "outfit_alt": "a dark vortex of shattered metal blades and black aura instead of the general phantom",
         "colors": "crimson red, dark grey, glowing green, gold scripture yellow, iron black",
         "materials": "rusted ancient bronze, glowing magma-like veins, semi-translucent smoke armor, glowing energy flame",
-        "damage": "its floating bronze sword is heavily cracked with bright golden light leaking from within, and the general phantom is dissolving into dark ash. For the heavily damaged state, the sword is broken into three floating fragments, the armored shadow is half disintegrated, and it floats next to a ruined war banner."
+        "damage": "its floating bronze saber is heavily cracked with bright golden light leaking from within, and the general phantom is dissolving into dark ash. For the heavily damaged state, the saber is broken into three floating fragments, the armored shadow is half disintegrated, and it floats next to a ruined war banner."
     },
     "char_0044_abyssal_dread": {
         "name": "The Abyssal Dread-Fiend (深渊煞魔)",
@@ -290,14 +290,14 @@ def expand_character_plan(plan, char_id, char_name):
         fixed_traits = "cassette tape helmet, spinning reels glowing green/pink, green soundwave eyes, oversized black windbreaker jacket, vintage microphone"
         style_desc = "modern cyberpunk urban mystery concept art"
     elif char_id == 'char_0043_blade_wraith':
-        gender_age = "ancient sword spirit, terrifying and dark presence"
+        gender_age = "ancient saber spirit, terrifying and dark presence"
         body_shape = "shadowy general phantom emerging from hilt, tall and dilapidated"
         face = "no physical face, helmet deep interior showing two glowing green flames as eyes"
         hair = "no hair, rolling black smoke from helmet seams"
         eyes = "two glowing green flames inside the helmet"
         outfit = "dilapidated black iron armor plates covered in rust and scratches"
-        accessories_weapon = "floating shattered bronze longsword glowing with crimson blood veins, and swirling white talisman bands"
-        fixed_traits = "floating broken bronze sword, general shadow, glowing green eyes, swirling talisman bands"
+        accessories_weapon = "floating shattered bronze curved saber (Chinese dao) glowing with crimson blood veins, and swirling white talisman bands. Note: the weapon is strictly a curved single-edged saber, not a straight sword."
+        fixed_traits = "floating broken curved bronze saber, general shadow, glowing green eyes, swirling talisman bands"
         style_desc = "Eastern fantasy ink-wash character concept art"
     elif char_id == 'char_0044_abyssal_dread':
         gender_age = "ancient demonic entity, terrifying and dark presence"
@@ -1333,7 +1333,8 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     bypass_types = {"modelSheet", "poseSheet", "expressionSheet", "detailSheet", "materialPalette", "outfitBreakdown", "damageState", "scene"}
     bypass_history = (
         (char_id == "char_0006_rust_mechanic" and img_type in bypass_types) or
-        (char_id == "char_0021_shadow_puppeteer" and img_type in {"damageState", "scene"})
+        (char_id == "char_0021_shadow_puppeteer" and img_type in {"damageState", "scene"}) or
+        (char_id == "char_0043_blade_wraith")
     )
     
     target_first_word = get_first_significant_word(prompt)
@@ -5290,7 +5291,7 @@ Solid clean dark gray background."""
     fungal_apothecary_plan = expand_character_plan(fungal_apothecary_plan, 'char_0040_fungal_apothecary', '蕈林秘医')
     book_wraith_plan = expand_character_plan(book_wraith_plan, 'char_0041_book_wraith', '禁忌书魂')
     radio_host_plan = expand_character_plan(radio_host_plan, 'char_0042_radio_host', '午夜电台主播')
-    blade_wraith_plan = expand_character_plan(blade_wraith_plan, 'char_0043_blade_wraith', '噬魂剑魅')
+    blade_wraith_plan = expand_character_plan(blade_wraith_plan, 'char_0043_blade_wraith', '噬魂刀魅')
     abyssal_dread_plan = expand_character_plan(abyssal_dread_plan, 'char_0044_abyssal_dread', '深渊煞魔')
 
     full_plan = (
@@ -7869,9 +7870,9 @@ radio_host_plan = [
 blade_wraith_plan = [
     {
         "char_id": "char_0043_blade_wraith",
-        "char_name": "噬魂剑魅",
+        "char_name": "噬魂刀魅",
         "img_type": "main",
-        "prompt": "A masterpiece concept art of the Soul-Devouring Blade-Wraith. A terrifying Eastern fantasy monster. A shattered ancient bronze longsword floats in the air, its blade covered in dark rust and glowing crimson veins of light. Behind the sword, a tall, shadowy phantom of a general in dilapidated black iron armor emerges from the hilt, with two chilling green flames glowing inside its helmet as eyes. Swirling around the sword are torn white talisman paper bands with gold scriptures. The background is a devastated ancient battlefield under a blood-red sunset, with broken weapons scattered on the ground. Epic dramatic lighting, highly detailed ink-wash fantasy style, 8k resolution."
+        "prompt": "A masterpiece concept art of the Soul-Devouring Blade-Wraith. A terrifying Eastern fantasy monster. A shattered ancient bronze curved saber floats in the air, its blade covered in dark rust and glowing crimson veins of light. Behind the saber, a tall, shadowy phantom of a general in dilapidated black iron armor emerges from the hilt, with two chilling green flames glowing inside its helmet as eyes. Swirling around the saber are torn white talisman paper bands with gold scriptures. The background is a devastated ancient battlefield under a blood-red sunset, with broken weapons scattered on the ground. Epic dramatic lighting, highly detailed ink-wash fantasy style, 8k resolution."
     }
 ]
 
