@@ -203,7 +203,29 @@ LOCKS = {
         "materials": "matte black plastic casing of helmet, glossy glass visor, nylon windbreaker fabric, silver metal mic, spinning plastic tape reels",
         "damage": "her helmet casing is cracked with escaping neon light and small sparks, and her nylon jacket is torn. For the heavily damaged state, her tape helmet is partially broken revealing inner circuit boards, and the cassette tape is shattered on the floor, surrounded by flickering sparks."
     }
-}
+,
+    "char_0043_blade_wraith": {
+        "name": "The Soul-Devouring Blade-Wraith (噬魂剑魅)",
+        "features": "shattered ancient bronze longsword floating in the air, glowing with sinister blood-red veins of light, with a tall shadowy phantom of a general in dilapidated black iron armor emerging from the hilt, two chilling green flames glowing inside its helmet as eyes",
+        "prop": "swirling torn white talisman bands and broken weapons",
+        "prop_desc": "swirling torn white talisman paper bands with gold scriptures, and a devastated battlefield with broken weapons scattered around",
+        "scene": "a devastated ancient battlefield under a blood-red sunset with ruined stone walls and dark smoke",
+        "outfit_alt": "a dark vortex of shattered metal blades and black aura instead of the general phantom",
+        "colors": "crimson red, dark grey, glowing green, gold scripture yellow, iron black",
+        "materials": "rusted ancient bronze, glowing magma-like veins, semi-translucent smoke armor, glowing energy flame",
+        "damage": "its floating bronze sword is heavily cracked with bright golden light leaking from within, and the general phantom is dissolving into dark ash. For the heavily damaged state, the sword is broken into three floating fragments, the armored shadow is half disintegrated, and it floats next to a ruined war banner."
+    },
+    "char_0044_abyssal_dread": {
+        "name": "The Abyssal Dread-Fiend (深渊煞魔)",
+        "features": "terrifying spectral demon without a face, whose head is a floating burning sphere of dark purple and black malice flames with two glowing scarlet eyes, body made of jagged black basalt bone plates",
+        "prop": "broken golden sealing chains and sharp obsidian claws",
+        "prop_desc": "broken golden chains with faint glowing ancient runes wrapped around its skeletal arms, and sharp black obsidian claws dripping purple mist",
+        "scene": "ruins of a broken ancient Chinese great wall under a pale full moon at night, dark swirling fog and purple sparks in the air",
+        "outfit_alt": "a torn, ragged cape made of dark ghostly feathers and flowing black smoke",
+        "colors": "deep purple, pitch black, glowing scarlet, warning gold, bone grey",
+        "materials": "burning purple flames, jagged black basalt plates, obsidian crystals, metallic gold chains",
+        "damage": "its purple head flame is faint and dim, and the golden talisman chains wrapped around its body are glowing intensely, cracking its dark stone armor with beams of golden light. For the heavily damaged state, it stands next to a shattered stone monument, its skeletal arm is partially shattered into basalt debris, and its chest core is exposed showing bright gold seals."
+    }}
 
 def expand_character_plan(plan, char_id, char_name):
     existing_types = {item["img_type"] for item in plan}
@@ -267,6 +289,26 @@ def expand_character_plan(plan, char_id, char_name):
         accessories_weapon = "a vintage silver condenser microphone, a glowing neon-pink cassette tape, and headphones resting around her neck"
         fixed_traits = "cassette tape helmet, spinning reels glowing green/pink, green soundwave eyes, oversized black windbreaker jacket, vintage microphone"
         style_desc = "modern cyberpunk urban mystery concept art"
+    elif char_id == 'char_0043_blade_wraith':
+        gender_age = "ancient sword spirit, terrifying and dark presence"
+        body_shape = "shadowy general phantom emerging from hilt, tall and dilapidated"
+        face = "no physical face, helmet deep interior showing two glowing green flames as eyes"
+        hair = "no hair, rolling black smoke from helmet seams"
+        eyes = "two glowing green flames inside the helmet"
+        outfit = "dilapidated black iron armor plates covered in rust and scratches"
+        accessories_weapon = "floating shattered bronze longsword glowing with crimson blood veins, and swirling white talisman bands"
+        fixed_traits = "floating broken bronze sword, general shadow, glowing green eyes, swirling talisman bands"
+        style_desc = "Eastern fantasy ink-wash character concept art"
+    elif char_id == 'char_0044_abyssal_dread':
+        gender_age = "ancient demonic entity, terrifying and dark presence"
+        body_shape = "tall withered silhouette with elongated limbs, basalt bone structures"
+        face = "no physical face, a floating sphere of dark purple and black malice flames with two glowing scarlet eyes"
+        hair = "no hair, rolling dark purple flames and black mist"
+        eyes = "glowing scarlet eyes shining from within purple flames"
+        outfit = "broken black basalt bone armor, a ragged cape made of dark ghostly feathers and smoke"
+        accessories_weapon = "broken golden sealing chains with glowing runes, and sharp obsidian claws dripping purple mist"
+        fixed_traits = "purple malice flames head, glowing scarlet eyes, broken golden sealing chains, black basalt bone armor"
+        style_desc = "Eastern fantasy ink-wash character concept art"
     else:
         gender_age = "young appearance"
         body_shape = "slender build"
@@ -5242,12 +5284,14 @@ Solid clean dark gray background."""
     neon_plan = expand_character_plan(neon_plan, 'char_0004_neon_hacker', '霓虹潜行者')
     
     # Apply dynamic expander to the new characters
-    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan, radio_host_plan
+    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan, radio_host_plan, blade_wraith_plan, abyssal_dread_plan
     red_umbrella_plan = expand_character_plan(red_umbrella_plan, 'char_0036_red_umbrella_entity', '红伞执念体')
     stele_pathfinder_plan = expand_character_plan(stele_pathfinder_plan, 'char_0037_stele_pathfinder', '残碑拓荒人')
     fungal_apothecary_plan = expand_character_plan(fungal_apothecary_plan, 'char_0040_fungal_apothecary', '蕈林秘医')
     book_wraith_plan = expand_character_plan(book_wraith_plan, 'char_0041_book_wraith', '禁忌书魂')
     radio_host_plan = expand_character_plan(radio_host_plan, 'char_0042_radio_host', '午夜电台主播')
+    blade_wraith_plan = expand_character_plan(blade_wraith_plan, 'char_0043_blade_wraith', '噬魂剑魅')
+    abyssal_dread_plan = expand_character_plan(abyssal_dread_plan, 'char_0044_abyssal_dread', '深渊煞魔')
 
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
@@ -5260,7 +5304,7 @@ Solid clean dark gray background."""
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
-        fungal_apothecary_plan + book_wraith_plan + radio_host_plan
+        fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -7819,6 +7863,24 @@ radio_host_plan = [
         "char_name": "午夜电台主播",
         "img_type": "main",
         "prompt": "A masterpiece cinematic concept art of the Midnight Radio Host. A young woman in oversized futuristic streetwear and a black windbreaker. Her head is replaced by a vintage retro cassette tape-player helmet with spinning reels glowing with radioactive neon green and hot pink light inside. She sits in a cozy, dimly lit radio booth surrounded by vinyl records, glowing audio mixers, and dark soundproofing foam. In her right hand, she holds a heavy vintage silver condenser microphone, and in her left, a glowing neon-pink cassette tape. Outside the window, a dark moody city is shrouded in misty blue and warm amber neon glows. Atmospheric fog, Octane render, highly detailed, 8k resolution."
+    }
+]
+
+blade_wraith_plan = [
+    {
+        "char_id": "char_0043_blade_wraith",
+        "char_name": "噬魂剑魅",
+        "img_type": "main",
+        "prompt": "A masterpiece concept art of the Soul-Devouring Blade-Wraith. A terrifying Eastern fantasy monster. A shattered ancient bronze longsword floats in the air, its blade covered in dark rust and glowing crimson veins of light. Behind the sword, a tall, shadowy phantom of a general in dilapidated black iron armor emerges from the hilt, with two chilling green flames glowing inside its helmet as eyes. Swirling around the sword are torn white talisman paper bands with gold scriptures. The background is a devastated ancient battlefield under a blood-red sunset, with broken weapons scattered on the ground. Epic dramatic lighting, highly detailed ink-wash fantasy style, 8k resolution."
+    }
+]
+
+abyssal_dread_plan = [
+    {
+        "char_id": "char_0044_abyssal_dread",
+        "char_name": "深渊煞魔",
+        "img_type": "main",
+        "prompt": "A masterpiece concept art of the Abyssal Dread-Fiend. A terrifying Eastern fantasy monster. It has no physical face; instead, its head is a floating, burning sphere of dark purple and black malice flames with two glowing red eyes shining from within. Its body is composed of jagged black bone plates and sharp basalt claws, wrapped in broken golden sealing chains with faint glowing runes. It stands on the ruins of a broken ancient Great Wall with withered vines under a pale moonlight, dark fog swirling around. High contrast dramatic lighting, cinematic framing, highly detailed ink-wash fantasy style, 8k resolution."
     }
 ]
 
