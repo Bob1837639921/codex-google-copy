@@ -225,7 +225,30 @@ LOCKS = {
         "colors": "deep purple, pitch black, glowing scarlet, warning gold, bone grey",
         "materials": "burning purple flames, jagged black basalt plates, obsidian crystals, metallic gold chains",
         "damage": "its purple head flame is faint and dim, and the golden talisman chains wrapped around its body are glowing intensely, cracking its dark stone armor with beams of golden light. For the heavily damaged state, it stands next to a shattered stone monument, its skeletal arm is partially shattered into basalt debris, and its chest core is exposed showing bright gold seals."
-    }}
+    },
+    "char_0045_thousand_faces": {
+        "name": "The Thousand-Faced Skin-Wraith (千面皮魔)",
+        "features": "ethereal faceless female figure in layered tattered semi-translucent white hemp robes, her face is a patchwork of stitched human face skins sewn with silver thread",
+        "prop": "long bone needle and glowing silver thread",
+        "prop_desc": "a long slender bone needle threaded with glowing silver thread, and a massive worn ancient Chinese silk scroll unrolling horizontally with ink-wash drawings of screaming human faces",
+        "scene": "desolate ruins of a bamboo forest under a dark red sky with paper talismans and autumn leaves scattering in the wind",
+        "outfit_alt": "a dark crimson traditional bridal gown with a tattered red veil obscuring her face",
+        "colors": "pure white, ink black, eerie purple, blood red, silver",
+        "materials": "tattered hemp cloth, worn ancient silk scroll, polished bone needle, glowing ethereal thread",
+        "damage": "her white robes are heavily torn and stained with dark blood, and the silk scroll behind her is burning and shredding at the edges. For the heavily damaged state, she clutches her face as the stitched skins peel off, her white hemp robe is shredded, and the scroll is torn in half with screaming souls escaping in black smoke."
+    },
+    "char_0046_bone_spider": {
+        "name": "The Bone-Corroding Broodmother (蚀骨蛛后)",
+        "features": "colossal spider monster with glossy black obsidian shell, a distinct white human skull pattern on its back, and dozens of glowing green eyes lining its head",
+        "prop": "thick sticky bone-silk web and acid-dripping mandibles",
+        "prop_desc": "a massive spiderweb woven from thick sticky green silk and human bones, and sharp obsidian mandibles dripping glowing green acid",
+        "scene": "a dark subterranean cavern under ruined stone walls with glowing green mineral veins and poisonous purple mist",
+        "outfit_alt": "a heavy volcanic iron plate armor fused into its obsidian shell with volcanic embers drifting around",
+        "colors": "obsidian black, toxic green, bone white, poison purple, basalt grey",
+        "materials": "glossy obsidian chitin shell, sticky bioluminescent green silk, calcified bones, acidic liquid",
+        "damage": "its obsidian shell is cracked with glowing green fluid leaking out, and several of its spider legs are broken. For the heavily damaged state, it stands inside a shattered cavern, its abdomen is cracked open with toxic smoke escaping, and it crawls on a ruined web with broken swords scattered around."
+    }
+}
 
 def expand_character_plan(plan, char_id, char_name):
     existing_types = {item["img_type"] for item in plan}
@@ -308,6 +331,26 @@ def expand_character_plan(plan, char_id, char_name):
         outfit = "broken black basalt bone armor, a ragged cape made of dark ghostly feathers and smoke"
         accessories_weapon = "broken golden sealing chains with glowing runes, and sharp obsidian claws dripping purple mist"
         fixed_traits = "purple malice flames head, glowing scarlet eyes, broken golden sealing chains, black basalt bone armor"
+        style_desc = "Eastern fantasy ink-wash character concept art"
+    elif char_id == 'char_0045_thousand_faces':
+        gender_age = "ancient诡灵 spirit, terrifying and eerie female presence"
+        body_shape = "floating slender silhouette, rigid wooden puppet-like limbs"
+        face = "no physical face, a patchwork of stitched human face skins with silver thread"
+        hair = "extremely long, messy, disheveled pale white hair"
+        eyes = "no eyes, faint purple-red light glowing from the stitches"
+        outfit = "layered tattered white hemp robes tied with a straw rope"
+        accessories_weapon = "floating massive Chinese ink-wash scroll, bone needle, and glowing silver thread"
+        fixed_traits = "white hemp robe, stitched face skins, massive ink scroll, bone needle"
+        style_desc = "Eastern fantasy ink-wash character concept art"
+    elif char_id == 'char_0046_bone_spider':
+        gender_age = "ancient toxic beast, colossal and terrifying presence"
+        body_shape = "colossal obsidian spider body with eight sharp hook-like legs"
+        face = "spider head with dozens of glowing green eyes"
+        hair = "no hair, volcanic ash smoke rising from back shell"
+        eyes = "dozens of glowing green eyes"
+        outfit = "cracked glossy black obsidian shell with a human skull pattern on its back"
+        accessories_weapon = "thick sticky green silk web, bone fragments, acid-dripping mandibles"
+        fixed_traits = "obsidian shell, skull pattern on back, glowing green eyes, glowing green abdomen"
         style_desc = "Eastern fantasy ink-wash character concept art"
     else:
         gender_age = "young appearance"
@@ -946,7 +989,7 @@ async def scan_existing_web_images(agent: BrowserAgent):
         return res
     return []
 
-async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pre_assistant_count: int = 0, timeout_sec: int = 300):
+async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pre_assistant_count: int = 0, timeout_sec: int = 600):
     logging.info("开始监测 DOM 生成进度...")
     start_time = time.time()
     pre_srcs_json = json.dumps(list(pre_existing_srcs))
@@ -5285,7 +5328,7 @@ Solid clean dark gray background."""
     neon_plan = expand_character_plan(neon_plan, 'char_0004_neon_hacker', '霓虹潜行者')
     
     # Apply dynamic expander to the new characters
-    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan, radio_host_plan, blade_wraith_plan, abyssal_dread_plan
+    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan, radio_host_plan, blade_wraith_plan, abyssal_dread_plan, thousand_faces_plan, bone_spider_plan
     red_umbrella_plan = expand_character_plan(red_umbrella_plan, 'char_0036_red_umbrella_entity', '红伞执念体')
     stele_pathfinder_plan = expand_character_plan(stele_pathfinder_plan, 'char_0037_stele_pathfinder', '残碑拓荒人')
     fungal_apothecary_plan = expand_character_plan(fungal_apothecary_plan, 'char_0040_fungal_apothecary', '蕈林秘医')
@@ -5293,6 +5336,8 @@ Solid clean dark gray background."""
     radio_host_plan = expand_character_plan(radio_host_plan, 'char_0042_radio_host', '午夜电台主播')
     blade_wraith_plan = expand_character_plan(blade_wraith_plan, 'char_0043_blade_wraith', '噬魂刀魅')
     abyssal_dread_plan = expand_character_plan(abyssal_dread_plan, 'char_0044_abyssal_dread', '深渊煞魔')
+    thousand_faces_plan = expand_character_plan(thousand_faces_plan, 'char_0045_thousand_faces', '千面皮魔')
+    bone_spider_plan = expand_character_plan(bone_spider_plan, 'char_0046_bone_spider', '蚀骨蛛后')
 
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
@@ -5305,7 +5350,7 @@ Solid clean dark gray background."""
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
-        fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan
+        fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -7882,6 +7927,24 @@ abyssal_dread_plan = [
         "char_name": "深渊煞魔",
         "img_type": "main",
         "prompt": "A masterpiece concept art of the Abyssal Dread-Fiend. A terrifying Eastern fantasy monster. It has no physical face; instead, its head is a floating, burning sphere of dark purple and black malice flames with two glowing red eyes shining from within. Its body is composed of jagged black bone plates and sharp basalt claws, wrapped in broken golden sealing chains with faint glowing runes. It stands on the ruins of a broken ancient Great Wall with withered vines under a pale moonlight, dark fog swirling around. High contrast dramatic lighting, cinematic framing, highly detailed ink-wash fantasy style, 8k resolution."
+    }
+]
+
+thousand_faces_plan = [
+    {
+        "char_id": "char_0045_thousand_faces",
+        "char_name": "千面皮魔",
+        "img_type": "main",
+        "prompt": "A masterpiece fantasy concept art of the Thousand-Faced Skin-Wraith. A terrifying and artistic Eastern fantasy monster. An ethereal, faceless female figure in layered, tattered semi-translucent white hemp robes floats in the air. Her face is a horrifying patchwork of stitched human face skins, sewn together with delicate silver thread. Behind her, a massive, worn ancient Chinese silk scroll unrolls horizontally, filled with ink-wash paintings of screaming human faces and rising black mist. In her right hand, she holds a long, slender bone needle threaded with glowing silver thread. The background is a desolate ruins of a bamboo forest under a dark red sky, with paper talismans and autumn leaves scattering in the wind. High contrast atmospheric lighting, highly detailed ink-wash fantasy style, 8k resolution."
+    }
+]
+
+bone_spider_plan = [
+    {
+        "char_id": "char_0046_bone_spider",
+        "char_name": "蚀骨蛛后",
+        "img_type": "main",
+        "prompt": "An epic dark fantasy concept art of the Bone-Corroding Broodmother. A colossal spider monster. Its body is made of cracked, glossy black obsidian shell, with a distinct white human skull pattern on its back. Dozens of glowing green eyes line its head. Its bulbous translucent dark-green abdomen glows faintly, showing silhouettes of squirming eggs inside. It crawls on a massive spiderweb woven from thick sticky silk and bones. The background is a dark cavern under the ruins of an ancient great wall, with faint glowing green mineral veins and poisonous purple fog. Cinematic rim lighting, hyper-realistic textures of stone and chitin shell, ink-wash style blend, 8k."
     }
 ]
 
