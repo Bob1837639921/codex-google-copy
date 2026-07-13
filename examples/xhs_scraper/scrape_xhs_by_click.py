@@ -135,7 +135,7 @@ async def scrape_detail_via_click(agent, keyword):
 
 async def main():
     print("=" * 80)
-    print("🎬 Xiaohongshu Modal Overlay Click-Scraper (Bypassing Detail Wind-Control)")
+    print("🎬 Xiaohongshu Modal Overlay Inspector (Risk-Aware Reference)")
     print("=" * 80)
     
     agent = BrowserAgent("ws://localhost:8765/client")

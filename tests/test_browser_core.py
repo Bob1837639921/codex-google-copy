@@ -45,6 +45,25 @@ class SilentWebSocket:
         return None
 
 
+class RiskSnapshotWebSocket(EchoWebSocket):
+    async def send(self, message):
+        payload = json.loads(message)
+        self.sent.append(payload)
+        await self.responses.put(
+            json.dumps(
+                {
+                    "id": payload["id"],
+                    "status": "success",
+                    "blockedByLogin": False,
+                    "blockedByRisk": True,
+                    "blockerReason": "访问频繁",
+                    "dom": [],
+                },
+                ensure_ascii=False,
+            )
+        )
+
+
 class PlanAgent:
     async def connect(self):
         return True
@@ -125,6 +144,15 @@ class BrowserCoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(websocket.sent[0]["sessionId"], "background-session")
         self.assertFalse(websocket.sent[0]["visible"])
 
+    async def test_snapshot_preserves_site_risk_blocker(self):
+        agent = BrowserAgent(command_timeout=1)
+        agent.websocket = RiskSnapshotWebSocket()
+
+        snapshot = await agent.snapshot()
+
+        self.assertTrue(snapshot["blocked_by_risk"])
+        self.assertEqual(snapshot["blocker_reason"], "访问频繁")
+
     async def test_close_tab_uses_exact_tab_id(self):
         agent = BrowserAgent(command_timeout=1, session_id="cleanup-session")
         websocket = EchoWebSocket()
@@ -195,6 +223,31 @@ class ConfigurationTests(unittest.TestCase):
 
         self.assertEqual(action["action"], "stop")
         self.assertEqual(action["status"], "needs_planner")
+
+    def test_auto_operator_stops_on_site_risk_warning(self):
+        operator = AutoOperator(AutoOperatorConfig(goal="search wet food", persist_report=False))
+
+        blocker = operator.detect_blocker(
+            {
+                "snapshot": {
+                    "blocked_by_login": False,
+                    "blocked_by_risk": True,
+                    "blocker_reason": "访问频繁",
+                }
+            }
+        )
+
+        self.assertIn("访问频繁", blocker)
+
+    def test_mcp_mutations_reject_site_risk_warning(self):
+        with self.assertRaisesRegex(RuntimeError, "访问频繁"):
+            nodex_mcp_server.ensure_snapshot_allows_interaction(
+                {
+                    "blocked_by_login": False,
+                    "blocked_by_risk": True,
+                    "blocker_reason": "访问频繁",
+                }
+            )
 
     def test_mcp_surface_contains_only_generic_browser_tools(self):
         names = {definition["name"] for definition in nodex_mcp_server.TOOL_DEFINITIONS}

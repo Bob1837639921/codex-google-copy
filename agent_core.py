@@ -213,6 +213,8 @@ class BrowserAgent:
         response = await self._send_command("snapshot")
         return {
             "blocked_by_login": response.get("blockedByLogin", False),
+            "blocked_by_risk": response.get("blockedByRisk", False),
+            "blocker_reason": response.get("blockerReason"),
             "dom": response.get("dom", [])
         }
 

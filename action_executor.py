@@ -54,6 +54,9 @@ class UniversalActionExecutor:
             raise RuntimeError(
                 "Login, CAPTCHA, or verification wall detected. Stop and ask the user to handle it manually."
             )
+        if snapshot.get("blocked_by_risk"):
+            reason = snapshot.get("blocker_reason") or "site risk-control warning"
+            raise RuntimeError(f"Site risk-control warning detected ({reason}). Stop automatic interaction and wait.")
 
     def locator_from_step(self, step: Dict[str, Any]) -> Dict[str, Any]:
         locator = step.get("locator")
@@ -257,6 +260,8 @@ class UniversalActionExecutor:
             )
 
         if action == "hover":
+            if step.get("safe", True):
+                await self.guard_interaction()
             selector = await self.resolve_selector(self.locator_from_step(step), float(step.get("timeout", 8)))
             return await self.agent.hover(selector)
 
@@ -264,6 +269,8 @@ class UniversalActionExecutor:
             key = step.get("key")
             if not isinstance(key, str) or not key:
                 raise ValueError("Missing key for press action.")
+            if step.get("safe", True):
+                await self.guard_interaction()
             return await self.agent.press(key)
 
         if action == "select_option":
@@ -278,6 +285,8 @@ class UniversalActionExecutor:
             )
 
         if action == "reload":
+            if step.get("safe", True):
+                await self.guard_interaction()
             return await self.agent.reload()
 
         if action == "set_visibility":
@@ -295,6 +304,8 @@ class UniversalActionExecutor:
             return await self.wait_for_condition(step)
 
         if action == "scroll":
+            if step.get("safe", True):
+                await self.guard_interaction()
             direction = step.get("direction", "down")
             amount = int(step.get("amount", 800))
             repeat = int(step.get("repeat", 1))

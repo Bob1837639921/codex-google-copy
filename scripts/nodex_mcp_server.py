@@ -100,6 +100,14 @@ def interaction_mode(args: dict[str, Any]) -> str:
     return mode
 
 
+def ensure_snapshot_allows_interaction(snapshot: dict[str, Any]) -> None:
+    if snapshot.get("blocked_by_login"):
+        raise RuntimeError("Login or verification wall detected. Ask the user to handle it manually.")
+    if snapshot.get("blocked_by_risk"):
+        reason = snapshot.get("blocker_reason") or "site risk-control warning"
+        raise RuntimeError(f"Site risk-control warning detected ({reason}). Stop automatic interaction and wait.")
+
+
 async def tool_status(args: dict[str, Any]) -> dict[str, Any]:
     async def ping(agent: BrowserAgent) -> dict[str, Any]:
         return await agent._send_command("ping")
@@ -165,6 +173,8 @@ async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
             ],
             "hard_limits": [
                 "No automatic CAPTCHA, slider, login, payment, or account-risk bypass.",
+                "Domain-specific pacing is enforced for Xiaohongshu, Taobao/Tmall/Xianyu/1688, and JD. Do not work around it with parallel tabs or retry loops.",
+                "If snapshot reports blocked_by_login or blocked_by_risk, stop automatic interaction and preserve the page for the user.",
                 "A screenshot only captures pixels; it does not interpret them unless the calling AI or host reads the image.",
                 "If the caller has no vision model, use visual_snapshot for JSON layout evidence instead of relying on screenshot interpretation.",
                 "A successful click/type means the bridge executed the action, not that the business goal is complete. Verify with snapshot, screenshot, extract, or page state.",
@@ -230,6 +240,7 @@ async def tool_hover(args: dict[str, Any]) -> dict[str, Any]:
     locator = locator_from_args(args)
 
     async def run(agent: BrowserAgent) -> Any:
+        ensure_snapshot_allows_interaction(await agent.snapshot())
         executor = UniversalActionExecutor(agent)
         selector = await executor.resolve_selector(locator)
         return await agent.hover(selector)
@@ -242,9 +253,7 @@ async def tool_click(args: dict[str, Any]) -> dict[str, Any]:
     mode = interaction_mode(args)
 
     async def run(agent: BrowserAgent) -> Any:
-        snapshot = await agent.snapshot()
-        if snapshot.get("blocked_by_login"):
-            raise RuntimeError("Login or verification wall detected. Ask the user to handle it manually.")
+        ensure_snapshot_allows_interaction(await agent.snapshot())
         executor = UniversalActionExecutor(agent)
         selector = await executor.resolve_selector(locator)
         result = await agent.click(selector, mode=mode)
@@ -264,9 +273,7 @@ async def tool_type(args: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("`submit` must be a boolean")
 
     async def run(agent: BrowserAgent) -> Any:
-        snapshot = await agent.snapshot()
-        if snapshot.get("blocked_by_login"):
-            raise RuntimeError("Login or verification wall detected. Ask the user to handle it manually.")
+        ensure_snapshot_allows_interaction(await agent.snapshot())
         executor = UniversalActionExecutor(agent)
         selector = await executor.resolve_selector(locator)
         result = await agent.type(selector, text, mode=mode, submit=submit)
@@ -279,6 +286,7 @@ async def tool_press(args: dict[str, Any]) -> dict[str, Any]:
     key = require_str(args, "key")
 
     async def run(agent: BrowserAgent) -> Any:
+        ensure_snapshot_allows_interaction(await agent.snapshot())
         return await agent.press(key)
 
     return ok(await with_agent(run))
@@ -291,9 +299,7 @@ async def tool_select_option(args: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("Provide exactly one of value, option_label, or option_index")
 
     async def run(agent: BrowserAgent) -> Any:
-        snapshot = await agent.snapshot()
-        if snapshot.get("blocked_by_login"):
-            raise RuntimeError("Login or verification wall detected. Ask the user to handle it manually.")
+        ensure_snapshot_allows_interaction(await agent.snapshot())
         executor = UniversalActionExecutor(agent)
         selector = await executor.resolve_selector(locator)
         result = await agent.select_option(
@@ -309,6 +315,7 @@ async def tool_select_option(args: dict[str, Any]) -> dict[str, Any]:
 
 async def tool_reload(args: dict[str, Any]) -> dict[str, Any]:
     async def run(agent: BrowserAgent) -> Any:
+        ensure_snapshot_allows_interaction(await agent.snapshot())
         return await agent.reload()
 
     return ok(await with_agent(run, timeout=90))
@@ -361,6 +368,7 @@ async def tool_scroll(args: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("`x` and `y` must be numbers")
 
     async def run(agent: BrowserAgent) -> Any:
+        ensure_snapshot_allows_interaction(await agent.snapshot())
         result = await agent.evaluate(f"window.scrollBy({float(x)}, {float(y)}); ({{x: window.scrollX, y: window.scrollY}})")
         return {"position": result, "verification_required": True}
 

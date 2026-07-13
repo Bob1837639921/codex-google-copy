@@ -149,6 +149,9 @@ class AutoOperator:
         snapshot = observation.get("snapshot") or {}
         if snapshot.get("blocked_by_login"):
             return "snapshot reported login or verification wall"
+        if snapshot.get("blocked_by_risk"):
+            reason = snapshot.get("blocker_reason") or "site risk-control warning"
+            return f"snapshot reported site risk-control warning: {reason}"
 
         visual = observation.get("visual_snapshot") or {}
         for item in visual.get("items", [])[:120]:
@@ -323,6 +326,8 @@ class AutoOperator:
         evidence = {
             "goal": self.config.goal,
             "blocked_by_login": snapshot.get("blocked_by_login"),
+            "blocked_by_risk": snapshot.get("blocked_by_risk"),
+            "blocker_reason": snapshot.get("blocker_reason"),
             "dom_sample": (snapshot.get("dom") or [])[:40],
             "viewport": visual.get("viewport"),
             "visible_items": (visual.get("items") or [])[:40],
