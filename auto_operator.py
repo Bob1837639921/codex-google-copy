@@ -67,6 +67,7 @@ class AutoOperatorConfig:
     take_screenshots: bool = False
     visual_limit: int = 120
     task_name: str = "NodeX Auto Operator"
+    persist_report: bool = True
 
 
 class AutoOperator:
@@ -84,7 +85,9 @@ class AutoOperator:
         self._typed_search = False
         self._scrolled = 0
         self._profile_search_loaded = False
-        self._profile_extracted = False
+        self._profile_extract_attempts = 0
+        self._profile_extraction_result: Any = None
+        self._clicked_selectors: set[str] = set()
 
     async def run(self) -> dict[str, Any]:
         await self.agent.connect()
@@ -120,7 +123,8 @@ class AutoOperator:
         finally:
             await self.agent.close()
 
-        self.write_report()
+        if self.config.persist_report:
+            self.write_report()
         return self.report
 
     async def observe(self, round_idx: int, label: str = "observe") -> dict[str, Any]:
@@ -167,21 +171,32 @@ class AutoOperator:
         if profile and query:
             if profile.get("search_url_template") and not self._profile_search_loaded:
                 url = profile["search_url_template"].format(query=quote_plus(query))
-                self._profile_search_loaded = True
-                return {"action": "navigate", "url": url, "wait_seconds": 4, "reason": f"site profile search for {profile['name']}"}
-            if profile.get("extract_results_js") and not self._profile_extracted:
-                self._profile_extracted = True
+                return {
+                    "action": "navigate",
+                    "url": url,
+                    "wait_seconds": 1,
+                    "marks_profile_search": True,
+                    "reason": f"site profile search for {profile['name']}",
+                }
+            if profile.get("extract_results_js") and not self.has_meaningful_result(self._profile_extraction_result):
+                if self._profile_extract_attempts >= 2:
+                    return {
+                        "action": "stop",
+                        "status": "needs_planner",
+                        "reason": f"site profile {profile['name']} returned no usable results after two observations",
+                    }
                 return {
                     "action": "extract_js",
                     "key": f"{profile['name']}_results",
                     "code": profile["extract_results_js"],
+                    "wait_seconds": 1 if self._profile_extract_attempts else 0,
                     "reason": f"site profile result extraction for {profile['name']}",
                 }
-            if self._profile_extracted:
+            if self.has_meaningful_result(self._profile_extraction_result):
                 return {
                     "action": "stop",
                     "status": "completed",
-                    "reason": f"site profile {profile['name']} extracted available results",
+                    "reason": f"site profile {profile['name']} returned non-empty result evidence",
                 }
 
         if self.config.url and not self.same_url(current_url, self.config.url):
@@ -190,7 +205,7 @@ class AutoOperator:
         click_target = self.extract_click_target(self.config.goal)
         if click_target:
             item = self.find_text_item(visual, click_target)
-            if item:
+            if item and item["selector"] not in self._clicked_selectors:
                 return {
                     "action": "click",
                     "selector": item["selector"],
@@ -208,7 +223,6 @@ class AutoOperator:
                 }
 
         if query and self._typed_search and self._scrolled < 1:
-            self._scrolled += 1
             return {"action": "scroll", "direction": "down", "amount": 900, "repeat": 1, "reason": "search submitted; inspect more results"}
 
         return {
@@ -222,14 +236,19 @@ class AutoOperator:
         if name == "navigate":
             result = await self.agent.navigate(action["url"])
             await asyncio.sleep(float(action.get("wait_seconds", 2)))
+            if action.get("marks_profile_search"):
+                self._profile_search_loaded = True
             return result
         if name == "click":
             await self.guard()
-            return await self.agent.click(action["selector"])
+            result = await self.agent.click(action["selector"])
+            self._clicked_selectors.add(action["selector"])
+            return result
         if name == "type":
             await self.guard()
+            result = await self.agent.type(action["selector"], action["text"], submit=True)
             self._typed_search = True
-            return await self.agent.type(action["selector"], action["text"])
+            return result
         if name == "scroll":
             amount = int(action.get("amount", 800))
             repeat = int(action.get("repeat", 1))
@@ -238,9 +257,15 @@ class AutoOperator:
             for _ in range(repeat):
                 await self.agent.evaluate(f"window.scrollBy(0, {dy})")
                 await asyncio.sleep(0.5)
+            self._scrolled += repeat
             return {"scrolled": dy * repeat}
         if name == "extract_js":
+            wait_seconds = float(action.get("wait_seconds", 0))
+            if wait_seconds:
+                await asyncio.sleep(wait_seconds)
             result = await self.agent.evaluate(action["code"])
+            self._profile_extract_attempts += 1
+            self._profile_extraction_result = result
             self.report.setdefault("extracted_data", {})[action.get("key", "extracted")] = result
             return result
         raise ValueError(f"Unsupported auto action: {name}")
@@ -261,6 +286,16 @@ class AutoOperator:
         if output_path.parent:
             output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(json.dumps(self.report, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    @staticmethod
+    def has_meaningful_result(value: Any) -> bool:
+        if value is None or value is False:
+            return False
+        if isinstance(value, str):
+            return bool(value.strip())
+        if isinstance(value, (list, tuple, set, dict)):
+            return bool(value)
+        return True
 
     @staticmethod
     def load_site_profiles(profile_dir: str = "site_profiles") -> list[dict[str, Any]]:

@@ -166,6 +166,7 @@ cython_debug/
 
 # Scratch directory for temporary agent testing
 scratch/
+debug/
 
 # Scraper output data
 examples/xhs_scraper/comments_output.json

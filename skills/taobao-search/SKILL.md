@@ -1,6 +1,6 @@
 ---
 name: taobao-search
-description: Perform generic product search and price/sales extraction on Taobao. Trigger keywords: 淘宝, taobao, 搜商品, 买东西, 比价.
+description: "Perform generic product search and price/sales extraction on Taobao. Trigger keywords: 淘宝, taobao, 搜商品, 买东西, 比价."
 ---
 
 # Taobao Search Skill

@@ -35,10 +35,6 @@ def ok(value: Any) -> dict[str, Any]:
     return {"content": text_content(value)}
 
 
-def error(value: Any) -> dict[str, Any]:
-    return {"content": text_content(value), "isError": True}
-
-
 async def with_agent(
     handler: Callable[[BrowserAgent], Awaitable[Any]],
     *,
@@ -68,6 +64,28 @@ def require_plan_steps(args: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(steps, list) or not all(isinstance(step, dict) for step in steps):
         raise ValueError("`steps` must be an array of action objects")
     return steps
+
+
+LOCATOR_FIELDS = {
+    "selector", "text", "contains", "exact_text", "placeholder",
+    "label", "aria_label", "name", "role", "tag", "index",
+}
+
+
+def locator_from_args(args: dict[str, Any]) -> dict[str, Any]:
+    locator = args.get("locator")
+    if locator is None:
+        locator = {key: args[key] for key in LOCATOR_FIELDS if key in args}
+    if not isinstance(locator, dict) or not locator:
+        raise ValueError("Provide a locator or one of the supported locator fields")
+    return locator
+
+
+def interaction_mode(args: dict[str, Any]) -> str:
+    mode = args.get("mode", "smart")
+    if mode not in {"smart", "direct"}:
+        raise ValueError("`mode` must be `smart` or `direct`")
+    return mode
 
 
 async def tool_status(args: dict[str, Any]) -> dict[str, Any]:
@@ -101,6 +119,8 @@ async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
             "mcp_tools": sorted(TOOLS.keys()),
             "action_plan_actions": [
                 "navigate",
+                "reload",
+                "set_visibility",
                 "snapshot",
                 "observe",
                 "screenshot",
@@ -108,6 +128,8 @@ async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
                 "click",
                 "type",
                 "hover",
+                "press",
+                "select_option",
                 "wait",
                 "wait_for",
                 "scroll",
@@ -169,36 +191,166 @@ async def tool_snapshot(args: dict[str, Any]) -> dict[str, Any]:
     return ok(await with_agent(run))
 
 
-async def tool_hover(args: dict[str, Any]) -> dict[str, Any]:
-    selector = require_str(args, "selector")
+async def tool_observe(args: dict[str, Any]) -> dict[str, Any]:
+    limit = args.get("limit", 80)
+    screenshot_path = args.get("screenshot_path")
+    full_page = args.get("full_page", False)
+    if not isinstance(limit, int):
+        raise ValueError("`limit` must be an integer")
+    if screenshot_path is not None and (not isinstance(screenshot_path, str) or not screenshot_path):
+        raise ValueError("`screenshot_path` must be a non-empty string when provided")
+    if not isinstance(full_page, bool):
+        raise ValueError("`full_page` must be a boolean")
 
     async def run(agent: BrowserAgent) -> Any:
+        snapshot = await agent.snapshot()
+        visual = await agent.visual_snapshot(limit=limit)
+        result = {"snapshot": snapshot, "visual_snapshot": visual}
+        if screenshot_path:
+            screenshot = await agent.screenshot(screenshot_path, full_page=full_page)
+            result["screenshot"] = {key: value for key, value in screenshot.items() if key != "base64"}
+        return result
+
+    return ok(await with_agent(run, timeout=90))
+
+
+async def tool_hover(args: dict[str, Any]) -> dict[str, Any]:
+    locator = locator_from_args(args)
+
+    async def run(agent: BrowserAgent) -> Any:
+        executor = UniversalActionExecutor(agent)
+        selector = await executor.resolve_selector(locator)
         return await agent.hover(selector)
 
     return ok(await with_agent(run))
 
 
 async def tool_click(args: dict[str, Any]) -> dict[str, Any]:
-    selector = require_str(args, "selector")
+    locator = locator_from_args(args)
+    mode = interaction_mode(args)
 
     async def run(agent: BrowserAgent) -> Any:
         snapshot = await agent.snapshot()
         if snapshot.get("blocked_by_login"):
             raise RuntimeError("Login or verification wall detected. Ask the user to handle it manually.")
-        return await agent.click(selector)
+        executor = UniversalActionExecutor(agent)
+        selector = await executor.resolve_selector(locator)
+        result = await agent.click(selector, mode=mode)
+        return {"selector": selector, "action_result": result, "verification_required": True}
 
     return ok(await with_agent(run))
 
 
 async def tool_type(args: dict[str, Any]) -> dict[str, Any]:
-    selector = require_str(args, "selector")
+    locator_args = dict(args)
+    locator_args.pop("text", None)
+    locator = locator_from_args(locator_args)
     text = require_str(args, "text")
+    mode = interaction_mode(args)
+    submit = args.get("submit", False)
+    if not isinstance(submit, bool):
+        raise ValueError("`submit` must be a boolean")
 
     async def run(agent: BrowserAgent) -> Any:
         snapshot = await agent.snapshot()
         if snapshot.get("blocked_by_login"):
             raise RuntimeError("Login or verification wall detected. Ask the user to handle it manually.")
-        return await agent.type(selector, text)
+        executor = UniversalActionExecutor(agent)
+        selector = await executor.resolve_selector(locator)
+        result = await agent.type(selector, text, mode=mode, submit=submit)
+        return {"selector": selector, "submitted": submit, "action_result": result, "verification_required": True}
+
+    return ok(await with_agent(run))
+
+
+async def tool_press(args: dict[str, Any]) -> dict[str, Any]:
+    key = require_str(args, "key")
+
+    async def run(agent: BrowserAgent) -> Any:
+        return await agent.press(key)
+
+    return ok(await with_agent(run))
+
+
+async def tool_select_option(args: dict[str, Any]) -> dict[str, Any]:
+    locator = locator_from_args(args)
+    provided = [args.get("value") is not None, args.get("option_label") is not None, args.get("option_index") is not None]
+    if sum(provided) != 1:
+        raise ValueError("Provide exactly one of value, option_label, or option_index")
+
+    async def run(agent: BrowserAgent) -> Any:
+        snapshot = await agent.snapshot()
+        if snapshot.get("blocked_by_login"):
+            raise RuntimeError("Login or verification wall detected. Ask the user to handle it manually.")
+        executor = UniversalActionExecutor(agent)
+        selector = await executor.resolve_selector(locator)
+        result = await agent.select_option(
+            selector,
+            value=args.get("value"),
+            label=args.get("option_label"),
+            index=args.get("option_index"),
+        )
+        return {"selector": selector, "action_result": result, "verification_required": True}
+
+    return ok(await with_agent(run))
+
+
+async def tool_reload(args: dict[str, Any]) -> dict[str, Any]:
+    async def run(agent: BrowserAgent) -> Any:
+        return await agent.reload()
+
+    return ok(await with_agent(run, timeout=90))
+
+
+async def tool_set_visibility(args: dict[str, Any]) -> dict[str, Any]:
+    visible = args.get("visible", False)
+    if not isinstance(visible, bool):
+        raise ValueError("`visible` must be a boolean")
+
+    async def run(agent: BrowserAgent) -> Any:
+        return await agent.set_visibility(visible)
+
+    return ok(await with_agent(run))
+
+
+async def tool_tabs(args: dict[str, Any]) -> dict[str, Any]:
+    async def run(agent: BrowserAgent) -> Any:
+        return {"active": await agent.active_tab(), "tabs": await agent.list_tabs()}
+
+    return ok(await with_agent(run))
+
+
+async def tool_claim_tab(args: dict[str, Any]) -> dict[str, Any]:
+    tab_id = args.get("tab_id")
+    if not isinstance(tab_id, int):
+        raise ValueError("`tab_id` must be an integer returned by nodex_tabs")
+
+    async def run(agent: BrowserAgent) -> Any:
+        return await agent.claim_tab(tab_id)
+
+    return ok(await with_agent(run))
+
+
+async def tool_close_tab(args: dict[str, Any]) -> dict[str, Any]:
+    tab_id = args.get("tab_id")
+    if not isinstance(tab_id, int):
+        raise ValueError("`tab_id` must be an integer returned by nodex_tabs")
+
+    async def run(agent: BrowserAgent) -> Any:
+        return await agent.close_tab(tab_id)
+
+    return ok(await with_agent(run))
+
+
+async def tool_scroll(args: dict[str, Any]) -> dict[str, Any]:
+    x = args.get("x", 0)
+    y = args.get("y", 0)
+    if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+        raise ValueError("`x` and `y` must be numbers")
+
+    async def run(agent: BrowserAgent) -> Any:
+        result = await agent.evaluate(f"window.scrollBy({float(x)}, {float(y)}); ({{x: window.scrollX, y: window.scrollY}})")
+        return {"position": result, "verification_required": True}
 
     return ok(await with_agent(run))
 
@@ -258,20 +410,14 @@ async def tool_run_action_plan(args: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(stop_on_error, bool):
         raise ValueError("`stop_on_error` must be a boolean")
 
-    plan_path = ROOT / ".nodex_mcp_action_plan.json"
     plan = {
         "group_name": group_name,
         "stop_on_error": stop_on_error,
         "steps": steps,
     }
-    plan_path.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
-    try:
-        executor = UniversalActionExecutor()
-        result = await asyncio.wait_for(executor.run_plan(str(plan_path)), timeout=300)
-        return ok(result)
-    finally:
-        with contextlib.suppress(OSError):
-            plan_path.unlink()
+    executor = UniversalActionExecutor()
+    result = await asyncio.wait_for(executor.run_plan_data(plan), timeout=300)
+    return ok(result)
 
 
 async def tool_auto_operate(args: dict[str, Any]) -> dict[str, Any]:
@@ -299,82 +445,10 @@ async def tool_auto_operate(args: dict[str, Any]) -> dict[str, Any]:
         output_file=output_file,
         take_screenshots=take_screenshots,
         screenshot_dir=str(ROOT / "debug" / "auto_operator"),
+        persist_report="output_file" in args,
     )
     result = await asyncio.wait_for(AutoOperator(config).run(), timeout=420)
     return ok(result)
-
-
-async def tool_run_skill_by_trigger(args: dict[str, Any]) -> dict[str, Any]:
-    query = require_str(args, "query")
-    cmd = [sys.executable, str(ROOT / "skill_router.py"), "--query", query]
-    try:
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
-        )
-        stdout, _ = await process.communicate()
-        output = stdout.decode('utf-8', errors='ignore')
-        try:
-            res_json = json.loads(output.strip().split("\n")[-1])
-            return ok(res_json)
-        except Exception:
-            return ok({"status": "success", "raw_output": output})
-    except Exception as exc:
-        return error(f"Failed to execute router: {exc}")
-
-
-async def tool_taobao_search(args: dict[str, Any]) -> dict[str, Any]:
-    keyword = require_str(args, "keyword")
-    config = AutoOperatorConfig(
-        goal=f"在淘宝搜索 {keyword}",
-        url="https://www.taobao.com",
-        max_rounds=4,
-        output_file=str(ROOT / "auto_operator_report.json"),
-        take_screenshots=False,
-        screenshot_dir=str(ROOT / "debug" / "auto_operator"),
-    )
-    result = await asyncio.wait_for(AutoOperator(config).run(), timeout=420)
-    return ok(result)
-
-
-async def tool_xhs_search(args: dict[str, Any]) -> dict[str, Any]:
-    keyword = require_str(args, "keyword")
-    config = AutoOperatorConfig(
-        goal=f"在小红书搜索 {keyword}",
-        url="https://www.xiaohongshu.com",
-        max_rounds=4,
-        output_file=str(ROOT / "auto_operator_report.json"),
-        take_screenshots=False,
-        screenshot_dir=str(ROOT / "debug" / "auto_operator"),
-    )
-    result = await asyncio.wait_for(AutoOperator(config).run(), timeout=420)
-    return ok(result)
-
-
-async def tool_generate_character(args: dict[str, Any]) -> dict[str, Any]:
-    char_id = args.get("character_name_or_id")
-    img_type = args.get("type")
-    cmd = [sys.executable, str(ROOT / "part_generator.py")]
-    if char_id:
-        cmd.extend(["--char-id", char_id])
-    if img_type:
-        cmd.extend(["--type", img_type])
-        
-    try:
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT
-        )
-        stdout, _ = await process.communicate()
-        output = stdout.decode('utf-8', errors='ignore')
-        if process.returncode == 0:
-            return ok({"status": "success", "output": output})
-        else:
-            return error({"status": "failed", "returncode": process.returncode, "output": output})
-    except Exception as exc:
-        return error(f"Failed to execute character generator: {exc}")
 
 
 TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
@@ -382,20 +456,41 @@ TOOLS: dict[str, Callable[[dict[str, Any]], Awaitable[dict[str, Any]]]] = {
     "nodex_status": tool_status,
     "nodex_init": tool_init,
     "nodex_navigate": tool_navigate,
+    "nodex_reload": tool_reload,
+    "nodex_set_visibility": tool_set_visibility,
+    "nodex_tabs": tool_tabs,
+    "nodex_claim_tab": tool_claim_tab,
+    "nodex_close_tab": tool_close_tab,
     "nodex_snapshot": tool_snapshot,
+    "nodex_observe": tool_observe,
     "nodex_hover": tool_hover,
     "nodex_click": tool_click,
     "nodex_type": tool_type,
+    "nodex_press": tool_press,
+    "nodex_select_option": tool_select_option,
+    "nodex_scroll": tool_scroll,
     "nodex_evaluate": tool_evaluate,
     "nodex_screenshot": tool_screenshot,
     "nodex_visual_snapshot": tool_visual_snapshot,
     "nodex_download": tool_download,
     "nodex_run_action_plan": tool_run_action_plan,
     "nodex_auto_operate": tool_auto_operate,
-    "nodex_run_skill_by_trigger": tool_run_skill_by_trigger,
-    "nodex_taobao_search": tool_taobao_search,
-    "nodex_xhs_search": tool_xhs_search,
-    "nodex_generate_character": tool_generate_character,
+}
+
+
+LOCATOR_SCHEMA_PROPERTIES = {
+    "locator": {"type": "object", "description": "Semantic locator object."},
+    "selector": {"type": "string"},
+    "text": {"type": "string"},
+    "contains": {"type": "string"},
+    "exact_text": {"type": "string"},
+    "placeholder": {"type": "string"},
+    "label": {"type": "string"},
+    "aria_label": {"type": "string"},
+    "name": {"type": "string"},
+    "role": {"type": "string"},
+    "tag": {"type": "string"},
+    "index": {"type": "integer"},
 }
 
 
@@ -433,41 +528,129 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "nodex_reload",
+        "description": "Reload the controlled tab and wait for page loading to complete.",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "nodex_set_visibility",
+        "description": "Keep NodeX browser work in the background by default, or explicitly bring its tab forward for visible demonstrations.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"visible": {"type": "boolean"}},
+            "required": ["visible"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_tabs",
+        "description": "List Chrome tabs and the currently active tab. Use returned tab ids only with nodex_claim_tab or nodex_close_tab.",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "nodex_claim_tab",
+        "description": "Explicitly claim an HTTP/HTTPS Chrome tab returned by nodex_tabs.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"tab_id": {"type": "integer"}},
+            "required": ["tab_id"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_close_tab",
+        "description": "Close an exact Chrome tab id returned by nodex_tabs. Do not close user tabs without explicit authorization.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"tab_id": {"type": "integer"}},
+            "required": ["tab_id"],
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "nodex_snapshot",
         "description": "Return visible page elements and login-wall detection state.",
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
     },
     {
-        "name": "nodex_hover",
-        "description": "Move the visible cursor to a CSS selector.",
+        "name": "nodex_observe",
+        "description": "Collect DOM safety state plus a bounded visual-layout JSON snapshot in one call; optionally save a screenshot.",
         "inputSchema": {
             "type": "object",
-            "properties": {"selector": {"type": "string"}},
-            "required": ["selector"],
+            "properties": {
+                "limit": {"type": "integer"},
+                "screenshot_path": {"type": "string"},
+                "full_page": {"type": "boolean"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_hover",
+        "description": "Move the visible cursor to one uniquely resolved semantic or CSS locator.",
+        "inputSchema": {
+            "type": "object",
+            "properties": LOCATOR_SCHEMA_PROPERTIES,
             "additionalProperties": False,
         },
     },
     {
         "name": "nodex_click",
-        "description": "Click a CSS selector after checking for login or verification walls.",
+        "description": "Resolve one unique visible element and click it after a safety snapshot. The result still requires state verification.",
         "inputSchema": {
             "type": "object",
-            "properties": {"selector": {"type": "string"}},
-            "required": ["selector"],
+            "properties": {
+                **LOCATOR_SCHEMA_PROPERTIES,
+                "mode": {"type": "string", "enum": ["smart", "direct"]},
+            },
             "additionalProperties": False,
         },
     },
     {
         "name": "nodex_type",
-        "description": "Type text into a CSS selector after checking for login or verification walls.",
+        "description": "Replace text in one uniquely resolved input. Submission is separate and disabled unless submit=true.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "selector": {"type": "string"},
+                **LOCATOR_SCHEMA_PROPERTIES,
                 "text": {"type": "string"},
-                "mode": {"type": "string", "enum": ["smart", "direct"], "description": "smart simulates typing keystroke delays (for anti-bot); direct inserts text instantly (for trusted sites)"}
+                "mode": {"type": "string", "enum": ["smart", "direct"], "description": "smart simulates typing delays; direct inserts text instantly"},
+                "submit": {"type": "boolean", "description": "Press Enter after typing; defaults to false"},
             },
-            "required": ["selector", "text"],
+            "required": ["text"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_press",
+        "description": "Press a keyboard key or shortcut in the controlled tab, for example Enter or Control+A.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"key": {"type": "string"}},
+            "required": ["key"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_select_option",
+        "description": "Select a native HTML option by value, exact label, or zero-based index after resolving one select element.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                **LOCATOR_SCHEMA_PROPERTIES,
+                "value": {"type": "string"},
+                "option_label": {"type": "string"},
+                "option_index": {"type": "integer"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "nodex_scroll",
+        "description": "Scroll the controlled page by x/y pixel deltas, then return the resulting scroll position.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"x": {"type": "number"}, "y": {"type": "number"}},
             "additionalProperties": False,
         },
     },
@@ -550,56 +733,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "additionalProperties": False,
         },
     },
-    {
-        "name": "nodex_run_skill_by_trigger",
-        "description": "Detect registered triggers within a natural language query and route to the corresponding skill automation workflow.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "The natural language instruction, e.g. '在淘宝上搜索显卡'"}
-            },
-            "required": ["query"],
-            "additionalProperties": False,
-        },
-    },
-    {
-        "name": "nodex_taobao_search",
-        "description": "Directly search for products on Taobao and extract results using the generic taobao site profile.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "keyword": {"type": "string", "description": "The product search term, e.g. '显卡'"}
-            },
-            "required": ["keyword"],
-            "additionalProperties": False,
-        },
-    },
-    {
-        "name": "nodex_xhs_search",
-        "description": "Directly search on Xiaohongshu and extract results using the generic xhs site profile.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "keyword": {"type": "string", "description": "The search keyword, e.g. '露营'"}
-            },
-            "required": ["keyword"],
-            "additionalProperties": False,
-        },
-    },
-    {
-        "name": "nodex_generate_character",
-        "description": "Directly execute the character DALL-E asset generator pipeline to generate visual character sheets and sync to frontend constants.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "character_name_or_id": {"type": "string", "description": "The character ID or name, e.g. '沙海游侠'"},
-                "type": {"type": "string", "description": "Optional asset sheet type, e.g. 'main', 'portrait', 'expression'"}
-            },
-            "additionalProperties": False,
-        },
-    },
 ]
-
 
 async def handle_request(request: dict[str, Any]) -> dict[str, Any] | None:
     request_id = request.get("id")
@@ -614,7 +748,7 @@ async def handle_request(request: dict[str, Any]) -> dict[str, Any] | None:
             result = {
                 "protocolVersion": PROTOCOL_VERSION,
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "nodex-chrome-agent", "version": "0.1.0"},
+                "serverInfo": {"name": "nodex-chrome-agent", "version": "0.2.0"},
             }
         elif method == "tools/list":
             result = {"tools": TOOL_DEFINITIONS}

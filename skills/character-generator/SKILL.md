@@ -1,6 +1,6 @@
 ---
 name: character-generator
-description: Generate wasteland character design sheets across multiple dimensions (DALL-E) and sync them to the React frontend UI. Trigger keywords: 生图, 角色生成, 生成角色, 画角色, dalle, 画图.
+description: "Generate wasteland character design sheets across multiple dimensions (DALL-E) and sync them to the React frontend UI. Trigger keywords: 生图, 角色生成, 生成角色, 画角色, dalle, 画图."
 ---
 
 # Character Generator Skill

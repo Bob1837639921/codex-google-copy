@@ -8,11 +8,8 @@ import concurrent.futures
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-connected_client = None
-responses = {}
-
 connected_extension = None
-connected_clients = {}  # cmd_id -> client_websocket
+connected_clients = {}  # cmd_id -> (client_websocket, extension_websocket)
 responses = {}
 
 async def handler(websocket, path=None):
@@ -24,7 +21,7 @@ async def handler(websocket, path=None):
     elif path:
         req_path = path
     
-    if "client" in req_path:
+    if req_path.rstrip("/") == "/client":
         print("[Server] Python controller client connected!")
         try:
             async for message in websocket:
@@ -34,9 +31,17 @@ async def handler(websocket, path=None):
                     if cmd_id:
                         if connected_extension:
                             # Map this command ID to the active client connection
-                            connected_clients[cmd_id] = websocket
+                            connected_clients[cmd_id] = (websocket, connected_extension)
                             # Forward directly to the Chrome extension
-                            await connected_extension.send(message)
+                            try:
+                                await connected_extension.send(message)
+                            except Exception:
+                                connected_clients.pop(cmd_id, None)
+                                await websocket.send(json.dumps({
+                                    "id": cmd_id,
+                                    "status": "error",
+                                    "error": "Browser extension disconnected while forwarding command"
+                                }, ensure_ascii=False))
                         else:
                             await websocket.send(json.dumps({
                                 "id": cmd_id, 
@@ -47,6 +52,10 @@ async def handler(websocket, path=None):
                     print(f"Error forwarding client message: {ex}")
         except websockets.exceptions.ConnectionClosed:
             print("[Server] Python controller client disconnected.")
+        finally:
+            stale_ids = [cmd_id for cmd_id, (client, _) in connected_clients.items() if client is websocket]
+            for cmd_id in stale_ids:
+                connected_clients.pop(cmd_id, None)
     else:
         print("[Server] Browser extension connected!")
         connected_extension = websocket
@@ -57,8 +66,9 @@ async def handler(websocket, path=None):
                     cmd_id = data.get("id")
                     if cmd_id:
                         # If this belongs to an external client, dispatch it back
-                        if cmd_id in connected_clients:
-                            client_ws = connected_clients.pop(cmd_id)
+                        route = connected_clients.get(cmd_id)
+                        if route and route[1] is websocket:
+                            client_ws, _ = connected_clients.pop(cmd_id)
                             try:
                                 await client_ws.send(message)
                             except:
@@ -73,6 +83,17 @@ async def handler(websocket, path=None):
         finally:
             if connected_extension == websocket:
                 connected_extension = None
+            pending = [cmd_id for cmd_id, (_, extension) in connected_clients.items() if extension is websocket]
+            for cmd_id in pending:
+                client_ws, _ = connected_clients.pop(cmd_id)
+                try:
+                    await client_ws.send(json.dumps({
+                        "id": cmd_id,
+                        "status": "error",
+                        "error": "Browser extension disconnected before replying"
+                    }, ensure_ascii=False))
+                except Exception:
+                    pass
 
 async def send_command(action, **kwargs):
     global connected_extension

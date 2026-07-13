@@ -1,6 +1,6 @@
 ---
 name: xiaohongshu-automation
-description: Automate search and content scraping on Xiaohongshu (XHS). Trigger keywords: 小红书, xiaohongshu, xhs, 红书.
+description: "Automate search and content scraping on Xiaohongshu (XHS). Trigger keywords: 小红书, xiaohongshu, xhs, 红书."
 ---
 
 # Xiaohongshu Automation Skill

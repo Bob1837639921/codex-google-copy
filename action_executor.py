@@ -38,8 +38,8 @@ LOCATOR_KEYS = {
 
 
 class UniversalActionExecutor:
-    def __init__(self):
-        self.agent = BrowserAgent()
+    def __init__(self, agent: BrowserAgent = None):
+        self.agent = agent or BrowserAgent()
         self.extracted_data: Dict[str, Any] = {}
         self.last_snapshot: Dict[str, Any] = {}
 
@@ -70,6 +70,12 @@ class UniversalActionExecutor:
             result = await self.agent.evaluate(self._locator_js(locator))
             last_result = result
             if isinstance(result, dict) and result.get("selector"):
+                count = int(result.get("count", 1))
+                if count > 1 and "index" not in locator:
+                    raise RuntimeError(
+                        f"Locator is ambiguous and matched {count} visible elements: {locator}. "
+                        "Add a stable attribute, scope the locator, or provide an explicit index from fresh observation evidence."
+                    )
                 return str(result["selector"])
             if asyncio.get_event_loop().time() >= deadline:
                 raise RuntimeError(f"Could not resolve locator {locator}. Last result: {last_result}")
@@ -98,7 +104,7 @@ class UniversalActionExecutor:
     let node = el;
     while (node && node.nodeType === 1 && node !== document.body) {{
       let part = node.tagName.toLowerCase();
-      if (node.getAttribute("name")) part += `[name="${{String(node.getAttribute("name")).replace(/"/g, "\\\\\"")}}"]`;
+      if (node.getAttribute("name")) part += `[name=${{escapeCss(node.getAttribute("name"))}}]`;
       const parent = node.parentElement;
       if (parent) {{
         const siblings = Array.from(parent.children).filter((child) => child.tagName === node.tagName);
@@ -126,18 +132,21 @@ class UniversalActionExecutor:
   if (loc.selector) {{
     const direct = Array.from(document.querySelectorAll(loc.selector)).filter(visible);
     const item = direct[Number(loc.index || 0)];
-    if (item) return {{ selector: selectorFor(item), source: "selector", text: textOf(item) }};
+    if (item) return {{ selector: selectorFor(item), source: "selector", text: textOf(item), count: direct.length }};
   }}
 
   if (loc.label) {{
     const wanted = clean(loc.label).toLowerCase();
     const labels = Array.from(document.querySelectorAll("label")).filter(visible);
+    const targets = [];
     for (const label of labels) {{
       if (!clean(label.innerText).toLowerCase().includes(wanted)) continue;
       let target = label.control || (label.htmlFor ? document.getElementById(label.htmlFor) : null);
       target = target || label.querySelector("input, textarea, select, [contenteditable='true']");
-      if (target && visible(target)) return {{ selector: selectorFor(target), source: "label", text: textOf(target) }};
+      if (target && visible(target)) targets.push(target);
     }}
+    const target = targets[Number(loc.index || 0)];
+    if (target) return {{ selector: selectorFor(target), source: "label", text: textOf(target), count: targets.length }};
   }}
 
   const query = [
@@ -151,7 +160,7 @@ class UniversalActionExecutor:
     return score(a) - score(b);
   }});
   const item = candidates[Number(loc.index || 0)];
-  return item ? {{ selector: selectorFor(item), source: "semantic", text: textOf(item) }} : {{ selector: null, count: 0 }};
+  return item ? {{ selector: selectorFor(item), source: "semantic", text: textOf(item), count: candidates.length }} : {{ selector: null, count: 0 }};
 }})()
 """
 
@@ -240,14 +249,42 @@ class UniversalActionExecutor:
                 raise ValueError("Missing value/text_to_type/input for type action.")
             locator = {"selector": step["selector"]} if "selector" in step and "locator" not in step else self.locator_from_step(step)
             selector = await self.resolve_selector(locator, float(step.get("timeout", 8)))
-            result = await self.agent.type(selector, str(text))
-            if step.get("submit") is False:
-                return result
-            return result
+            return await self.agent.type(
+                selector,
+                str(text),
+                mode=step.get("mode", "smart"),
+                submit=bool(step.get("submit", False)),
+            )
 
         if action == "hover":
             selector = await self.resolve_selector(self.locator_from_step(step), float(step.get("timeout", 8)))
             return await self.agent.hover(selector)
+
+        if action == "press":
+            key = step.get("key")
+            if not isinstance(key, str) or not key:
+                raise ValueError("Missing key for press action.")
+            return await self.agent.press(key)
+
+        if action == "select_option":
+            if step.get("safe", True):
+                await self.guard_interaction()
+            selector = await self.resolve_selector(self.locator_from_step(step), float(step.get("timeout", 8)))
+            return await self.agent.select_option(
+                selector,
+                value=step.get("value"),
+                label=step.get("option_label"),
+                index=step.get("option_index"),
+            )
+
+        if action == "reload":
+            return await self.agent.reload()
+
+        if action == "set_visibility":
+            visible = step.get("visible", False)
+            if not isinstance(visible, bool):
+                raise ValueError("set_visibility requires a boolean visible field.")
+            return await self.agent.set_visibility(visible)
 
         if action == "wait":
             seconds = float(step.get("seconds", 2))
@@ -333,10 +370,27 @@ class UniversalActionExecutor:
         with open(plan_path, "r", encoding="utf-8") as f:
             plan = json.load(f)
 
+        plan = dict(plan)
+        plan.setdefault(
+            "output_file",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "action_execution_report.json"),
+        )
+        return await self.run_plan_data(plan)
+
+    async def run_plan_data(self, plan: Dict[str, Any]):
+        """Execute an in-memory plan; report persistence is opt-in via output_file."""
+        if not isinstance(plan, dict):
+            raise ValueError("Action plan must be an object.")
+
         group_name = plan.get("group_name", "NodeX Action Plan")
         steps = plan.get("steps", [])
         if not isinstance(steps, list):
             raise ValueError("Plan field steps must be a list.")
+        if not all(isinstance(step, dict) for step in steps):
+            raise ValueError("Every action plan step must be an object.")
+
+        self.extracted_data = {}
+        self.last_snapshot = {}
 
         await self.initialize(group_name)
 
@@ -354,19 +408,45 @@ class UniversalActionExecutor:
         finally:
             await self.agent.close()
 
+        mutating_actions = {"navigate", "reload", "click", "type", "press", "select_option", "scroll", "evaluate"}
+        evidence_actions = {"snapshot", "observe", "screenshot", "visual_snapshot", "wait_for", "extract", "checkpoint"}
+        successful = [item for item in report if item.get("status") == "success"]
+        last_mutation = max(
+            (index for index, item in enumerate(successful) if item.get("action") in mutating_actions),
+            default=-1,
+        )
+        post_action_evidence = [
+            item.get("action")
+            for index, item in enumerate(successful)
+            if index > last_mutation and item.get("action") in evidence_actions
+        ]
+        failed = any(item.get("status") == "failed" for item in report)
+        if last_mutation < 0:
+            evidence_status = "not_required"
+        elif post_action_evidence:
+            evidence_status = "present"
+        else:
+            evidence_status = "missing"
+
         output_data = {
             "group_name": group_name,
             "execution_steps": report,
             "extracted_data": self.extracted_data,
+            "verification": {
+                "status": evidence_status,
+                "post_action_evidence": post_action_evidence,
+                "has_failed_steps": failed,
+                "completion_claim": "review_evidence" if evidence_status == "present" and not failed else "not_verified",
+                "note": "Successful browser actions are not proof that the user's business goal completed.",
+            },
         }
-        output_file = plan.get(
-            "output_file",
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "action_execution_report.json"),
-        )
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(output_data, f, ensure_ascii=False, indent=2)
-
-        logging.info("Action plan completed. Report saved at: %s", output_file)
+        output_file = plan.get("output_file")
+        if output_file:
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(output_data, f, ensure_ascii=False, indent=2)
+            logging.info("Action plan completed. Report saved at: %s", output_file)
+        else:
+            logging.info("Action plan completed in memory.")
         return output_data
 
 if __name__ == "__main__":

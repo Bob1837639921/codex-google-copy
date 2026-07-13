@@ -1,6 +1,6 @@
 {
   "name": "codex-google-copy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A local Chrome automation bridge for Codex using a Chrome extension, WebSocket server, and Python SDK.",
   "author": {
     "name": "Bob1837639921"
@@ -18,9 +18,9 @@
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "Codex Google Copy",
+    "displayName": "NodeX Browser Agent",
     "shortDescription": "Control Chrome from Codex through a local WebSocket bridge.",
-    "longDescription": "Codex Google Copy provides instructions for using the bundled Chrome extension, local WebSocket bridge, and Python SDK to navigate, inspect, click, type, and evaluate pages in a local Chrome session.",
+    "longDescription": "NodeX Browser Agent provides generic, evidence-driven Chrome control through a local extension, WebSocket bridge, Python SDK, and MCP tools.",
     "developerName": "Bob1837639921",
     "category": "Productivity",
     "capabilities": [

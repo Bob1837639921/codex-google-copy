@@ -23,20 +23,6 @@ let keepAliveInterval = setInterval(() => {
     }
 }, 20000);
 
-async function hasHttpOrHttpsTab() {
-  try {
-    const tabs = await chrome.tabs.query({ active: true });
-    for (let tab of tabs) {
-      if (tab.url && (tab.url.includes('chatgpt.com') || tab.url.includes('localhost') || tab.url.includes('127.0.0.1'))) {
-        return true;
-      }
-    }
-  } catch (e) {
-    console.log('Error querying tabs:', e);
-  }
-  return false;
-}
-
 async function triggerConnect(force = false) {
   if (socket && socket.readyState === 1 /* WebSocket.OPEN */) {
     return;
@@ -49,12 +35,6 @@ async function triggerConnect(force = false) {
       clearTimeout(connectTimeout);
       connectTimeout = null;
     }
-  }
-  
-  const hasTab = await hasHttpOrHttpsTab();
-  if (!hasTab && !force) {
-    console.log('[Connection] No active HTTP/HTTPS tabs. Staying silent to avoid error logs.');
-    return;
   }
   
   if (isExplicitlyPaused && !force) {
@@ -87,24 +67,33 @@ function connectWebSocket() {
     try {
         const sid = data.sessionId || 'default';
         let tabId = sessions[sid]?.tabId || agentTabId;
+        const foreground = sessions[sid]?.foreground === true;
 
         // 如果断掉或者找不到页面，强行新建页面兜底（仅针对需要 tabId 的页面操控指令）
-        const needsTabId = ['navigate', 'evaluate', 'hover', 'click', 'type', 'snapshot', 'screenshot'];
+        const needsTabId = ['navigate', 'reload', 'evaluate', 'hover', 'click', 'type', 'press', 'selectOption', 'snapshot', 'screenshot'];
         if (!tabId && needsTabId.includes(data.action)) {
             await initAgentTab('AI 自动兜底新建', null, sid);
             tabId = sessions[sid].tabId;
         }
 
-        if (tabId && data.action !== 'init' && data.action !== 'listTabs' && data.action !== 'getErrorLog' && data.action !== 'testFind') {
+        if (foreground && tabId && data.action !== 'init' && data.action !== 'claimTab' && data.action !== 'listTabs' && data.action !== 'getErrorLog' && data.action !== 'testFind') {
             await chrome.tabs.update(tabId, { active: true }).catch(() => {});
         }
 
         if (data.action === 'init') {
             await initAgentTab(data.taskName || 'AI 正在执行', data.id, data.sessionId);
+        } else if (data.action === 'claimTab') {
+            await claimAgentTab(data.tabId, data.id, data.sessionId);
+        } else if (data.action === 'closeTab') {
+            await closeAgentTab(data.tabId ?? tabId, data.id);
+        } else if (data.action === 'setVisibility') {
+            await setSessionVisibility(sid, data.visible, data.id);
         } else if (data.action === 'ping') {
             socket.send(JSON.stringify({ id: data.id, status: 'success', message: 'Extension connected' }));
         } else if (data.action === 'navigate') {
-            await executeNavigate(tabId, data.url, data.id);
+            await executeNavigate(tabId, data.url, data.id, foreground);
+        } else if (data.action === 'reload') {
+            await executeReload(tabId, data.id);
         } else if (data.action === 'evaluate') {
             await executeEvaluate(tabId, data.code, data.id);
         } else if (data.action === 'hover') {
@@ -112,7 +101,11 @@ function connectWebSocket() {
         } else if (data.action === 'click') {
             await executeClick(tabId, data.selector, data.mode, data.id);
         } else if (data.action === 'type') {
-            await executeType(tabId, data.selector, data.text, data.mode, data.id);
+            await executeType(tabId, data.selector, data.text, data.mode, data.submit !== false, data.id);
+        } else if (data.action === 'press') {
+            await executePress(tabId, data.key, data.id);
+        } else if (data.action === 'selectOption') {
+            await executeSelectOption(tabId, data.selector, data, data.id);
         } else if (data.action === 'snapshot') {
             await executeSnapshot(tabId, data.id);
         } else if (data.action === 'screenshot') {
@@ -165,11 +158,6 @@ function connectWebSocket() {
             } else {
                 socket.send(JSON.stringify({ id: data.id, status: 'error', error: 'No active tab found' }));
             }
-        } else if (data.action === 'reloadExtension') {
-            socket.send(JSON.stringify({ id: data.id, status: 'success', message: 'Reloading extension...' }));
-            setTimeout(() => {
-                chrome.runtime.reload();
-            }, 150);
         }
     } catch (e) {
         socket.send(JSON.stringify({ id: data.id, status: 'error', error: e.toString() }));
@@ -312,43 +300,6 @@ async function initAgentTab(taskName, msgId, sessionId) {
         }
     }
 
-    // 智能特性：如果浏览器中任何标签页是 chatgpt.com，直接接管它，不新建 about:blank
-    try {
-        const tabs = await chrome.tabs.query({});
-        const chatgptTab = tabs.find(t => t.url && t.url.includes('chatgpt.com'));
-        if (chatgptTab) {
-            agentTabId = chatgptTab.id;
-            
-            // 调试器附着是必选核心步骤，首先执行
-            await attachDebugger(agentTabId);
-            await chrome.tabs.update(agentTabId, { active: true });
-            
-            // 标签页分组为可选外观属性，即使权限或分组限制导致报错也不影响核心功能
-            try {
-                currentGroupId = await chrome.tabs.group({ tabIds: [agentTabId] });
-                await chrome.tabGroups.update(currentGroupId, { 
-                    title: taskName, 
-                    color: 'cyan'
-                });
-            } catch (groupErr) {
-                console.warn('Failed to group tab:', groupErr);
-                lastErrorLog.push('Grouping failed (non-fatal): ' + groupErr.toString());
-            }
-            
-            sessions[sid] = {
-                tabId: agentTabId,
-                groupId: currentGroupId
-            };
-            if (msgId) {
-                socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Attached to ChatGPT tab' }));
-            }
-            return;
-        }
-    } catch (e) {
-        console.error('Error auto-attaching to ChatGPT tab:', e);
-        lastErrorLog.push('auto-attach error: ' + e.toString() + ' stack: ' + e.stack);
-    }
-
     const tab = await chrome.tabs.create({ url: 'about:blank', active: false });
     agentTabId = tab.id;
     
@@ -363,12 +314,69 @@ async function initAgentTab(taskName, msgId, sessionId) {
     // 将新建标签页记录到会话列表中
     sessions[sid] = {
         tabId: agentTabId,
-        groupId: currentGroupId
+        groupId: currentGroupId,
+        foreground: false
     };
     
     if (msgId) {
         socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Tab created and grouped' }));
     }
+}
+
+async function claimAgentTab(tabId, msgId, sessionId) {
+    const sid = sessionId || 'default';
+    if (!Number.isInteger(tabId)) {
+        throw new Error('claimTab requires a numeric tabId returned by listTabs');
+    }
+    const tab = await chrome.tabs.get(tabId);
+    if (!tab.url || (!tab.url.startsWith('http://') && !tab.url.startsWith('https://'))) {
+        throw new Error('Only HTTP/HTTPS tabs can be claimed');
+    }
+    await attachDebugger(tabId);
+    agentTabId = tabId;
+    currentGroupId = tab.groupId >= 0 ? tab.groupId : null;
+    sessions[sid] = { tabId, groupId: currentGroupId, foreground: false };
+    socket.send(JSON.stringify({
+        id: msgId,
+        status: 'success',
+        tab: { id: tab.id, url: tab.url, title: tab.title, windowId: tab.windowId }
+    }));
+}
+
+async function setSessionVisibility(sessionId, visible, msgId) {
+    const session = sessions[sessionId];
+    if (!session) {
+        throw new Error('Initialize or claim a tab before changing visibility');
+    }
+    session.foreground = visible === true;
+    if (session.foreground) {
+        await chrome.tabs.update(session.tabId, { active: true });
+    }
+    socket.send(JSON.stringify({
+        id: msgId,
+        status: 'success',
+        visible: session.foreground,
+        tabId: session.tabId
+    }));
+}
+
+async function closeAgentTab(tabId, msgId) {
+    if (!Number.isInteger(tabId)) {
+        throw new Error('closeTab requires a numeric tabId or an initialized session');
+    }
+    const tab = await chrome.tabs.get(tabId);
+    await chrome.tabs.remove(tabId);
+
+    for (const [sid, session] of Object.entries(sessions)) {
+        if (session.tabId === tabId) delete sessions[sid];
+    }
+    if (agentTabId === tabId) agentTabId = null;
+
+    socket.send(JSON.stringify({
+        id: msgId,
+        status: 'success',
+        closedTab: { id: tab.id, url: tab.url, title: tab.title }
+    }));
 }
 
 async function attachDebugger(tabId) {
@@ -396,33 +404,44 @@ async function attachDebugger(tabId) {
   });
 }
 
-async function sendCommand(tabId, method, params = {}) {
-  return new Promise((resolve, reject) => {
-    chrome.debugger.sendCommand({ tabId: tabId }, method, params, async (result) => {
-      if (chrome.runtime.lastError) {
-        const errMsg = chrome.runtime.lastError.message;
-        if (errMsg && (errMsg.includes("Debugger is not attached") || errMsg.includes("not attached to the tab"))) {
-          console.warn(`[Debugger] Detached detected. Attempting to auto re-attach to tab ${tabId}...`);
-          try {
-            await attachDebugger(tabId);
-            chrome.debugger.sendCommand({ tabId: tabId }, method, params, (retryResult) => {
-              if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError.message);
-              } else {
-                resolve(retryResult);
-              }
-            });
-          } catch (attachErr) {
-            reject(`Failed to re-attach debugger: ${attachErr}. Original error: ${errMsg}`);
-          }
-        } else {
-          reject(errMsg);
-        }
+async function sendCommand(tabId, method, params = {}, timeoutMs = 30000) {
+  const invoke = () => new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      callback(value);
+    };
+    const timer = setTimeout(() => {
+      finish(reject, new Error(`CDP command ${method} timed out for tab ${tabId}`));
+    }, timeoutMs);
+
+    chrome.debugger.sendCommand({ tabId }, method, params, (result) => {
+      const errMsg = chrome.runtime.lastError?.message;
+      if (errMsg) {
+        finish(reject, new Error(errMsg));
       } else {
-        resolve(result);
+        finish(resolve, result);
       }
     });
   });
+
+  try {
+    return await invoke();
+  } catch (error) {
+    const errMsg = error?.message || String(error);
+    const detached = errMsg.includes("Debugger is not attached") || errMsg.includes("not attached to the tab");
+    if (!detached) throw error;
+
+    console.warn(`[Debugger] Detached detected. Attempting to auto re-attach to tab ${tabId}...`);
+    try {
+      await attachDebugger(tabId);
+      return await invoke();
+    } catch (attachErr) {
+      throw new Error(`Failed to re-attach debugger: ${attachErr}. Original error: ${errMsg}`);
+    }
+  }
 }
 
 async function ensureAgentTab() {
@@ -529,18 +548,38 @@ async function touchFakeCursor(tabId) {
     }).catch(() => {});
 }
 
-async function executeNavigate(tabId, url, msgId) {
-  await chrome.tabs.update(tabId, { url: url, active: true });
-  
-  setTimeout(async () => {
-      try {
-          await ensureFakeCursor(tabId);
-          socket.send(JSON.stringify({ id: msgId, status: 'success' }));
-      } catch (e) {
-          console.error("Error in executeNavigate timeout:", e);
-          socket.send(JSON.stringify({ id: msgId, status: 'success', warning: e.toString() }));
-      }
-  }, 3000);
+async function executeNavigate(tabId, url, msgId, foreground = false) {
+  await chrome.tabs.update(tabId, { url: url, active: foreground });
+  await waitForTabComplete(tabId);
+  await ensureFakeCursor(tabId);
+  const tab = await chrome.tabs.get(tabId);
+  socket.send(JSON.stringify({
+      id: msgId,
+      status: 'success',
+      tab: { id: tab.id, url: tab.url, title: tab.title }
+  }));
+}
+
+async function executeReload(tabId, msgId) {
+  await chrome.tabs.reload(tabId);
+  await waitForTabComplete(tabId);
+  await ensureFakeCursor(tabId);
+  const tab = await chrome.tabs.get(tabId);
+  socket.send(JSON.stringify({
+      id: msgId,
+      status: 'success',
+      tab: { id: tab.id, url: tab.url, title: tab.title }
+  }));
+}
+
+async function waitForTabComplete(tabId, timeoutMs = 15000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab.status === 'complete') return tab;
+      await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  throw new Error(`Timed out waiting for tab ${tabId} to finish loading`);
 }
 
 async function executeEvaluate(tabId, code, msgId) {
@@ -550,7 +589,15 @@ async function executeEvaluate(tabId, code, msgId) {
     returnByValue: true,
     awaitPromise: true
   });
-  
+
+  if (result.exceptionDetails) {
+    const details = result.exceptionDetails;
+    const description = details.exception?.description || details.text || 'Unknown page evaluation error';
+    throw new Error(description);
+  }
+  if (result.result?.subtype === 'error') {
+    throw new Error(result.result.description || 'Page evaluation returned an error');
+  }
   socket.send(JSON.stringify({ id: msgId, status: 'success', result: result.result?.value }));
 }
 
@@ -616,7 +663,7 @@ async function executeClick(tabId, selector, modeOrMsgId, msgId) {
     setTimeout(async () => {
         try {
             const codeClick = `
-                (() => {
+                (async () => {
                     const el = document.querySelector(${selectorLiteral});
                     if (el) { 
                         const cursor = document.getElementById('ai-fake-cursor');
@@ -624,25 +671,28 @@ async function executeClick(tabId, selector, modeOrMsgId, msgId) {
                             window.__ai_cursor_pulse();
                         }
                         const runMode = ${modeLiteral};
-                        setTimeout(() => {
-                            if (runMode === 'direct') {
-                                el.click();
-                            } else {
-                                const opts = { bubbles: true, cancelable: true, view: window };
-                                el.dispatchEvent(new PointerEvent('pointerdown', opts));
-                                el.dispatchEvent(new MouseEvent('mousedown', opts));
-                                if (typeof el.focus === 'function') el.focus();
-                                el.dispatchEvent(new PointerEvent('pointerup', opts));
-                                el.dispatchEvent(new MouseEvent('mouseup', opts));
-                                el.click();
-                            }
-                        }, 50);
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        if (runMode === 'direct') {
+                            el.click();
+                        } else {
+                            const opts = { bubbles: true, cancelable: true, view: window };
+                            el.dispatchEvent(new PointerEvent('pointerdown', opts));
+                            el.dispatchEvent(new MouseEvent('mousedown', opts));
+                            if (typeof el.focus === 'function') el.focus();
+                            el.dispatchEvent(new PointerEvent('pointerup', opts));
+                            el.dispatchEvent(new MouseEvent('mouseup', opts));
+                            el.click();
+                        }
                         return true; 
                     }
                     return false;
                 })();
             `;
-            const clickResult = await sendCommand(tabId, 'Runtime.evaluate', { expression: codeClick, returnByValue: true });
+            const clickResult = await sendCommand(tabId, 'Runtime.evaluate', {
+                expression: codeClick,
+                returnByValue: true,
+                awaitPromise: true
+            });
             if (!clickResult.result?.value) {
                 if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'error', error: `Element not found for selector: ${selector}` }));
                 return;
@@ -655,7 +705,7 @@ async function executeClick(tabId, selector, modeOrMsgId, msgId) {
     }, 1200); 
 }
 
-async function executeType(tabId, selector, text, mode, msgId) {
+async function executeType(tabId, selector, text, mode, submit, msgId) {
     const isDirect = (mode === 'direct');
     const moved = await executeHover(tabId, selector, null);
     if (!moved) {
@@ -730,8 +780,10 @@ async function executeType(tabId, selector, text, mode, msgId) {
                 }
             }
             
-            await sendCommand(tabId, 'Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
-            await sendCommand(tabId, 'Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+            if (submit) {
+                await sendCommand(tabId, 'Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+                await sendCommand(tabId, 'Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13 });
+            }
  
             if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
         } catch (e) {
@@ -739,6 +791,58 @@ async function executeType(tabId, selector, text, mode, msgId) {
             if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
         }
     }, 1200);
+}
+
+async function executePress(tabId, key, msgId) {
+    if (!key || typeof key !== 'string') {
+        socket.send(JSON.stringify({ id: msgId, status: 'error', error: 'A non-empty key is required' }));
+        return;
+    }
+    const parts = key.split('+').map(part => part.trim()).filter(Boolean);
+    const keyName = parts.pop();
+    const modifiers = parts.reduce((mask, modifier) => {
+        const normalized = modifier.toLowerCase();
+        if (normalized === 'alt') return mask | 1;
+        if (normalized === 'control' || normalized === 'ctrl') return mask | 2;
+        if (normalized === 'meta' || normalized === 'command') return mask | 4;
+        if (normalized === 'shift') return mask | 8;
+        return mask;
+    }, 0);
+    await sendCommand(tabId, 'Input.dispatchKeyEvent', { type: 'keyDown', key: keyName, code: keyName, modifiers });
+    await sendCommand(tabId, 'Input.dispatchKeyEvent', { type: 'keyUp', key: keyName, code: keyName, modifiers });
+    socket.send(JSON.stringify({ id: msgId, status: 'success', key }));
+}
+
+async function executeSelectOption(tabId, selector, options, msgId) {
+    const expression = `
+        (() => {
+            const el = document.querySelector(${jsString(selector)});
+            if (!el) return { ok: false, error: 'element_not_found' };
+            if (el.tagName !== 'SELECT') return { ok: false, error: 'element_is_not_select' };
+            const choices = Array.from(el.options);
+            let option = null;
+            if (${JSON.stringify(options.value ?? null)} !== null) {
+                option = choices.find(item => item.value === ${JSON.stringify(options.value ?? null)});
+            } else if (${JSON.stringify(options.label ?? null)} !== null) {
+                option = choices.find(item => item.label === ${JSON.stringify(options.label ?? null)} || item.text === ${JSON.stringify(options.label ?? null)});
+            } else if (${JSON.stringify(options.index ?? null)} !== null) {
+                option = choices[Number(${JSON.stringify(options.index ?? null)})] || null;
+            }
+            if (!option) return { ok: false, error: 'option_not_found' };
+            el.value = option.value;
+            option.selected = true;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            return { ok: true, value: option.value, label: option.label || option.text, index: option.index };
+        })()
+    `;
+    const result = await sendCommand(tabId, 'Runtime.evaluate', { expression, returnByValue: true });
+    const value = result.result?.value;
+    if (!value?.ok) {
+        socket.send(JSON.stringify({ id: msgId, status: 'error', error: value?.error || 'Could not select option' }));
+        return;
+    }
+    socket.send(JSON.stringify({ id: msgId, status: 'success', result: value }));
 }
 
 async function executeSnapshot(tabId, msgId) {

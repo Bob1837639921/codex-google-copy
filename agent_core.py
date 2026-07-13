@@ -25,10 +25,13 @@ class BrowserAgent:
     Highly recommended for AI agents seeking precise DOM manipulation, visual micro-animations,
     and automatic login barrier detection.
     """
-    def __init__(self, ws_url: str = "ws://localhost:8765/client"):
+    def __init__(self, ws_url: str = "ws://localhost:8765/client", command_timeout: float = 45.0, session_id: str = None):
         self.ws_url = ws_url
+        self.command_timeout = float(command_timeout)
+        self.session_id = session_id or os.environ.get("BROWSER_AGENT_SESSION_ID")
         self.websocket = None
         self._loop = None
+        self._command_lock = asyncio.Lock()
 
     async def connect(self):
         """
@@ -43,30 +46,60 @@ class BrowserAgent:
             logging.error(f"Failed to connect to the Bridge: {e}. Make sure server_live.py is running.")
             raise e
 
-    async def _send_command(self, action: str, **kwargs):
+    async def _send_command(self, action: str, *, timeout: float = None, **kwargs):
         """
         Internal method to pack, transmit, and block-await the response for a specific action.
         """
-        if not self.websocket:
-            raise RuntimeError("WebSocket is not connected. Call 'await agent.connect()' first.")
-            
-        cmd_id = str(uuid.uuid4())
-        payload = {"id": cmd_id, "action": action}
-        payload.update(kwargs)
-        
-        # Transmit command via WebSocket channel
-        await self.websocket.send(json.dumps(payload))
-        
-        # Wait for the specific response with matching command ID
-        async for message in self.websocket:
-            try:
-                data = json.loads(message)
-                if data.get("id") == cmd_id:
-                    if data.get("status") == "error":
-                        raise RuntimeError(f"Browser action failed: {data.get('error')}")
-                    return data
-            except json.JSONDecodeError:
-                pass # Ignore keepalive ping/status packets
+        command_timeout = self.command_timeout if timeout is None else float(timeout)
+        if command_timeout <= 0:
+            raise ValueError("Command timeout must be greater than zero.")
+
+        # websockets permits only one active recv per connection. Keep each
+        # command/response exchange atomic so concurrent callers cannot steal
+        # replies from one another.
+        async with self._command_lock:
+            websocket = self.websocket
+            if websocket is None:
+                raise RuntimeError("WebSocket is not connected. Call 'await agent.connect()' first.")
+
+            cmd_id = str(uuid.uuid4())
+            payload = {"id": cmd_id, "action": action}
+            if self.session_id and "sessionId" not in kwargs:
+                payload["sessionId"] = self.session_id
+            payload.update(kwargs)
+            await websocket.send(json.dumps(payload))
+
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + command_timeout
+            while True:
+                remaining = deadline - loop.time()
+                if remaining <= 0:
+                    raise TimeoutError(
+                        f"Browser action '{action}' timed out after {command_timeout:.1f}s "
+                        f"(command_id={cmd_id})."
+                    )
+                try:
+                    message = await asyncio.wait_for(websocket.recv(), timeout=remaining)
+                except asyncio.TimeoutError as exc:
+                    raise TimeoutError(
+                        f"Browser action '{action}' timed out after {command_timeout:.1f}s "
+                        f"(command_id={cmd_id})."
+                    ) from exc
+                except websockets.exceptions.ConnectionClosed as exc:
+                    raise ConnectionError(
+                        f"Browser bridge disconnected while running '{action}' (command_id={cmd_id})."
+                    ) from exc
+
+                try:
+                    data = json.loads(message)
+                except json.JSONDecodeError:
+                    continue
+                if data.get("id") != cmd_id:
+                    logging.debug("Ignoring stale browser response id=%s while waiting for id=%s", data.get("id"), cmd_id)
+                    continue
+                if data.get("status") == "error":
+                    raise RuntimeError(f"Browser action failed: {data.get('error')}")
+                return data
 
     async def init(self, task_name: str = "AI Live Agent", session_id: str = None):
         """
@@ -75,8 +108,9 @@ class BrowserAgent:
         - 启动任何浏览器交互前的【首要必须步骤】。请勿省略此步骤，否则后续指令将因未附着 Tab 而报错。
         - task_name 将直接展示在受控浏览器的标签页组名称上，用以向用户标明当前的任务名称。
         """
-        if session_id is None:
-            session_id = os.environ.get("BROWSER_AGENT_SESSION_ID")
+        if session_id is not None:
+            self.session_id = session_id
+        session_id = self.session_id
         logging.info(f"Initializing Browser Agent Group: '{task_name}' (session_id={session_id})")
         return await self._send_command("init", taskName=task_name, sessionId=session_id)
 
@@ -111,7 +145,7 @@ class BrowserAgent:
         logging.info(f"Clicking element (mode={mode}): {selector}")
         return await self._send_command("click", selector=selector, mode=mode)
 
-    async def type(self, selector: str, text: str, mode: str = "smart"):
+    async def type(self, selector: str, text: str, mode: str = "smart", submit: bool = True):
         """
         向网页中的目标输入框（或 contentEditable 富文本容器）中输入指定文本。
         【AI 决策指南（拟人化输入安全防护）】：
@@ -122,7 +156,51 @@ class BrowserAgent:
         - 如果是富文本编辑器（如小红书创作者页面），输入前确保先选中该元素，输入完成后如页面未发生状态更新，应结合 snapshot() 或 wait_for() 检查输入状态。
         """
         logging.info(f"Typing into element (mode={mode}): {selector}")
-        return await self._send_command("type", selector=selector, text=text, mode=mode)
+        return await self._send_command("type", selector=selector, text=text, mode=mode, submit=bool(submit))
+
+    async def press(self, key: str):
+        """Press a keyboard key or shortcut in the controlled tab."""
+        return await self._send_command("press", key=key)
+
+    async def select_option(self, selector: str, value: str = None, label: str = None, index: int = None):
+        """Select one option in a native HTML select element."""
+        choices = [value is not None, label is not None, index is not None]
+        if sum(choices) != 1:
+            raise ValueError("Provide exactly one of value, label, or index.")
+        return await self._send_command("selectOption", selector=selector, value=value, label=label, index=index)
+
+    async def reload(self):
+        """Reload the controlled tab and wait for the browser to finish loading."""
+        return await self._send_command("reload")
+
+    async def set_visibility(self, visible: bool):
+        """Choose whether browser actions should bring the controlled tab forward."""
+        return await self._send_command("setVisibility", visible=bool(visible))
+
+    async def list_tabs(self):
+        """List browser tabs visible to the extension."""
+        response = await self._send_command("listTabs")
+        return response.get("result", [])
+
+    async def active_tab(self):
+        """Return metadata for the active browser tab."""
+        response = await self._send_command("getActiveTab")
+        return response.get("tab")
+
+    async def claim_tab(self, tab_id: int, session_id: str = None):
+        """Claim a tab id previously returned by list_tabs()."""
+        if not isinstance(tab_id, int):
+            raise ValueError("tab_id must be an integer returned by list_tabs().")
+        if session_id is not None:
+            self.session_id = session_id
+        session_id = self.session_id
+        return await self._send_command("claimTab", tabId=tab_id, sessionId=session_id)
+
+    async def close_tab(self, tab_id: int = None):
+        """Close an explicit tab id, or the current session's controlled tab."""
+        if tab_id is not None and not isinstance(tab_id, int):
+            raise ValueError("tab_id must be an integer returned by list_tabs().")
+        return await self._send_command("closeTab", tabId=tab_id)
 
     async def snapshot(self):
         """
@@ -224,7 +302,7 @@ class BrowserAgent:
     let node = el;
     while (node && node.nodeType === 1 && node !== document.body) {{
       let part = node.tagName.toLowerCase();
-      if (node.getAttribute("name")) part += `[name="${{String(node.getAttribute("name")).replace(/"/g, "\\\\\"")}}"]`;
+      if (node.getAttribute("name")) part += `[name=${{escapeCss(node.getAttribute("name"))}}]`;
       const parent = node.parentElement;
       if (parent) {{
         const siblings = Array.from(parent.children).filter((child) => child.tagName === node.tagName);
@@ -553,6 +631,9 @@ class BrowserAgent:
         """
         Closes the WebSocket connection gracefully.
         """
-        if self.websocket:
-            await self.websocket.close()
-            logging.info("Browser Agent connection closed.")
+        async with self._command_lock:
+            websocket = self.websocket
+            self.websocket = None
+            if websocket:
+                await websocket.close()
+                logging.info("Browser Agent connection closed.")
