@@ -288,6 +288,10 @@ async function initAgentTab(taskName, msgId, sessionId) {
             if (tab) {
                 agentTabId = oldTabId;
                 currentGroupId = sessions[sid].groupId;
+                await chrome.tabGroups.update(currentGroupId, {
+                    title: taskName,
+                    color: 'cyan'
+                });
                 await attachDebugger(agentTabId);
                 if (msgId) {
                     socket.send(JSON.stringify({ id: msgId, status: 'success', message: 'Tab reused' }));

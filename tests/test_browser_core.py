@@ -105,6 +105,15 @@ class BrowserCoreTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(websocket.sent[0]["sessionId"], "session-a")
 
+    async def test_unicode_task_name_is_preserved(self):
+        agent = BrowserAgent(command_timeout=1, session_id="unicode-session")
+        websocket = EchoWebSocket()
+        agent.websocket = websocket
+
+        await agent.init("小红书猫粮口碑与京东比价")
+
+        self.assertEqual(websocket.sent[0]["taskName"], "小红书猫粮口碑与京东比价")
+
     async def test_visibility_defaults_can_be_changed_per_session(self):
         agent = BrowserAgent(command_timeout=1, session_id="background-session")
         websocket = EchoWebSocket()
@@ -149,6 +158,19 @@ class BrowserCoreTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ConfigurationTests(unittest.TestCase):
+    def test_stdio_is_configured_for_utf8(self):
+        class Stream:
+            def __init__(self):
+                self.configuration = None
+
+            def reconfigure(self, **kwargs):
+                self.configuration = kwargs
+
+        stream = Stream()
+        nodex_mcp_server.configure_stdio_utf8(stream)
+
+        self.assertEqual(stream.configuration, {"encoding": "utf-8", "errors": "strict"})
+
     def test_empty_extraction_is_not_meaningful(self):
         self.assertFalse(AutoOperator.has_meaningful_result([]))
         self.assertFalse(AutoOperator.has_meaningful_result({}))

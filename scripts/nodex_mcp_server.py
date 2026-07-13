@@ -23,6 +23,18 @@ PROTOCOL_VERSION = "2024-11-05"
 DEFAULT_TIMEOUT = 45
 
 
+def configure_stdio_utf8(*streams: Any) -> None:
+    for stream in streams:
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        with contextlib.suppress(AttributeError, OSError, ValueError):
+            reconfigure(encoding="utf-8", errors="strict")
+
+
+configure_stdio_utf8(sys.stdin, sys.stdout, sys.stderr)
+
+
 def text_content(value: Any) -> list[dict[str, str]]:
     if isinstance(value, str):
         text = value
