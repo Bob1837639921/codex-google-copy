@@ -11,37 +11,24 @@ let connectTimeout = null;
 const CURSOR_ACTIVE_OPACITY = '1';
 const CURSOR_IDLE_OPACITY = '0.62';
 const CURSOR_IDLE_DELAY_MS = 8000;
-const siteInteractionState = new Map();
-const SITE_INTERACTION_POLICIES = [
+const SITE_STABILITY_POLICIES = [
     {
-        name: 'xiaohongshu-strict',
+        name: 'xiaohongshu-dynamic',
         hostSuffixes: ['xiaohongshu.com'],
-        minIntervalMs: 1400,
-        maxIntervalMs: 2600,
-        settleMinMs: 2500,
-        settleMaxMs: 4500,
-        actionWindowMs: 60000,
-        maxActionsPerWindow: 18
+        quietPeriodMs: 700,
+        maxWaitMs: 3500
     },
     {
-        name: 'alibaba-marketplace-strict',
+        name: 'alibaba-marketplace-dynamic',
         hostSuffixes: ['taobao.com', 'tmall.com', 'goofish.com', '1688.com'],
-        minIntervalMs: 900,
-        maxIntervalMs: 1800,
-        settleMinMs: 1800,
-        settleMaxMs: 3200,
-        actionWindowMs: 60000,
-        maxActionsPerWindow: 24
+        quietPeriodMs: 500,
+        maxWaitMs: 3000
     },
     {
-        name: 'jd-marketplace-moderate',
+        name: 'jd-marketplace-dynamic',
         hostSuffixes: ['jd.com'],
-        minIntervalMs: 500,
-        maxIntervalMs: 1200,
-        settleMinMs: 1000,
-        settleMaxMs: 2200,
-        actionWindowMs: 60000,
-        maxActionsPerWindow: 30
+        quietPeriodMs: 350,
+        maxWaitMs: 2000
     }
 ];
 
@@ -49,18 +36,10 @@ function jsString(value) {
   return JSON.stringify(String(value));
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function randomBetween(min, max) {
-    return Math.floor(min + Math.random() * (max - min + 1));
-}
-
-function policyForUrl(url) {
+function stabilityPolicyForUrl(url) {
     try {
         const hostname = new URL(url).hostname.toLowerCase();
-        return SITE_INTERACTION_POLICIES.find(policy => policy.hostSuffixes.some(
+        return SITE_STABILITY_POLICIES.find(policy => policy.hostSuffixes.some(
             suffix => hostname === suffix || hostname.endsWith(`.${suffix}`)
         )) || null;
     } catch (error) {
@@ -68,48 +47,56 @@ function policyForUrl(url) {
     }
 }
 
-async function policyForTab(tabId, targetUrl = null) {
-    if (targetUrl) return policyForUrl(targetUrl);
+async function stabilityPolicyForTab(tabId, targetUrl = null) {
+    if (targetUrl) return stabilityPolicyForUrl(targetUrl);
     const tab = await chrome.tabs.get(tabId);
-    return policyForUrl(tab.url || '');
+    return stabilityPolicyForUrl(tab.url || '');
 }
 
-async function applySiteInteractionPolicy(tabId, action, targetUrl = null) {
-    const policy = await policyForTab(tabId, targetUrl);
-    if (!policy) return;
+async function waitForPageStability(tabId, targetUrl = null) {
+    const policy = await stabilityPolicyForTab(tabId, targetUrl);
+    if (!policy) return { status: 'not_required' };
 
-    const now = Date.now();
-    let state = siteInteractionState.get(tabId);
-    if (!state || state.policyName !== policy.name) {
-        state = { policyName: policy.name, lastActionAt: 0, actionTimes: [] };
-    }
-    state.actionTimes = state.actionTimes.filter(timestamp => now - timestamp < policy.actionWindowMs);
-    if (state.actionTimes.length >= policy.maxActionsPerWindow) {
-        throw new Error(
-            `Site interaction budget reached for ${policy.name}/${action}. Stop, observe the page, and wait before continuing.`
-        );
+    try {
+        await waitForTabComplete(tabId, policy.maxWaitMs);
+    } catch (error) {
+        // A long-lived SPA may remain loading while its current DOM is usable.
     }
 
-    const requiredInterval = randomBetween(policy.minIntervalMs, policy.maxIntervalMs);
-    const elapsed = now - state.lastActionAt;
-    if (state.lastActionAt && elapsed < requiredInterval) {
-        await sleep(requiredInterval - elapsed);
+    const expression = `
+        new Promise((resolve) => {
+            const quietPeriodMs = ${policy.quietPeriodMs};
+            const maxWaitMs = ${policy.maxWaitMs};
+            let quietTimer = null;
+            let finished = false;
+            const finish = (status) => {
+                if (finished) return;
+                finished = true;
+                clearTimeout(quietTimer);
+                clearTimeout(maxTimer);
+                observer.disconnect();
+                resolve({ status, policy: ${jsString(policy.name)} });
+            };
+            const scheduleQuietCheck = () => {
+                clearTimeout(quietTimer);
+                quietTimer = setTimeout(() => finish('stable'), quietPeriodMs);
+            };
+            const observer = new MutationObserver(scheduleQuietCheck);
+            observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+            const maxTimer = setTimeout(() => finish('timeout'), maxWaitMs);
+            scheduleQuietCheck();
+        })
+    `;
+    try {
+        const result = await sendCommand(tabId, 'Runtime.evaluate', {
+            expression,
+            returnByValue: true,
+            awaitPromise: true
+        });
+        return result.result?.value || { status: 'unknown', policy: policy.name };
+    } catch (error) {
+        return { status: 'context_changed', policy: policy.name };
     }
-
-    const completedAt = Date.now();
-    state.lastActionAt = completedAt;
-    state.actionTimes.push(completedAt);
-    siteInteractionState.set(tabId, state);
-}
-
-async function settleAfterNavigation(tabId, targetUrl = null) {
-    const policy = await policyForTab(tabId, targetUrl);
-    if (!policy) return;
-    await sleep(randomBetween(policy.settleMinMs, policy.settleMaxMs));
-}
-
-function evaluationNeedsInteractionPacing(code) {
-    return /\b(?:scrollBy|scrollTo)\s*\(/.test(String(code || ''));
 }
 
 // 每20秒发一次心跳，防止 Chrome 休眠
@@ -187,30 +174,20 @@ function connectWebSocket() {
         } else if (data.action === 'ping') {
             socket.send(JSON.stringify({ id: data.id, status: 'success', message: 'Extension connected' }));
         } else if (data.action === 'navigate') {
-            await applySiteInteractionPolicy(tabId, 'navigate', data.url);
             await executeNavigate(tabId, data.url, data.id, foreground);
         } else if (data.action === 'reload') {
-            await applySiteInteractionPolicy(tabId, 'reload');
             await executeReload(tabId, data.id);
         } else if (data.action === 'evaluate') {
-            if (evaluationNeedsInteractionPacing(data.code)) {
-                await applySiteInteractionPolicy(tabId, 'scroll');
-            }
             await executeEvaluate(tabId, data.code, data.id);
         } else if (data.action === 'hover') {
-            await applySiteInteractionPolicy(tabId, 'hover');
-            await executeHover(tabId, data.selector, data.id);
+            await executeHover(tabId, data.selector, data.id, foreground);
         } else if (data.action === 'click') {
-            await applySiteInteractionPolicy(tabId, 'click');
-            await executeClick(tabId, data.selector, data.mode, data.id);
+            await executeClick(tabId, data.selector, data.mode, data.id, foreground);
         } else if (data.action === 'type') {
-            await applySiteInteractionPolicy(tabId, 'type');
-            await executeType(tabId, data.selector, data.text, data.mode, data.submit !== false, data.id);
+            await executeType(tabId, data.selector, data.text, data.mode, data.submit !== false, data.id, foreground);
         } else if (data.action === 'press') {
-            await applySiteInteractionPolicy(tabId, 'press');
             await executePress(tabId, data.key, data.id);
         } else if (data.action === 'selectOption') {
-            await applySiteInteractionPolicy(tabId, 'selectOption');
             await executeSelectOption(tabId, data.selector, data, data.id);
         } else if (data.action === 'snapshot') {
             await executeSnapshot(tabId, data.id);
@@ -342,7 +319,6 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 
 // 监听标签页手动关闭事件，及时同步状态
 chrome.tabs.onRemoved.addListener((tabId) => {
-  siteInteractionState.delete(tabId);
   if (tabId === agentTabId) {
     agentTabId = null;
     currentGroupId = null;
@@ -662,7 +638,7 @@ async function touchFakeCursor(tabId) {
 async function executeNavigate(tabId, url, msgId, foreground = false) {
   await chrome.tabs.update(tabId, { url: url, active: foreground });
   await waitForTabComplete(tabId);
-  await settleAfterNavigation(tabId, url);
+  await waitForPageStability(tabId, url);
   await ensureFakeCursor(tabId);
   const tab = await chrome.tabs.get(tabId);
   socket.send(JSON.stringify({
@@ -675,7 +651,7 @@ async function executeNavigate(tabId, url, msgId, foreground = false) {
 async function executeReload(tabId, msgId) {
   await chrome.tabs.reload(tabId);
   await waitForTabComplete(tabId);
-  await settleAfterNavigation(tabId);
+  await waitForPageStability(tabId);
   await ensureFakeCursor(tabId);
   const tab = await chrome.tabs.get(tabId);
   socket.send(JSON.stringify({
@@ -714,7 +690,7 @@ async function executeEvaluate(tabId, code, msgId) {
   socket.send(JSON.stringify({ id: msgId, status: 'success', result: result.result?.value }));
 }
 
-async function executeHover(tabId, selector, msgId) {
+async function executeHover(tabId, selector, msgId, foreground = false) {
     await ensureFakeCursor(tabId);
     const selectorLiteral = jsString(selector);
     const codeMove = `
@@ -754,18 +730,18 @@ async function executeHover(tabId, selector, msgId) {
     
     setTimeout(() => {
         if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'success' }));
-    }, 1200); 
+    }, foreground ? 650 : 0);
     return true;
 }
 
-async function executeClick(tabId, selector, modeOrMsgId, msgId) {
+async function executeClick(tabId, selector, modeOrMsgId, msgId, foreground = false) {
     let mode = 'smart';
     let actualMsgId = msgId || modeOrMsgId;
     if (typeof modeOrMsgId === 'string' && modeOrMsgId !== 'null' && modeOrMsgId.length < 10) {
         mode = modeOrMsgId;
     }
 
-    const moved = await executeHover(tabId, selector, null); 
+    const moved = await executeHover(tabId, selector, null, foreground);
     if (!moved) {
         if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'error', error: `Element not found for selector: ${selector}` }));
         return;
@@ -815,12 +791,12 @@ async function executeClick(tabId, selector, modeOrMsgId, msgId) {
             console.error("Error in executeClick timeout:", e);
             if(actualMsgId) socket.send(JSON.stringify({ id: actualMsgId, status: 'error', error: e.toString() }));
         }
-    }, 1200); 
+    }, foreground ? 650 : 0);
 }
 
-async function executeType(tabId, selector, text, mode, submit, msgId) {
+async function executeType(tabId, selector, text, mode, submit, msgId, foreground = false) {
     const isDirect = (mode === 'direct');
-    const moved = await executeHover(tabId, selector, null);
+    const moved = await executeHover(tabId, selector, null, foreground);
     if (!moved) {
         if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
         return;
@@ -903,7 +879,7 @@ async function executeType(tabId, selector, text, mode, submit, msgId) {
             console.error("Error in executeType timeout:", e);
             if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: e.toString() }));
         }
-    }, 1200);
+    }, foreground ? 650 : 0);
 }
 
 async function executePress(tabId, key, msgId) {

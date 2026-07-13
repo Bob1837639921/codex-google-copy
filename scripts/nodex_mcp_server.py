@@ -21,6 +21,8 @@ from auto_operator import AutoOperator, AutoOperatorConfig  # noqa: E402
 
 PROTOCOL_VERSION = "2024-11-05"
 DEFAULT_TIMEOUT = 45
+_shared_agent: BrowserAgent | None = None
+_shared_agent_lock = asyncio.Lock()
 
 
 def configure_stdio_utf8(*streams: Any) -> None:
@@ -53,15 +55,33 @@ async def with_agent(
     timeout: int = DEFAULT_TIMEOUT,
     init_task_name: str | None = None,
 ) -> Any:
-    agent = BrowserAgent()
-    try:
-        await asyncio.wait_for(agent.connect(), timeout=10)
-        if init_task_name:
-            await asyncio.wait_for(agent.init(init_task_name), timeout=timeout)
-        return await asyncio.wait_for(handler(agent), timeout=timeout)
-    finally:
-        with contextlib.suppress(Exception):
-            await agent.close()
+    global _shared_agent
+    async with _shared_agent_lock:
+        agent = _shared_agent
+        if agent is None or agent.websocket is None:
+            agent = BrowserAgent()
+            await asyncio.wait_for(agent.connect(), timeout=10)
+            _shared_agent = agent
+        try:
+            if init_task_name:
+                await asyncio.wait_for(agent.init(init_task_name), timeout=timeout)
+            return await asyncio.wait_for(handler(agent), timeout=timeout)
+        except (ConnectionError, TimeoutError):
+            with contextlib.suppress(Exception):
+                await agent.close()
+            if _shared_agent is agent:
+                _shared_agent = None
+            raise
+
+
+async def close_shared_agent() -> None:
+    global _shared_agent
+    async with _shared_agent_lock:
+        agent = _shared_agent
+        _shared_agent = None
+        if agent is not None:
+            with contextlib.suppress(Exception):
+                await agent.close()
 
 
 def require_str(args: dict[str, Any], name: str) -> str:
@@ -173,7 +193,7 @@ async def tool_capabilities(args: dict[str, Any]) -> dict[str, Any]:
             ],
             "hard_limits": [
                 "No automatic CAPTCHA, slider, login, payment, or account-risk bypass.",
-                "Domain-specific pacing is enforced for Xiaohongshu, Taobao/Tmall/Xianyu/1688, and JD. Do not work around it with parallel tabs or retry loops.",
+                "Condition-based navigation stability waits are used for Xiaohongshu, Taobao/Tmall/Xianyu/1688, and JD; there is no fixed rate limit or action quota.",
                 "If snapshot reports blocked_by_login or blocked_by_risk, stop automatic interaction and preserve the page for the user.",
                 "A screenshot only captures pixels; it does not interpret them unless the calling AI or host reads the image.",
                 "If the caller has no vision model, use visual_snapshot for JSON layout evidence instead of relying on screenshot interpretation.",
@@ -793,20 +813,23 @@ async def handle_request(request: dict[str, Any]) -> dict[str, Any] | None:
 
 async def main() -> None:
     os.chdir(ROOT)
-    while True:
-        line = await asyncio.to_thread(sys.stdin.readline)
-        if not line:
-            break
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            request = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        response = await handle_request(request)
-        if response is not None:
-            print(json.dumps(response, ensure_ascii=False), flush=True)
+    try:
+        while True:
+            line = await asyncio.to_thread(sys.stdin.readline)
+            if not line:
+                break
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                request = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            response = await handle_request(request)
+            if response is not None:
+                print(json.dumps(response, ensure_ascii=False), flush=True)
+    finally:
+        await close_shared_agent()
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ Use this skill when you need to search or inspect a bounded set of Xiaohongshu (
 - Start with `nodex_observe`, perform one action, then verify the resulting URL, overlay, or visible content before continuing.
 - Keep `smart` mode for clicks and typing. Do not use direct DOM clicks as a speed shortcut.
 - Inspect only the notes and comment batches needed for the user's decision. Prefer bounded extraction over exhaustive comment crawling.
-- Let the runtime's Xiaohongshu policy pace navigation, clicks, typing, and scrolling. Do not add rapid retry loops around a throttled action.
+- Let the runtime wait for Xiaohongshu's DOM to become stable after navigation. After submission, clicks, or scrolling, use an evidence-based `wait_for` or fresh observation instead of a fixed delay.
 - If a locator fails, observe again and choose a new evidence-backed locator. Never repeat the same failed action in a tight loop.
 
 ## Risk-Control Stop Conditions

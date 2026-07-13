@@ -14,7 +14,7 @@ Call `nodex_capabilities` when the available surface is uncertain. Never invent 
 The runtime chain is:
 
 1. The model calls a `nodex_*` MCP tool or submits a JSON action plan.
-2. The Python client connects to `ws://localhost:8765/client`.
+2. The Python client reuses a persistent connection to `ws://localhost:8765/client` for direct MCP tools.
 3. `server_live.py` routes commands and responses by command id.
 4. The Chrome extension executes the operation in the claimed tab.
 5. The model reviews returned DOM, layout, screenshot, URL, or extracted evidence.
@@ -49,16 +49,17 @@ For every non-trivial task:
 
 For an unfamiliar website, call `nodex_auto_operate`. It may perform conservative high-confidence steps, but it must return `needs_planner` when evidence is insufficient.
 
-## Site Risk Policies
+## Site Stability Policies
 
-The extension applies domain-specific pacing to sites with stricter behavioral controls:
+The extension applies condition-based DOM stability waits after navigation on dynamic sites:
 
-- Xiaohongshu: strict loading settle time, interaction spacing, and per-minute action budget.
-- Taobao, Tmall, Xianyu/Goofish, and 1688: strict marketplace pacing.
-- JD: moderate marketplace pacing.
-- Other sites: no additional delay unless the action plan requests one.
+- Xiaohongshu, Taobao, Tmall, Xianyu/Goofish, 1688, and JD continue as soon as the page becomes quiet.
+- A short maximum wait prevents a continuously updating SPA from hanging the task.
+- There is no fixed interaction interval or per-minute action quota.
+- Clicks, typing, and scrolling return without an arbitrary post-action delay; the next `wait_for`, `observe`, or `snapshot` supplies verification.
+- Other sites continue without an additional navigation stability wait unless the action plan requests one.
 
-Do not counteract these limits with parallel tabs, rapid retries, reload loops, direct-mode clicks, or repeated scroll evaluations. On these sites, inspect a bounded result set and reuse one controlled tab/session.
+Reuse one controlled tab/session and keep the observe-act-verify loop. Do not create parallel tabs, rapid retries, reload loops, direct-mode clicks, or repeated scroll evaluations to compensate for a failed action.
 
 ## Locator Contract
 

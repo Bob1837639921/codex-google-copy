@@ -1,6 +1,7 @@
 import asyncio
 import json
 import unittest
+from pathlib import Path
 
 from action_executor import UniversalActionExecutor
 from agent_core import BrowserAgent
@@ -86,6 +87,16 @@ class LocatorAgent:
         return {"selector": "button", "count": 2}
 
 
+class PersistentAgent:
+    def __init__(self):
+        self.websocket = object()
+        self.close_calls = 0
+
+    async def close(self):
+        self.websocket = None
+        self.close_calls += 1
+
+
 class BrowserCoreTests(unittest.IsolatedAsyncioTestCase):
     async def test_commands_are_safe_when_called_concurrently(self):
         agent = BrowserAgent(command_timeout=1)
@@ -153,6 +164,20 @@ class BrowserCoreTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(snapshot["blocked_by_risk"])
         self.assertEqual(snapshot["blocker_reason"], "访问频繁")
 
+    async def test_mcp_direct_tools_reuse_shared_bridge_connection(self):
+        previous = nodex_mcp_server._shared_agent
+        agent = PersistentAgent()
+        nodex_mcp_server._shared_agent = agent
+        try:
+            first = await nodex_mcp_server.with_agent(lambda current: asyncio.sleep(0, result=current))
+            second = await nodex_mcp_server.with_agent(lambda current: asyncio.sleep(0, result=current))
+        finally:
+            nodex_mcp_server._shared_agent = previous
+
+        self.assertIs(first, agent)
+        self.assertIs(second, agent)
+        self.assertEqual(agent.close_calls, 0)
+
     async def test_close_tab_uses_exact_tab_id(self):
         agent = BrowserAgent(command_timeout=1, session_id="cleanup-session")
         websocket = EchoWebSocket()
@@ -186,6 +211,13 @@ class BrowserCoreTests(unittest.IsolatedAsyncioTestCase):
 
 
 class ConfigurationTests(unittest.TestCase):
+    def test_extension_uses_dynamic_stability_without_fixed_rate_limits(self):
+        source = (Path(__file__).parents[1] / "extension" / "background.js").read_text(encoding="utf-8")
+
+        self.assertIn("waitForPageStability", source)
+        self.assertNotIn("maxActionsPerWindow", source)
+        self.assertNotIn("minIntervalMs", source)
+
     def test_stdio_is_configured_for_utf8(self):
         class Stream:
             def __init__(self):
