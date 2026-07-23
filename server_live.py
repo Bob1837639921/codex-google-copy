@@ -6,7 +6,13 @@ import os
 import sys
 import concurrent.futures
 
-sys.stdout.reconfigure(encoding='utf-8')
+if sys.stdout is None:
+    sys.stdout = open(os.path.join(os.path.dirname(__file__), "server_live.log"), "a", encoding="utf-8")
+if sys.stderr is None:
+    sys.stderr = open(os.path.join(os.path.dirname(__file__), "server_live.log"), "a", encoding="utf-8")
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 connected_extension = None
 connected_clients = {}  # cmd_id -> (client_websocket, extension_websocket)
