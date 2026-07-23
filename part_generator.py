@@ -247,6 +247,28 @@ LOCKS = {
         "colors": "obsidian black, toxic green, bone white, poison purple, basalt grey",
         "materials": "glossy obsidian chitin shell, sticky bioluminescent green silk, calcified bones, acidic liquid",
         "damage": "its obsidian shell is cracked with glowing green fluid leaking out, and several of its spider legs are broken. For the heavily damaged state, it stands inside a shattered cavern, its abdomen is cracked open with toxic smoke escaping, and it crawls on a ruined web with broken swords scattered around."
+    },
+    "char_0047_bone_pipa_wraith": {
+        "name": "The Bone-Pipa Wraith (骨琶怨姬)",
+        "features": "beautiful but cold-faced blindfolded young female musician with long flowing white hair, wearing an elegant flowy dark-purple and ink-black traditional Chinese silk robe, with a white translucent silk ribbon covering her eyes",
+        "prop": "her ivory bone pipa with glowing purple strings",
+        "prop_desc": "a beautifully crafted traditional Chinese pipa made of white ivory and bone, with glowing purple energy strings releasing soundwave ripples",
+        "scene": "a ruined traditional Chinese stone pavilion under a large dark red moon at night, surrounded by withered red spider lily flowers and floating purple embers",
+        "outfit_alt": "a tattered dark-crimson wedding gown with a matching tattered red veil floating around her head",
+        "colors": "ink black, glowing purple, bone white, dark red, charcoal grey",
+        "materials": "flowing translucent silk, polished ivory bone, ancient weathered stone, glowing energy strings",
+        "damage": "her dark-purple robe is torn and frayed, and her white blindfold is partially torn, revealing faint purple glow from her closed eyes. For the heavily damaged state, she stands next to a shattered stone column, her pipa's body cracked and its purple strings broken, releasing chaotic glowing shockwaves into the air."
+    },
+    "char_0048_withered_daoist": {
+        "name": "The Withered Wood Daoist (枯木妖道)",
+        "features": "withered and thin ancient Chinese Daoist priest wearing a tattered and burnt dark purple robe, his face hidden behind a sinister wooden mask carved from lightning-struck wood with only one glowing purple eye visible",
+        "prop": "his decaying peach-wood sword and floating black talismans",
+        "prop_desc": "a decaying dark peach-wood sword dripping with thick black corrosion fluid, surrounded by dozens of floating black paper talismans with glowing purple scriptures",
+        "scene": "a scorched and dead withered forest under dark thunderclouds, with purple lightning flashing in the heavy mist and broken swords scattered on the ground",
+        "outfit_alt": "a heavy dark iron scale armor combined with tattered Daoist robes and a long tattered black cloak",
+        "colors": "deep purple, charcoal black, glowing warning purple, wood brown, toxic green",
+        "materials": "rough tattered linen cloth, carbonized lightning-struck wood, decaying rotting wood, glowing magical paper",
+        "damage": "his dark purple robe is heavily scorched with burn holes, and his wooden mask is cracked showing a withered mummified face underneath. For the heavily damaged state, his peach-wood sword is broken in half, and thick black toxic mist is escaping from his body as he stands in a field of ashes."
     }
 }
 
@@ -351,6 +373,26 @@ def expand_character_plan(plan, char_id, char_name):
         outfit = "cracked glossy black obsidian shell with a human skull pattern on its back"
         accessories_weapon = "thick sticky green silk web, bone fragments, acid-dripping mandibles"
         fixed_traits = "obsidian shell, skull pattern on back, glowing green eyes, glowing green abdomen"
+        style_desc = "Eastern fantasy ink-wash character concept art"
+    elif char_id == 'char_0047_bone_pipa_wraith':
+        gender_age = "young woman, cold and tragic spectral presence"
+        body_shape = "slender build, floating posture, flowy lines"
+        face = "beautiful but cold-faced pale face, blindfolded with a white ribbon"
+        hair = "long flowing white hair cascading down her back"
+        eyes = "closed eyes obscured by a translucent white silk ribbon"
+        outfit = "elegant flowy traditional Chinese silk robes in dark purple and ink black"
+        accessories_weapon = "ivory and bone traditional Chinese pipa (lute) with glowing purple strings"
+        fixed_traits = "blindfold white ribbon, long white hair, dark purple silk robes, ivory bone pipa"
+        style_desc = "Eastern fantasy ink-wash character concept art"
+    elif char_id == 'char_0048_withered_daoist':
+        gender_age = "withered and thin ancient man, eerie Daoist presence"
+        body_shape = "withered, thin, and skeletal posture, slightly hunched"
+        face = "hidden behind a dark carbonized wooden mask with one glowing purple eye visible"
+        hair = "messy grey-black hair tied in a loose topknot"
+        eyes = "one glowing purple eye visible through the mask"
+        outfit = "tattered, burnt, and dirty dark purple ancient Daoist robes"
+        accessories_weapon = "decaying dark peach-wood sword dripping black liquid, and floating black paper talismans"
+        fixed_traits = "wooden mask, tattered dark purple robes, decaying peach-wood sword, floating black talismans"
         style_desc = "Eastern fantasy ink-wash character concept art"
     else:
         gender_age = "young appearance"
@@ -5328,7 +5370,7 @@ Solid clean dark gray background."""
     neon_plan = expand_character_plan(neon_plan, 'char_0004_neon_hacker', '霓虹潜行者')
     
     # Apply dynamic expander to the new characters
-    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan, radio_host_plan, blade_wraith_plan, abyssal_dread_plan, thousand_faces_plan, bone_spider_plan
+    global red_umbrella_plan, stele_pathfinder_plan, fungal_apothecary_plan, book_wraith_plan, radio_host_plan, blade_wraith_plan, abyssal_dread_plan, thousand_faces_plan, bone_spider_plan, bone_pipa_wraith_plan, withered_daoist_plan
     red_umbrella_plan = expand_character_plan(red_umbrella_plan, 'char_0036_red_umbrella_entity', '红伞执念体')
     stele_pathfinder_plan = expand_character_plan(stele_pathfinder_plan, 'char_0037_stele_pathfinder', '残碑拓荒人')
     fungal_apothecary_plan = expand_character_plan(fungal_apothecary_plan, 'char_0040_fungal_apothecary', '蕈林秘医')
@@ -5338,6 +5380,8 @@ Solid clean dark gray background."""
     abyssal_dread_plan = expand_character_plan(abyssal_dread_plan, 'char_0044_abyssal_dread', '深渊煞魔')
     thousand_faces_plan = expand_character_plan(thousand_faces_plan, 'char_0045_thousand_faces', '千面皮魔')
     bone_spider_plan = expand_character_plan(bone_spider_plan, 'char_0046_bone_spider', '蚀骨蛛后')
+    bone_pipa_wraith_plan = expand_character_plan(bone_pipa_wraith_plan, 'char_0047_bone_pipa_wraith', '骨琶怨姬')
+    withered_daoist_plan = expand_character_plan(withered_daoist_plan, 'char_0048_withered_daoist', '枯木妖道')
 
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
@@ -5350,7 +5394,7 @@ Solid clean dark gray background."""
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
-        fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan
+        fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan + bone_pipa_wraith_plan + withered_daoist_plan
     )
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
@@ -7945,6 +7989,24 @@ bone_spider_plan = [
         "char_name": "蚀骨蛛后",
         "img_type": "main",
         "prompt": "An epic dark fantasy concept art of the Bone-Corroding Broodmother. A colossal spider monster. Its body is made of cracked, glossy black obsidian shell, with a distinct white human skull pattern on its back. Dozens of glowing green eyes line its head. Its bulbous translucent dark-green abdomen glows faintly, showing silhouettes of squirming eggs inside. It crawls on a massive spiderweb woven from thick sticky silk and bones. The background is a dark cavern under the ruins of an ancient great wall, with faint glowing green mineral veins and poisonous purple fog. Cinematic rim lighting, hyper-realistic textures of stone and chitin shell, ink-wash style blend, 8k."
+    }
+]
+
+bone_pipa_wraith_plan = [
+    {
+        "char_id": "char_0047_bone_pipa_wraith",
+        "char_name": "骨琶怨姬",
+        "img_type": "main",
+        "prompt": "An epic dark fantasy concept art of the Bone-Pipa Wraith. A beautiful but cold-faced blindfolded young female musician with long flowing white hair, wearing an elegant flowy dark-purple and ink-black traditional Chinese silk robe, with a white translucent silk ribbon covering her eyes. She holds an ivory bone pipa with glowing purple strings, releasing soundwave ripples. The scene is a ruined traditional Chinese stone pavilion under a large dark red moon at night, surrounded by withered red spider lily flowers and floating purple embers. Cinematic rim lighting, hyper-realistic textures, ink-wash style blend, 8k."
+    }
+]
+
+withered_daoist_plan = [
+    {
+        "char_id": "char_0048_withered_daoist",
+        "char_name": "枯木妖道",
+        "img_type": "main",
+        "prompt": "An epic dark fantasy concept art of the Withered Wood Daoist. An eerie, thin ancient Chinese Daoist priest wearing tattered and burnt dark purple robes, his face hidden behind a sinister wooden mask carved from lightning-struck wood with only one glowing purple eye visible. He holds a decaying dark peach-wood sword dripping with thick black corrosion fluid, surrounded by dozens of floating black paper talismans with glowing purple scriptures. The setting is a scorched and dead withered forest under dark thunderclouds, with purple lightning flashing in the heavy mist and broken swords scattered on the ground. Cinematic rim lighting, hyper-realistic textures, ink-wash style blend, 8k."
     }
 ]
 
