@@ -637,7 +637,11 @@ async function touchFakeCursor(tabId) {
 
 async function executeNavigate(tabId, url, msgId, foreground = false) {
   await chrome.tabs.update(tabId, { url: url, active: foreground });
-  await waitForTabComplete(tabId);
+  try {
+    await waitForTabComplete(tabId, 45000);
+  } catch (err) {
+    console.warn("waitForTabComplete soft timeout, proceeding anyway:", err);
+  }
   await waitForPageStability(tabId, url);
   await ensureFakeCursor(tabId);
   const tab = await chrome.tabs.get(tabId);

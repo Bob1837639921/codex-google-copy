@@ -269,6 +269,72 @@ LOCKS = {
         "colors": "deep purple, charcoal black, glowing warning purple, wood brown, toxic green",
         "materials": "rough tattered linen cloth, carbonized lightning-struck wood, decaying rotting wood, glowing magical paper",
         "damage": "his dark purple robe is heavily scorched with burn holes, and his wooden mask is cracked showing a withered mummified face underneath. For the heavily damaged state, his peach-wood sword is broken in half, and thick black toxic mist is escaping from his body as he stands in a field of ashes."
+        },
+    "char_0049_frostleaf_illusionist": {
+        "name": "The Frostleaf Illusionist (霜叶幻术师)",
+        "features": "graceful cold winter elf female, pale snow-like skin, long pointed elf ears, flowing silver-blue hair, elegant flowy blue and white gradient robe covered in frost",
+        "prop": "large glowing magical polyhedron ice crystal orb levitating above her hands",
+        "prop_desc": "a large glowing magical polyhedron ice crystal orb levitating above her hands, refracting colorful holographic illusions",
+        "scene": "breathtaking winter elven forest covered in thick white snow, glowing blue bioluminescent flora, gentle falling snow",
+        "outfit_alt": "elegant light silver silk dress with blue frosty lace and crystalline accessories",
+        "colors": "pure white, ice blue, silver, holographic rainbow refraction",
+        "materials": "thin silk freezing into frost, ice crystals",
+        "damage": "her elegant robe is torn with frost melting into water droplets, and the ice crystal orb is cracked and shattered into floating icy shards, surrounded by fading illusions."
+    },
+    "char_0050_thorn_executioner": {
+        "name": "The Thorn Executioner (荆棘行刑者)",
+        "features": "tall muscular fierce dark wood elf male warrior, tanned bronze skin, long pointed elf ears, half-face mask woven from sharp black thorny briars covering his lower face, fierce amber eyes",
+        "prop": "massive thick whip made of cursed thorny briars dripping with glowing green poison",
+        "prop_desc": "a massive thick whip made of cursed thorny briars dripping with glowing green poison",
+        "scene": "gloomy dark deep elven forest filled with twisting massive tree roots and poisonous fog",
+        "outfit_alt": "rugged heavy armor made of thick leather intertwined with dark green and blood-red magical vines, sharp wooden pauldrons",
+        "colors": "dark green, blood red, dead wood black, toxic neon green",
+        "materials": "heavy rugged leather, magical thorny vines, sharp wood splinters",
+        "damage": "his heavy vine armor is ripped open with bleeding gashes, his half-face briar mask is broken revealing his gritting teeth, and the cursed thorny whip is snapped in half, dripping toxic green blood on the forest floor."
+    },
+    "char_0051_moonphase_templar": {
+        "name": "The Moonphase Templar (月影重装骑士)",
+        "features": "tall and majestic East Asian female moon elf knight, delicate refined East Asian facial features, soft almond eyes, smooth pale porcelain skin, long flowing silver hair, clad in ornate glowing silver-and-white plate armor crafted from moonstone, no Caucasian features",
+        "prop": "massive semi-translucent shield shaped like a crescent moon",
+        "prop_desc": "a massive semi-translucent shield shaped like a crescent moon, radiating a holy protective silver aurora",
+        "scene": "mystical elven forest at night, with bright moonlight filtering through giant ancient leaf canopies, lighting up glowing blue flora and floating luminescent spores",
+        "outfit_alt": "elegant silver silk tunic with leather boots and moon phase engravings",
+        "colors": "silver white, moon white, deep velvet blue, glowing cyan-blue",
+        "materials": "glowing moonstone, polished silver plates, velvet cloth",
+        "damage": "her ornate plate armor is deeply cracked and dented with sparks of silver moonlight leaking out, her crescent shield is split down the center with its protective aurora flickering erratically, and she stands wounded but defiant on a field of crushed forest leaves."
+    },
+    "char_0052_thunder_talismanist": {
+        "name": "The Thunder Talismanist (雷劫画符师)",
+        "features": "young energetic Chinese female Taoist talisman cultivator, short messy black hair in double-mytail tied with yellow ribbon, bright yellow eyes, carrying a large dark weathered lightning-struck wooden canvas on her back",
+        "prop": "calligraphy brush writing glowing yellow paper talismans in mid-air",
+        "prop_desc": "glowing yellow paper talismans with purple electrical arcs floating in mid-air",
+        "scene": "ruined ancient courtyard under dark thunderclouds and heavy rain with purple lightning",
+        "outfit_alt": "casual lightweight yellow and black crop-top and shorts with Taoist patterns",
+        "colors": "bright yellow, charcoal black, purple electric blue, charred wood black",
+        "materials": "charred lightning-struck wood, magical paper talismans, gold calligraphy ink",
+        "damage": "her yellow Taoist robe is heavily scorched with burn holes, her lightning-struck wood canvas is split down the middle, and she grits her teeth with sparks of wild purple electricity escaping uncontrollably from her body."
+        },
+    "char_0053_venom_assassin": {
+        "name": "The Poison-Ivy Assassin (毒藤魅影)",
+        "features": "alluring deadly female wood elf assassin, tanned bronze skin, long flowing messy black hair, voluptuous curvy body, dark green enchanting eyes",
+        "prop": "slithering fluorescent green venomous vines intertwined around her fingers",
+        "prop_desc": "slithering fluorescent green venomous vines dripping green toxic droplets",
+        "scene": "dark poisonous elven swamp, glowing green toxic spores floating, twisting roots",
+        "outfit_alt": "seductive emerald silk evening dress with thorned vine straps",
+        "colors": "dark emerald green, toxic neon green, dark crimson red, bronze gold",
+        "materials": "tight thorned leather, translucent emerald silk, glowing venomous vines",
+        "damage": "her tight red leather outfit is deeply slashed with poison gas leaking, her black hair is damp and wild, her glowing vines are severed and bleeding toxic sap, standing wounded on a swamp rock."
+    },
+    "char_0054_petal_dancer": {
+        "name": "The Blossom Dancer (繁花舞姬)",
+        "features": "ethereal gorgeous female flower elf dancer, fair radiant skin, long flowing pastel-pink hair adorned with blossoms, bright emerald green eyes",
+        "prop": "whirlwind of sharp glowing pink flower petals floating in the air",
+        "prop_desc": "a whirlwind of sharp glowing pink flower petals floating and dancing in mid-air",
+        "scene": "magical sunlit elven forest clearing filled with blossoming flowers, golden sunbeams piercing ancient canopy",
+        "outfit_alt": "elegant floral festival silk robe with flower crown and barefoot ankle bells",
+        "colors": "pastel pink, blossom white, fresh leaf green, sunlit gold",
+        "materials": "translucent gossamer petals, soft green silk ribbons, glowing pollen spores",
+        "damage": "her translucent petal dress is torn and frayed with scattered rose petals, her pink hair is disheveled, and she sits gracefully on a bed of fallen leaves with a whirlwind of fading pink petals."
     }
 }
 
@@ -566,7 +632,7 @@ Current asset goal:
 Generate a {asset_label}. Focus on {current_focus}.
 
 Style:
-{style_desc}, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+{style_desc}, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting, high-fidelity production-ready asset.
 
 Composition:
 {current_composition}. Keep the character clearly readable. Avoid unnecessary extra characters.
@@ -1263,39 +1329,26 @@ async def scan_conversation_history(agent: BrowserAgent):
             });
         };
         
-        for (let i = 0; i < 30; i++) {
-            if (document.querySelectorAll('section[data-turn]').length > 0) break;
-            await new Promise(r => setTimeout(r, 100));
-        }
-        
-        collectTurns();
-        
-        // Fast scroll UP in 1500px steps
+        // Fast scroll UP in 3000px steps (max 5 steps)
         let currentScroll = container.scrollTop;
-        while (currentScroll > 0) {
-            currentScroll = Math.max(0, currentScroll - 1500);
+        let stepCount = 0;
+        while (currentScroll > 0 && stepCount < 5) {
+            stepCount++;
+            currentScroll = Math.max(0, currentScroll - 3000);
             container.scrollTop = currentScroll;
-            container.dispatchEvent(new Event('scroll', { bubbles: true }));
-            await new Promise(r => setTimeout(r, 100));
             collectTurns();
         }
         
-        await new Promise(r => setTimeout(r, 1000));
-        collectTurns();
-        
-        // Fast scroll DOWN in 1500px steps
+        // Fast scroll DOWN in 3000px steps (max 5 steps)
         const maxScroll = container.scrollHeight - container.clientHeight;
-        while (currentScroll < maxScroll) {
-            currentScroll = Math.min(maxScroll, currentScroll + 1500);
+        stepCount = 0;
+        while (currentScroll < maxScroll && stepCount < 5) {
+            stepCount++;
+            currentScroll = Math.min(maxScroll, currentScroll + 3000);
             container.scrollTop = currentScroll;
-            container.dispatchEvent(new Event('scroll', { bubbles: true }));
-            await new Promise(r => setTimeout(r, 100));
             collectTurns();
         }
-        
-        await new Promise(r => setTimeout(r, 500));
         collectTurns();
-        
         container.scrollTop = originalScrollTop;
         
         const result = [];
@@ -1378,19 +1431,37 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
         logging.info(f"✨ [智能跳过] 资产文件已存在于: {display_path}，直接跳过生成进入下一项！")
         return True
 
-    # 1. 载入历史专属会话 URL
+    # 1. 载入历史专属会话 URL，如已经在该会话中则直接复用，不重新刷新加载
     sessions = load_sessions()
     saved_url = sessions.get(char_id)
     
+    current_url = ""
+    try:
+        current_url = await agent.evaluate("window.location.href") or ""
+    except Exception:
+        pass
+
     if saved_url:
-        logging.info(f"检测到角色「{char_name}」拥有已缓存的专属会话。正在导入跳转...")
-        await agent.navigate(saved_url)
+        if current_url and current_url.split("?")[0] == saved_url.split("?")[0]:
+            logging.info(f"✨ 当前已处于角色「{char_name}」的专属会话 ({saved_url})，直接在当前窗口连续发送！")
+            await asyncio.sleep(2.0)
+        else:
+            logging.info(f"检测到角色「{char_name}」拥有已缓存的专属会话。正在导入跳转...")
+            await agent.navigate(saved_url)
+            await asyncio.sleep(6.0)
     else:
-        logging.info(f"未找到角色「{char_name}」的历史会话，正在开启全新会话...")
-        await agent.navigate("https://chatgpt.com/")
-        
-    # 增加等待时间至 10.0 秒以令 ChatGPT 的 React 历史状态和 DOM 彻底加载和沉淀，100% 避免 race condition
-    await asyncio.sleep(10.0)
+        if current_url and "/c/" in current_url:
+            save_session(char_id, current_url)
+            saved_url = current_url
+            logging.info(f"✨ 发现当前页面已在对话中 ({current_url})，直接将其绑定为角色「{char_name}」的专属会话！")
+            await asyncio.sleep(1.0)
+        elif current_url and "chatgpt.com" in current_url:
+            logging.info(f"当前已处于 ChatGPT 主页，直接开启全新会话...")
+            await asyncio.sleep(2.0)
+        else:
+            logging.info(f"未找到角色「{char_name}」的历史会话，正在开启全新会话...")
+            await agent.navigate("https://chatgpt.com/")
+            await asyncio.sleep(6.0)
     
     # 2. 扫描已有大图缓存（做为后面触发 DALL-E 之后寻找新生成图片的基准）
     pre_srcs = await scan_existing_web_images(agent)
@@ -1400,16 +1471,11 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     
     # 3. 运行防虚拟化滚动收集，提取已生成的历史图与 prompt 的对应关系，并进行 Prompt 相似度精准匹配
     # 如果是已有缓存的专属会话，历史记录绝不应为空。如果是空，则很有可能是因为加载延迟，我们将进行重试
-    history_pairs = []
-    if saved_url:
-        for attempt in range(3):
-            history_pairs = await scan_conversation_history(agent)
-            if history_pairs:
-                break
-            logging.warning(f"⚠️ 警告：检测到专属会话历史解析为空 (第 {attempt+1}/3 次尝试)，等待 3 秒后重试...")
-            await asyncio.sleep(3.0)
-    else:
+    try:
         history_pairs = await scan_conversation_history(agent)
+    except Exception as err:
+        logging.warning(f"⚠️ 历史会话扫描略过: {err}")
+        history_pairs = []
     
     matched_image_src = None
     max_sim = 0.0
@@ -1535,6 +1601,14 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     # 7. 同步回写 JSON 数据库
     sync_new_image_to_json(char_id, img_type, TYPE_LABEL.get(img_type, img_type), local_path, prompt)
     
+    # 彻底确保会话 URL 存盘
+    try:
+        final_url = await agent.evaluate("window.location.href")
+        if final_url and "/c/" in final_url:
+            save_session(char_id, final_url)
+    except Exception:
+        pass
+
     logging.info(f"【成功同步】角色「{char_name}」的「{TYPE_LABEL.get(img_type, img_type)}」已全部就绪！")
     return True
 
@@ -5383,6 +5457,66 @@ Solid clean dark gray background."""
     bone_pipa_wraith_plan = expand_character_plan(bone_pipa_wraith_plan, 'char_0047_bone_pipa_wraith', '骨琶怨姬')
     withered_daoist_plan = expand_character_plan(withered_daoist_plan, 'char_0048_withered_daoist', '枯木妖道')
 
+    frostleaf_illusionist_plan = [
+        {
+            "char_id": "char_0049_frostleaf_illusionist",
+            "char_name": "霜叶幻术师",
+            "img_type": "main",
+            "prompt": "An epic high fantasy concept art of the Frostleaf Illusionist. A graceful and cold winter elf female with pale snow-like skin, long pointed elf ears, and flowing silver-blue hair, wearing an elegant flowy blue and white gradient robe with frost crystalizing on the hems. She is not holding a staff, but instead levitating a large glowing magical polyhedron ice crystal orb above her hands, refracting colorful holographic illusions. The setting is a breathtaking winter elven forest covered in thick white snow, surrounded by glowing blue bioluminescent flora and gentle falling snow. Cinematic rim lighting, hyper-realistic textures, ethereal magic atmosphere, 8k."
+        }
+    ]
+    frostleaf_illusionist_plan = expand_character_plan(frostleaf_illusionist_plan, 'char_0049_frostleaf_illusionist', '霜叶幻术师')
+
+    thorn_executioner_plan = [
+        {
+            "char_id": "char_0050_thorn_executioner",
+            "char_name": "荆棘行刑者",
+            "img_type": "main",
+            "prompt": "An epic dark fantasy concept art of the Thorn Executioner. A tall, muscular and fierce dark wood elf male warrior with tanned bronze skin and long pointed elf ears. His lower face is hidden behind a half-face mask woven from sharp black thorny briars, revealing only his fierce amber eyes. He wears rugged heavy armor made of thick leather intertwined with dark green and blood-red magical vines, featuring sharp wooden pauldrons. He grips a massive, thick whip made of cursed thorny briars dripping with glowing green poison. The setting is a gloomy, dark deep elven forest filled with twisting massive tree roots and poisonous fog. Cinematic rim lighting, hyper-realistic textures, wild and dangerous atmosphere, 8k."
+        }
+    ]
+    thorn_executioner_plan = expand_character_plan(thorn_executioner_plan, 'char_0050_thorn_executioner', '荆棘行刑者')
+
+    moonphase_templar_plan = [
+        {
+            "char_id": "char_0051_moonphase_templar",
+            "char_name": "月影重装骑士",
+            "img_type": "main",
+            "prompt": "A breathtaking high fantasy concept art of the Moonphase Templar. A tall and majestic East Asian female moon elf knight with delicate refined East Asian facial features, soft almond-shaped eyes, smooth pale porcelain skin, and long flowing silver hair. She is clad in ornate, glowing silver-and-white plate armor crafted from moonstone, reflecting soft blue moonlight. She holds a massive, semi-translucent shield shaped like a crescent moon, which radiates a holy, protective silver aurora. The setting is a mystical elven forest at night, with bright moonlight filtering through giant ancient leaf canopies. 3D octane render, hyper-realistic textures, 8k, no Caucasian features."
+        }
+    ]
+    moonphase_templar_plan = expand_character_plan(moonphase_templar_plan, 'char_0051_moonphase_templar', '月影重装骑士')
+
+    thunder_talismanist_plan = [
+        {
+            "char_id": "char_0052_thunder_talismanist",
+            "char_name": "雷劫画符师",
+            "img_type": "main",
+            "prompt": "An epic high fantasy concept art of the Thunder Talismanist. A young, energetic Chinese female Taoist talisman cultivator carrying a large, dark, weathered lightning-struck wooden canvas on her back. She wears a modified yellow and black Taoist robe designed for street mobility. She holds a calligraphy brush in her hand, writing glowing yellow paper talismans in mid-air. Ethereal purple electricity and lightning bolts arc around her and on the ground. The background is a ruined ancient courtyard under dark thunderclouds and heavy rain. Masterpiece, octane render, highly detailed, 8k."
+        }
+    ]
+    thunder_talismanist_plan = expand_character_plan(thunder_talismanist_plan, 'char_0052_thunder_talismanist', '雷劫画符师')
+
+    venom_assassin_plan = [
+        {
+            "char_id": "char_0053_venom_assassin",
+            "char_name": "毒藤魅影",
+            "img_type": "main",
+            "prompt": "A breathtaking dark fantasy concept art of the Poison-Ivy Assassin. An alluring and deadly female wood elf assassin with tanned bronze skin and long, flowing messy black hair. She wears a skin-tight, seductive outfit woven from dark red leather and thorned dark-green vines. She is controlling slithering, fluorescent green venomous vines in her fingers, standing in a dark poisonous swamp with glowing green spores floating. Masterpiece, unreal engine 5 render, highly detailed, 8k."
+        }
+    ]
+    venom_assassin_plan = expand_character_plan(venom_assassin_plan, 'char_0053_venom_assassin', '毒藤魅影')
+
+    petal_dancer_plan = [
+        {
+            "char_id": "char_0054_petal_dancer",
+            "char_name": "繁花舞姬",
+            "img_type": "main",
+            "prompt": "A breathtaking high fantasy concept art of the Blossom Dancer. An ethereal and gorgeous female flower elf dancer with fair radiant skin and long flowing pastel-pink hair adorned with flower blossoms. She wears a translucent gossamer dress made of pink rose petals and soft green silk ribbons, showing her graceful body. She is dancing gracefully amidst a whirlwind of sharp, glowing pink flower petals floating in the air. The setting is a magical sunlit elven forest clearing filled with blossoming flowers. Masterpiece, unreal engine 5 render, highly detailed, 8k."
+        }
+    ]
+    petal_dancer_plan = expand_character_plan(petal_dancer_plan, 'char_0054_petal_dancer', '繁花舞姬')
+
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
         rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan +
@@ -5395,7 +5529,7 @@ Solid clean dark gray background."""
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
         fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan + bone_pipa_wraith_plan + withered_daoist_plan
-    )
+     + frostleaf_illusionist_plan + thorn_executioner_plan + moonphase_templar_plan + thunder_talismanist_plan + venom_assassin_plan + petal_dancer_plan)
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
@@ -6481,7 +6615,7 @@ Current asset goal:
 Generate a character model sheet / standard character design reference. Focus on authoritative design reference showing the character standing neutrally in her default costume.
 
 Style:
-Modern forest fantasy concept art, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+Modern forest fantasy concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting, high-fidelity production-ready asset.
 
 Composition:
 Detailed full-body front view of the character standing in her default costume holding her signature full-sized leaf-carved oak bow (scaled proportionally to her body height). The side of the sheet shows detailed callouts of her bow and arrows. Even lighting, clean light gray background.
@@ -7792,7 +7926,7 @@ Current asset goal:
 Generate a main visual key art image. Focus on strong first impression, world mood, signature outfit, weapon, and emotional identity.
 
 Style:
-Eastern fantasy character concept art, cinematic fantasy concept art, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+Eastern fantasy character concept art, cinematic fantasy concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting, high-fidelity production-ready asset.
 
 Composition:
 Cinematic action pose. The scholar is dynamically waving his giant iron calligraphy brush in a sweeping motion, releasing a beautiful arc of flowing wet black calligraphy ink across the air. He is looking ahead with a focused, sharp gaze. Full-body or three-quarter character view, cinematic but readable, the character is the clear focal point.
@@ -7831,7 +7965,7 @@ Current asset goal:
 Generate a cover image. Focus on iconic character presence in a dynamic pose, high emotional hook, dramatic lighting, and vertical composition suitable for a card banner or cover poster.
 
 Style:
-Eastern fantasy character concept art, cinematic promotional key art, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+Eastern fantasy character concept art, cinematic promotional key art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting, high-fidelity production-ready asset.
 
 Composition:
 Strong vertical cover framing. The scholar is captured in a dynamic action pose in the center of the frame, drawing massive floating calligraphy characters in mid-air with his giant calligraphy brush. Flowing ink particles and glowing dust swirl around him. High contrast cinematic lighting, highly detailed, 8k.
@@ -7913,7 +8047,7 @@ Current asset goal:
 Generate a fully colored detail sheet / close-up reference. Focus on close-up panels of the character's features: colored hair details, colored face close-up, colored costume embroidery, and realistic signature prop texture.
 
 Style:
-Eastern fantasy character concept art, high-fidelity character concept art, detailed fabric and material rendering, coherent design language, consistent facial identity, production-ready asset.
+Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting, high-fidelity production-ready asset.
 
 Composition:
 Close-up panels arranged neatly on a plain background. All panels must be fully colored, rendered, and detailed.

@@ -29,12 +29,21 @@ async def handler(websocket, path=None):
     
     if req_path.rstrip("/") == "/client":
         print("[Server] Python controller client connected!")
+        print("[Server] Python controller client connected!")
         try:
             async for message in websocket:
                 try:
                     data = json.loads(message)
                     cmd_id = data.get("id")
                     if cmd_id:
+                        if not connected_extension:
+                            print("[Server] Extension not connected yet. Waiting up to 30s for extension connection...")
+                            for _ in range(30):
+                                if connected_extension:
+                                    print("[Server] Extension connected during wait!")
+                                    break
+                                await asyncio.sleep(1)
+
                         if connected_extension:
                             # Map this command ID to the active client connection
                             connected_clients[cmd_id] = (websocket, connected_extension)
