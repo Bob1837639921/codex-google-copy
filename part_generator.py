@@ -1521,13 +1521,13 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
             await agent.navigate(saved_url)
             await asyncio.sleep(6.0)
     else:
+        # 没有已保存的专属会话，必须开启一个全新的专属会话，绝不能复用其他角色的 /c/ 会话！
         if current_url and "/c/" in current_url:
-            save_session(char_id, current_url)
-            saved_url = current_url
-            logging.info(f"✨ 发现当前页面已在对话中 ({current_url})，直接将其绑定为角色「{char_name}」的专属会话！")
-            await asyncio.sleep(1.0)
+            logging.info(f"检测到当前处于其他角色的会话 ({current_url})，正在为新角色「{char_name}」开启全新独立会话...")
+            await agent.navigate("https://chatgpt.com/")
+            await asyncio.sleep(6.0)
         elif current_url and "chatgpt.com" in current_url:
-            logging.info(f"当前已处于 ChatGPT 主页，直接开启全新会话...")
+            logging.info(f"当前已处于 ChatGPT 主页空白会话，为新角色「{char_name}」直接启动...")
             await asyncio.sleep(2.0)
         else:
             logging.info(f"未找到角色「{char_name}」的历史会话，正在开启全新会话...")
