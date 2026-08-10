@@ -357,6 +357,28 @@ LOCKS = {
         "colors": "ink black, crimson red, antique bronze gold, spirit cyan blue, leather brown",
         "materials": "polished bronze gears, carved seasoned wood, crimson silk cheongsam, glowing ethereal blue thread",
         "damage": "her short cheongsam is torn at the seams, her bronze glove sparks with blue electricity, wooden puppets are broken into pieces on the floor, sitting tiredly next to scattered gear fragments."
+    },
+    "char_0057_azure_sword_spirit": {
+        "name": "The Azure Sword Spirit (青霄剑灵·流光)",
+        "features": "ethereal gorgeous East Asian female sword spirit, fair porcelain skin, sharp cold cyan-blue eyes with sword glint, long high ponytail hair fading from ink-black to translucent azure-blue with antique jade hairpin, wearing sleek azure-and-white swordmaster silk tunic with sharp blade-like hem",
+        "prop": "a legendary ancient glowing cyan-blue crystalline broadsword, surrounded by 8 floating semi-transparent azure flying daggers arranged in a halo behind her",
+        "prop_desc": "a legendary azure crystalline broadsword and 8 floating glowing flying daggers",
+        "scene": "floating ancient sword grave mountain pavilion amidst swirling clouds and soaring energy sword-auras under blue daylight",
+        "outfit_alt": "regal immortal sword deity silk dress with flowing ribbons and engraved silver vambraces",
+        "colors": "azure blue, pure white, jade green, blade silver, antique gold",
+        "materials": "crystal sword blades, translucent energy veil, embroidered white silk, polished jade",
+        "damage": "her white tunic is cut and frayed with fading azure sword energy, standing proudly holding her cracked blade in a rain of falling spirit sword fragments."
+    },
+    "char_0058_nether_dragon_shaman": {
+        "name": "The Nether Dragon Shaman (九幽龙巫·刹夜)",
+        "features": "handsome mysterious young East Asian dragon shaman, slender silhouette, black obsidian dragon horns on forehead, heterochromia eyes (left cyan blue, right dark gold), cinnabar dragon tattoo on eye corner, wearing dark embroidered Miao-style shaman robes with elaborate antique silver dragon neck torcs and bone beads",
+        "prop": "carved ancient dragon-bone shaman staff topped with glowing soul orb, with a translucent ethereal black dragon spirit coiling around him and glowing spectral butterflies",
+        "prop_desc": "a carved dragon-bone shaman staff, coiling ethereal dragon spirit, and glowing spectral butterflies",
+        "scene": "misty ancient tribal dragon shrine in deep bamboo forest at twilight, surrounded by glowing blue spirit lanterns and mysterious carved totems",
+        "outfit_alt": "regal dragon priest ceremonial feathered cape with grand silver crown and ceremonial daggers",
+        "colors": "pitch black, spectral cyan blue, antique Miao silver, phantom purple, cinnabar red",
+        "materials": "textured tribal embroidered fabric, antique silver, polished dragon bone, glowing spirit flame",
+        "damage": "his embroidered robes are torn with dragon spirit fading into smoke, dragon horn slightly chipped, resting against a broken dragon totem with glowing spectral embers."
     }
 }
 
@@ -501,6 +523,26 @@ def expand_character_plan(plan, char_id, char_name):
         outfit = "asymmetrical stylish black-and-crimson mechanic short cheongsam with leather utility belts and knee-high leather boots"
         accessories_weapon = "ornate bronze mechanical puppet glove on right arm with glowing blue spirit strings, floating wooden clockwork puppets, and spinning gear blades"
         fixed_traits = "dark brown twin-tails with bronze gears, black-and-crimson short cheongsam, bronze mechanical glove, glowing blue spirit strings, no Caucasian features"
+        style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
+    elif char_id == 'char_0057_azure_sword_spirit':
+        gender_age = "young woman, ethereal and cold immortal sword spirit"
+        body_shape = "slender agile swordmaster build, poised and sharp posture"
+        face = "fair porcelain skin, cold focused gaze, cyan-blue sword-energy mark on forehead, aloof serene expression"
+        hair = "long flowing high ponytail hair fading from ink-black to translucent azure-blue with antique carved jade hairpin"
+        eyes = "striking icy cyan-blue eyes glowing with sharp sword aura"
+        outfit = "sleek azure-and-white swordmaster silk tunic with sharp blade-like hem, engraved silver vambraces, and pale jade ribbons"
+        accessories_weapon = "a legendary ancient glowing cyan-blue crystalline broadsword, and 8 floating semi-transparent azure flying daggers arranged in a halo behind her"
+        fixed_traits = "azure-tipped ponytail, jade sword hairpin, azure-white tunic, glowing cyan crystalline broadsword, 8 floating flying daggers, no Caucasian features"
+        style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
+    elif char_id == 'char_0058_nether_dragon_shaman':
+        gender_age = "young man, handsome, mysterious and charismatic dragon shaman presence"
+        body_shape = "tall slender silhouette, elegant and eerie shamanistic posture"
+        face = "striking handsome features, pale skin, heterochromia eyes (left cyan-blue, right dark gold), cinnabar dragon tattoo at outer eye corner"
+        hair = "messy jet-black mid-length layered hair adorned with tiny antique silver dragon rings and bone beads"
+        eyes = "captivating heterochromia eyes (left cyan-blue, right dark gold)"
+        outfit = "intricate dark embroidered Miao-style shaman robes layered with dark feathers, grand antique silver dragon neck torcs, and engraved bone charms"
+        accessories_weapon = "carved ancient dragon-bone shaman staff topped with glowing soul orb, a coiling translucent ethereal black dragon spirit, and glowing spectral butterflies"
+        fixed_traits = "black dragon horns on forehead, heterochromia eyes, silver dragon torc, dragon-bone staff, coiling ethereal dragon spirit, no Caucasian features"
         style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
     else:
         gender_age = "young appearance"
@@ -5608,6 +5650,26 @@ Solid clean dark gray background."""
     ]
     puppet_artificer_plan = expand_character_plan(puppet_artificer_plan, 'char_0056_puppet_artificer', '千机偃灵·墨巧')
 
+    azure_sword_spirit_plan = [
+        {
+            "char_id": "char_0057_azure_sword_spirit",
+            "char_name": "青霄剑灵·流光",
+            "img_type": "main",
+            "prompt": "A breathtaking high fantasy concept art of the Azure Sword Spirit. An ethereal and cold immortal East Asian female sword spirit with fair porcelain skin, sharp cyan-blue eyes with sword glint, and long flowing high ponytail hair fading from ink-black to translucent azure-blue with an antique carved jade hairpin. She wears a sleek azure-and-white swordmaster silk tunic with sharp blade-like hem and engraved silver vambraces. She holds a legendary ancient glowing cyan-blue crystalline broadsword, surrounded by 8 floating semi-transparent azure flying daggers arranged in a halo behind her. Floating sword grave mountain pavilion amidst swirling clouds. 3D octane render, 8k, no Caucasian features."
+        }
+    ]
+    azure_sword_spirit_plan = expand_character_plan(azure_sword_spirit_plan, 'char_0057_azure_sword_spirit', '青霄剑灵·流光')
+
+    nether_dragon_shaman_plan = [
+        {
+            "char_id": "char_0058_nether_dragon_shaman",
+            "char_name": "九幽龙巫·刹夜",
+            "img_type": "main",
+            "prompt": "A breathtaking high fantasy concept art of the Nether Dragon Shaman. A handsome and mysterious young East Asian dragon shaman with obsidian black dragon horns on his forehead, pale skin, heterochromia eyes (left cyan-blue, right dark gold), and a subtle cinnabar dragon tattoo at his eye corner. He is clad in intricate dark embroidered Miao-style shaman robes layered with dark feathers, grand antique silver dragon neck torcs, and bone charms. He wields a carved ancient dragon-bone shaman staff topped with a glowing soul orb, with a translucent ethereal black dragon spirit coiling around him amidst glowing spectral butterflies. Misty ancient tribal dragon shrine at twilight. 3D octane render, 8k, no Caucasian features."
+        }
+    ]
+    nether_dragon_shaman_plan = expand_character_plan(nether_dragon_shaman_plan, 'char_0058_nether_dragon_shaman', '九幽龙巫·刹夜')
+
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
         rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan +
@@ -5621,7 +5683,7 @@ Solid clean dark gray background."""
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
         fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan + bone_pipa_wraith_plan + withered_daoist_plan
      + frostleaf_illusionist_plan + thorn_executioner_plan + moonphase_templar_plan + thunder_talismanist_plan + venom_assassin_plan + petal_dancer_plan
-     + vermilion_sovereign_plan + puppet_artificer_plan)
+     + vermilion_sovereign_plan + puppet_artificer_plan + azure_sword_spirit_plan + nether_dragon_shaman_plan)
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
