@@ -730,6 +730,41 @@ async function executeHover(tabId, selector, msgId, foreground = false) {
     if (!moved) {
         if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
         return false;
+    await ensureFakeCursor(tabId);
+    const selectorLiteral = jsString(selector);
+    const codeMove = `
+        (() => {
+            const el = document.querySelector(${selectorLiteral});
+            if (!el) return false;
+            
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            setTimeout(() => {
+                const rect = el.getBoundingClientRect();
+                const cursor = document.getElementById('ai-fake-cursor');
+                if (cursor) {
+                    if (window.__ai_cursor_hide_timeout) {
+                        clearTimeout(window.__ai_cursor_hide_timeout);
+                    }
+                    
+                    cursor.style.opacity = '${CURSOR_ACTIVE_OPACITY}';
+                    cursor.style.left = (rect.left + rect.width / 2) + 'px';
+                    cursor.style.top = (rect.top + rect.height / 2) + 'px';
+                    
+                    window.__ai_cursor_hide_timeout = setTimeout(() => {
+                        const cur = document.getElementById('ai-fake-cursor');
+                        if (cur) cur.style.opacity = '${CURSOR_IDLE_OPACITY}';
+                    }, ${CURSOR_IDLE_DELAY_MS});
+                }
+            }, 300);
+            return true;
+        })();
+    `;
+    const moveResult = await sendCommand(tabId, 'Runtime.evaluate', { expression: codeMove, returnByValue: true });
+    const moved = moveResult.result?.value;
+    if (!moved) {
+        if(msgId) socket.send(JSON.stringify({ id: msgId, status: 'error', error: `Element not found for selector: ${selector}` }));
+        return false;
     }
     
     setTimeout(() => {
@@ -755,6 +790,26 @@ async function executeClick(tabId, selector, modeOrMsgId, msgId, foreground = fa
     
     setTimeout(async () => {
         try {
+            const codeCoord = `
+                (() => {
+                    const el = document.querySelector(${selectorLiteral});
+                    if (!el) return null;
+                    const rect = el.getBoundingClientRect();
+                    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                })()
+            `;
+            const coordRes = await sendCommand(tabId, 'Runtime.evaluate', { expression: codeCoord, returnByValue: true });
+            const coord = coordRes.result?.value;
+            
+            if (coord) {
+                // 1. Dispatch real CDP native mouse click with trusted events
+                const x = Math.round(coord.x);
+                const y = Math.round(coord.y);
+                await sendCommand(tabId, 'Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+                await sendCommand(tabId, 'Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1 });
+                await sendCommand(tabId, 'Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1 });
+            }
+
             const codeClick = `
                 (async () => {
                     const el = document.querySelector(${selectorLiteral});

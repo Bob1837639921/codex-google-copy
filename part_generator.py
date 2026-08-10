@@ -335,6 +335,28 @@ LOCKS = {
         "colors": "pastel pink, blossom white, fresh leaf green, sunlit gold",
         "materials": "translucent gossamer petals, soft green silk ribbons, glowing pollen spores",
         "damage": "her translucent petal dress is torn and frayed with scattered rose petals, her pink hair is disheveled, and she sits gracefully on a bed of fallen leaves with a whirlwind of fading pink petals."
+    },
+    "char_0055_vermilion_sovereign": {
+        "name": "The Vermilion Sovereign (朱雀天尊·凤仪)",
+        "features": "majestic gorgeous East Asian empress goddess with noble refined features, sharp almond eyes, radiant skin, long black hair accented with glowing golden feather strands, wearing a crimson-and-gold phoenix-feather gossamer silk robe with gold chest armor",
+        "prop": "swirling sacred solar flames and a massive glowing golden-red phoenix aura soaring behind her",
+        "prop_desc": "swirling sacred solar flames and glowing crimson-and-gold phoenix feather talismans",
+        "scene": "grand celestial imperial palace floating above a dramatic sunset cloud sea, with golden light beams and glowing fire sparks",
+        "outfit_alt": "regal ceremonial crimson silk empress gown with an imperial phoenix crown and flowing gold-embroidered train",
+        "colors": "crimson red, radiant gold, solar flame orange, cinnabar, imperial gold",
+        "materials": "phoenix feather gossamer silk, engraved polished gold armor, translucent flame veil, glowing fiery plumes",
+        "damage": "her crimson robe is scorched and torn with fire embers fading, golden armor cracked, standing proudly with flickering solar flame sparks on a broken celestial stone altar."
+    },
+    "char_0056_puppet_artificer": {
+        "name": "The Puppet Artificer (千机偃灵·墨巧)",
+        "features": "clever cute young East Asian female puppet master, porcelain skin, dark brown twin-tails with small bronze gears and red ribbons, stylish asymmetrical black-and-crimson short cheongsam, ornate bronze mechanical puppet glove on one arm",
+        "prop": "glowing blue spirit strings controlling floating wooden clockwork puppets and spinning bronze gear blades",
+        "prop_desc": "intricate wooden clockwork puppets, spinning bronze gear blades, and glowing blue spirit strings",
+        "scene": "traditional ancient workshop filled with blueprints, wooden scrolls, bronze gears, and mechanical puppet components",
+        "outfit_alt": "stylish steampunk scholar mechanic coat with brass goggles and leather tool apron",
+        "colors": "ink black, crimson red, antique bronze gold, spirit cyan blue, leather brown",
+        "materials": "polished bronze gears, carved seasoned wood, crimson silk cheongsam, glowing ethereal blue thread",
+        "damage": "her short cheongsam is torn at the seams, her bronze glove sparks with blue electricity, wooden puppets are broken into pieces on the floor, sitting tiredly next to scattered gear fragments."
     }
 }
 
@@ -460,6 +482,26 @@ def expand_character_plan(plan, char_id, char_name):
         accessories_weapon = "decaying dark peach-wood sword dripping black liquid, and floating black paper talismans"
         fixed_traits = "wooden mask, tattered dark purple robes, decaying peach-wood sword, floating black talismans"
         style_desc = "Eastern fantasy ink-wash character concept art"
+    elif char_id == 'char_0055_vermilion_sovereign':
+        gender_age = "young woman, majestic and drop-dead gorgeous empress goddess"
+        body_shape = "tall slender silhouette, regal and commanding posture"
+        face = "noble refined East Asian features, sharp almond eyes, golden phoenix mark on forehead, majestic expression"
+        hair = "long flowing black hair cascading to her waist with glowing golden feather strands and phoenix hairpin"
+        eyes = "radiant golden-red phoenix eyes, sharp and authoritative"
+        outfit = "ultra-luxurious flowing crimson-and-gold phoenix-feather gossamer silk robe with delicate gold chest armor and phoenix ornaments"
+        accessories_weapon = "swirling sacred solar flames and a massive glowing golden-red phoenix aura soaring behind her"
+        fixed_traits = "crimson-gold phoenix robe, solar flames, golden phoenix forehead mark, soaring phoenix aura, no Caucasian features"
+        style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
+    elif char_id == 'char_0056_puppet_artificer':
+        gender_age = "young woman, clever and cute genius mechanic presence"
+        body_shape = "petite agile build, nimble and lively posture"
+        face = "delicate porcelain skin, large expressive amber-brown eyes, witty and curious smile"
+        hair = "dark brown twin-tails adorned with small bronze gears and red ribbon bells"
+        eyes = "bright amber-brown eyes full of curiosity and wit"
+        outfit = "asymmetrical stylish black-and-crimson mechanic short cheongsam with leather utility belts and knee-high leather boots"
+        accessories_weapon = "ornate bronze mechanical puppet glove on right arm with glowing blue spirit strings, floating wooden clockwork puppets, and spinning gear blades"
+        fixed_traits = "dark brown twin-tails with bronze gears, black-and-crimson short cheongsam, bronze mechanical glove, glowing blue spirit strings, no Caucasian features"
+        style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
     else:
         gender_age = "young appearance"
         body_shape = "slender build"
@@ -577,7 +619,7 @@ def expand_character_plan(plan, char_id, char_name):
             background = "Clean light background"
             asset_label = "outfit breakdown sheet"
         elif t == "damageState":
-            focus = f"progressive clothing damage and weathering: {damage}. Show 3 views side-by-side: left, default; middle, battle-worn; right, extreme damaged state"
+            focus = f"tactical battle-worn aesthetic and weathering: {damage}. Show 3 views side-by-side: left, pristine default; middle, light combat wear; right, seasoned battle-tested state with frayed hemlines and atmospheric dust"
             composition = "Show three side-by-side full-body views of the same character standing, showing wear and tear progression"
             background = "Solid clean dark gray background"
             asset_label = "damage state variants"
@@ -720,13 +762,17 @@ class BrowserAgent:
         logging.info(f"👉 [模拟真人点击] 正在移动并点击: {selector}")
         return await self._send_command("click", selector=selector)
 
-    async def type(self, selector: str, text: str, mode: str = "smart"):
-        logging.info(f"👉 [模拟真人输入] 正在移动并输入文本 (mode={mode}): '{text[:40]}...' 到 {selector}")
-        return await self._send_command("type", selector=selector, text=text, mode=mode)
+    async def type(self, selector: str, text: str, mode: str = "smart", submit: bool = True):
+        logging.info(f"👉 [模拟真人输入] 正在移动并输入文本 (mode={mode}, submit={submit}): '{text[:40]}...' 到 {selector}")
+        return await self._send_command("type", selector=selector, text=text, mode=mode, submit=submit)
 
     async def hover(self, selector: str):
         logging.info(f"👉 [模拟真人悬停] 正在移动并悬停至: {selector}")
         return await self._send_command("hover", selector=selector)
+
+    async def send_key(self, key: str):
+        logging.info(f"👉 [模拟真人按键] 发送按键: {key}")
+        return await self._send_command("press", key=key)
 
     async def fetch_as_file(self, url: str, dest_path: str) -> dict:
         """
@@ -989,42 +1035,54 @@ def archive_image(downloaded_file: str, char_name: str, char_id: str, img_type: 
 async def trigger_dalle_generation(agent: BrowserAgent, prompt: str):
     logging.info(f"向 ChatGPT 输入绘制 Prompt (模拟真人): {prompt[:80]}...")
     
-    # 1. 使用我们通用的 type 接口输入 prompt，带有人机滑动和输入动画！
-    res = await agent.type("#prompt-textarea", prompt, mode="direct")
-    if res == "textarea_not_found":
-        raise RuntimeError("未能在 ChatGPT 页面中找到输入框，请确认当前标签页处于 ChatGPT 对话中！")
+    # 1. ProseMirror 原生事务驱动文本插入
+    prompt_json = json.dumps(prompt)
+    js_input = f"""
+    (() => {{
+        const el = document.querySelector('#prompt-textarea');
+        if (!el) return "textarea_not_found";
         
-    await asyncio.sleep(1.0) # 等待使发送按钮就绪并渲染出来
-    
-    # 2. 找到发送按钮并为其设置临时 ID，进行真人模拟点击发送！
-    js_find_send = """
-    (() => {
-        const sendBtn = document.querySelector('button[data-testid="composer-submit-button"]') ||
-                        document.querySelector('button[data-testid="send-button"]') || 
-                        document.querySelector('button[aria-label="Send message"]') ||
-                        document.querySelector('button.mb-1.me-1') ||
-                        document.querySelector('button:has(svg[viewBox="0 0 24 24"])');
-        if (!sendBtn) return "not_found";
-        sendBtn.id = "tmp-send-btn";
+        el.focus();
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        // Execute insertText on active selection in ProseMirror
+        document.execCommand('insertText', false, {prompt_json});
+        el.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        el.dispatchEvent(new Event('change', {{ bubbles: true }}));
         return "ok";
+    }})()
+    """
+    input_res = await agent.evaluate(js_input)
+    if input_res == "textarea_not_found":
+        # 降级尝试通用 type
+        res = await agent.type("#prompt-textarea", prompt, mode="direct", submit=False)
+        if res == "textarea_not_found":
+            raise RuntimeError("未能在 ChatGPT 页面中找到输入框，请确认当前标签页处于 ChatGPT 对话中！")
+        
+    await asyncio.sleep(0.6) # 等待使发送按钮就绪并渲染出来
+    
+    # 2. 找到发送按钮并触发点击
+    js_send = """
+    (() => {
+        const btn = document.querySelector('#composer-submit-button, button[data-testid="send-button"], button.composer-submit-btn');
+        if (!btn) return { status: 'no_btn' };
+        
+        btn.focus();
+        const opts = { bubbles: true, cancelable: true, view: window, buttons: 1 };
+        btn.dispatchEvent(new PointerEvent('pointerdown', opts));
+        btn.dispatchEvent(new MouseEvent('mousedown', opts));
+        btn.dispatchEvent(new PointerEvent('pointerup', opts));
+        btn.dispatchEvent(new MouseEvent('mouseup', opts));
+        btn.click();
+        return { status: 'clicked' };
     })()
     """
-    find_res = await agent.evaluate(js_find_send)
-    if find_res == "ok":
-        await agent.click("#tmp-send-btn")
-    else:
-        # 兜底直接点击 DOM
-        logging.warning("找不到发送按钮，通过底层 DOM 直接触发发送...")
-        await agent.evaluate("""
-            (() => {
-                const sendBtn = document.querySelector('button[data-testid="composer-submit-button"]') ||
-                                document.querySelector('button[data-testid="send-button"]') || 
-                                document.querySelector('button[aria-label="Send message"]');
-                if (sendBtn) sendBtn.click();
-            })()
-        """)
-        
-    logging.info("提示词已由虚拟鼠标模拟输入并触发发送，等待 DALL-E 绘图。")
+    await agent.evaluate(js_send)
+    logging.info("提示词已由虚拟输入驱动并提交，等待 DALL-E 绘图。")
 
 async def get_assistant_turn_count(agent: BrowserAgent) -> int:
     """
@@ -1168,8 +1226,11 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pr
             }}
 
             // 3. 检查是否有生图指示或停止按钮，代表生图已经在运行了
-            const hasStopButton = document.querySelector('button[data-testid="stop-button"]') !== null ||
-                                  document.querySelector('#composer-submit-button[data-testid="stop-button"]') !== null;
+            const stopBtn = document.querySelector('button[data-testid="stop-button"], #composer-submit-button[data-testid="stop-button"]');
+            const hasStopButton = stopBtn !== null && !stopBtn.disabled && (
+                stopBtn.getAttribute('aria-label')?.includes('停止') || 
+                stopBtn.getAttribute('aria-label')?.includes('Stop')
+            );
             
             const hasImageLoadingState = document.querySelector('[data-testid*="image-gen-loading"]') !== null ||
                                          document.querySelector('[data-testid="image-gen-loading-state-dots"]') !== null;
@@ -1192,6 +1253,13 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pr
             const hasThinking = isThinkingCurrently || hasSpinOrLoader;
             
             const isGeneratingCurrently = hasStopButton || hasThinking || hasImageLoadingState;
+
+            if (assistantTurns.length > {pre_assistant_count} && !isGeneratingCurrently && lastTurn) {{
+                const lastTurnImgs = Array.from(lastTurn.querySelectorAll('img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'));
+                if (lastTurnImgs.length === 0) {{
+                    return {{ "status": "no_image_in_reply", "text": lastTurn.innerText.slice(0, 100) }};
+                }}
+            }}
 
             const preSrcs = new Set({pre_srcs_json});
             const imgs = Array.from(document.querySelectorAll('img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'));
@@ -1234,6 +1302,9 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pr
                     return res.get("src")
                 else:
                     logging.warning("⚠️ 警告：检测到图片 done，但生图流程未见启动，疑似旧缓存图片，继续等待新图...")
+            elif status == "no_image_in_reply":
+                logging.warning(f"⚠️ ChatGPT 仅返回了纯文本回复而未触发 DALL-E 作图: {res.get('text')}")
+                return "no_image"
             elif status == "quota_limit":
                 logging.error(f"⚠️ [生图限额拦截] 检测到 ChatGPT 官方生图限额已满：{res.get('error')}")
                 return "quota_limit"
@@ -5517,6 +5588,26 @@ Solid clean dark gray background."""
     ]
     petal_dancer_plan = expand_character_plan(petal_dancer_plan, 'char_0054_petal_dancer', '繁花舞姬')
 
+    vermilion_sovereign_plan = [
+        {
+            "char_id": "char_0055_vermilion_sovereign",
+            "char_name": "朱雀天尊·凤仪",
+            "img_type": "main",
+            "prompt": "A breathtaking high fantasy concept art of the Vermilion Sovereign. A majestic and drop-dead gorgeous East Asian empress goddess with noble refined features, sharp almond eyes, radiant skin, and flowing long black hair accented with glowing golden feather strands. She is clad in an ultra-luxurious flowing crimson-and-gold phoenix-feather gossamer silk robe with delicate gold chest armor and phoenix ornaments. She commands swirling sacred solar flames and a massive glowing golden-red phoenix aura soaring behind her. Floating celestial palace in the sunset sky. 3D octane render, photorealistic, 8k, no Caucasian features."
+        }
+    ]
+    vermilion_sovereign_plan = expand_character_plan(vermilion_sovereign_plan, 'char_0055_vermilion_sovereign', '朱雀天尊·凤仪')
+
+    puppet_artificer_plan = [
+        {
+            "char_id": "char_0056_puppet_artificer",
+            "char_name": "千机偃灵·墨巧",
+            "img_type": "main",
+            "prompt": "A breathtaking stylized concept art of the Puppet Artificer. A clever and cute young East Asian female mechanical puppet master with delicate porcelain skin and dark brown twin-tails adorned with small bronze gears and red ribbons. She wears an asymmetrical stylish black-and-crimson mechanic short cheongsam with leather utility belts and an ornate bronze mechanical puppet glove on one arm. Glowing blue spirit strings extend from her fingertips, controlling floating intricate wooden clockwork puppets and spinning bronze gear blades around her. Cozy traditional workshop background filled with scrolls and gears. 3D octane render, 8k, no Caucasian features."
+        }
+    ]
+    puppet_artificer_plan = expand_character_plan(puppet_artificer_plan, 'char_0056_puppet_artificer', '千机偃灵·墨巧')
+
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
         rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan +
@@ -5529,7 +5620,8 @@ Solid clean dark gray background."""
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
         fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan + bone_pipa_wraith_plan + withered_daoist_plan
-     + frostleaf_illusionist_plan + thorn_executioner_plan + moonphase_templar_plan + thunder_talismanist_plan + venom_assassin_plan + petal_dancer_plan)
+     + frostleaf_illusionist_plan + thorn_executioner_plan + moonphase_templar_plan + thunder_talismanist_plan + venom_assassin_plan + petal_dancer_plan
+     + vermilion_sovereign_plan + puppet_artificer_plan)
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
