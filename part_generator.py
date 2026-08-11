@@ -381,15 +381,15 @@ LOCKS = {
         "damage": "his embroidered robes are torn with dragon spirit fading into smoke, dragon horn slightly chipped, resting against a broken dragon totem with glowing spectral embers."
     },
     "char_0059_sword_spirit_prime": {
-        "name": "The Primordial Azure Sword Soul (青霄剑灵·真形化身)",
-        "features": "transcendent ethereal young female humanoid sword spirit avatar, crystalline translucent pale skin, glowing bright cyan sword sigil on forehead, luminous cyan sword pupils, floating weightlessly barefoot with spirit toes touching sword qi ripples, long crystalline silver-to-cyan hair floating like glowing sword light trails with carved frost-jade dagger hairpin, wearing gossamer spirit robes with blade-sharp translucent cyan edges and glowing silver sword-soul vambraces",
-        "prop": "a colossal ancient primordial Azure God-Sword floating behind her with glowing archaic seal runes, her hand pinching a Taoist sword hand seal commanding a revolving halo of 8 translucent cyan energy blades",
-        "prop_desc": "a colossal floating primordial Azure God-Sword and 8 revolving translucent energy blade daggers",
-        "scene": "celestial primordial sword sanctum atop floating immortal cloud peaks, with colossal ancient stone swords piercing the heavens and swirling river of luminous cyan sword qi",
-        "outfit_alt": "divine celestial sword-goddess feather gossamer dress with floating crystal blade wings and radiant azure halo",
-        "colors": "crystalline cyan, celestial silver white, translucent ice blue, pure diamond white, antique jade green",
-        "materials": "translucent crystalline sword energy, glowing spirit gossamer silk, pure frost jade, celestial silver metal",
-        "damage": "her gossamer spirit robes have battle-tested fraying with dissolving cyan light particles, standing steadfast with her colossal sword embedded into the cracked ground amidst glowing dissipating blade shards."
+        "name": "The Jade-Water Celestial Sword Spirit (碧水仙剑·灵漪)",
+        "features": "transcendent ethereal young female humanoid water-sword spirit avatar, translucent pale jade-crystalline skin, glowing luminous emerald-aqua water-sword droplet rune on forehead, tranquil luminous aqua-teal eyes glowing with liquid blade intent, floating weightlessly barefoot with spirit toes stepping on glowing water lotus ripples, long waist-length liquid crystalline hair floating weightlessly like clear waterfall shifting from emerald jade to translucent aqua-cyan, secured with carved antique lotus jade sword hairpin, wearing gossamer translucent aquatic silk robes with water-ripple hemlines, floating ribbons of pure water sword qi, and carved jade-silver vambraces",
+        "prop": "a colossal ancient primordial Jade-Water Celestial God-Sword (碧水仙剑) forged from deep-sea spirit jade and cyan crystal pulsing with luminous aquatic runes floating behind her, her hand pinching a Taoist sword hand seal commanding a revolving halo of 8 translucent liquid jade flying sword blades",
+        "prop_desc": "a colossal floating primordial Jade-Water Celestial Sword and 8 revolving translucent aquatic energy flying blades",
+        "scene": "ethereal celestial jade-water domain atop tranquil reflection lake amidst misty emerald lotus mountains, colossal ancient water-sword stele monuments, and swirling ribbons of glowing aquatic sword qi",
+        "outfit_alt": "divine celestial water-spirit feather gossamer dress with floating crystal water-blade wings and radiant emerald halo",
+        "colors": "translucent emerald jade, luminous aqua teal, celestial crystal cyan, pure pearl white, shimmering aquatic gold",
+        "materials": "translucent aquatic sword crystal, glowing water gossamer silk, ancient spirit jade, celestial silver metal",
+        "damage": "her translucent gossamer robes have delicate battle-tested fraying with dissolving emerald water droplets and sparkling light particles, standing steadfast with her colossal jade-water sword embedded into cracked crystal ground amidst floating aquatic blade shards."
     }
 }
 
@@ -556,15 +556,15 @@ def expand_character_plan(plan, char_id, char_name):
         fixed_traits = "black dragon horns on forehead, heterochromia eyes, silver dragon torc, dragon-bone staff, coiling ethereal dragon spirit, no Caucasian features"
         style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
     elif char_id == 'char_0059_sword_spirit_prime':
-        gender_age = "transcendent ethereal young female humanoid sword spirit avatar, immortal and divine presence"
-        body_shape = "slender ethereal celestial silhouette, levitating weightlessly barefoot with spirit toes touching glowing sword-energy ripples"
-        face = "flawless crystalline translucent pale skin, glowing bright cyan sword sigil inscribed on forehead, luminous cyan sword pupils, tranquil divine countenance"
-        hair = "long waist-length crystalline hair fading from celestial silver-white to luminous translucent cyan-blue glass, floating weightlessly like glowing sword light trails, secured with carved frost-jade dagger hairpin"
-        eyes = "ethereal luminous cyan-blue sword pupils glowing with pure celestial blade intent"
-        outfit = "ethereal flowing gossamer spirit robes with blade-sharp crystalline translucent cyan edges, floating celestial ribbons woven from pure sword qi, delicate glowing silver dragon sword-soul vambraces and floating jade pendants"
-        accessories_weapon = "a colossal floating ancient primordial Azure God-Sword behind her with archaic seal engravings pulsing with cyan light, her right hand forming an elegant Taoist sword hand seal commanding a revolving halo of 8 translucent cyan energy blades"
-        fixed_traits = "floating barefoot levitation posture, glowing forehead sword rune, luminous cyan sword pupils, translucent blade-edge spirit robes, colossal floating primordial god-sword, hand forming sword seal, 8 revolving energy blades, no Caucasian features"
-        style_desc = "Eastern fantasy immortal concept art, 3D octane render, ethereal blade-soul aesthetic, crystalline translucency, hyper-detailed volumetric lighting, cinematic masterpiece, 8k"
+        gender_age = "transcendent ethereal young female humanoid water-sword spirit avatar, immortal and divine presence"
+        body_shape = "slender ethereal celestial silhouette, levitating weightlessly barefoot with spirit toes stepping on glowing aquatic lotus ripples"
+        face = "flawless translucent pale jade-crystalline skin, glowing luminous emerald-aqua water-sword droplet rune inscribed on forehead, tranquil divine countenance"
+        hair = "long waist-length liquid crystalline hair shifting from emerald jade-green to luminous translucent aqua-cyan, floating weightlessly like clear waterfall trails, secured with carved antique lotus jade sword hairpin"
+        eyes = "ethereal luminous aqua-teal eyes glowing with pure liquid sword intent and water ripples"
+        outfit = "ethereal flowing gossamer translucent aquatic silk robes with water-ripple translucent emerald hemlines, floating ribbons of pure aquatic sword qi, delicate carved jade-silver sword-soul vambraces and floating aquatic jade beads"
+        accessories_weapon = "a colossal floating ancient primordial Jade-Water Celestial God-Sword (碧水仙剑) behind her pulsing with luminous deep-sea jade runes, her right hand forming an elegant Taoist sword hand seal commanding a revolving halo of 8 translucent liquid jade flying sword blades"
+        fixed_traits = "floating barefoot levitation with lotus water ripples, glowing forehead water-sword droplet rune, luminous aqua-teal eyes, translucent emerald-ripple spirit robes, colossal floating jade-water celestial god-sword, hand forming sword seal, 8 revolving aquatic flying blades, no Caucasian features"
+        style_desc = "Eastern fantasy immortal concept art, 3D octane render, ethereal water-blade soul aesthetic, translucent jade-crystal fluid dynamics, hyper-detailed volumetric aquatic lighting, cinematic masterpiece, 8k"
     else:
         gender_age = "young appearance"
         body_shape = "slender build"
@@ -5694,12 +5694,12 @@ Solid clean dark gray background."""
     sword_spirit_prime_plan = [
         {
             "char_id": "char_0059_sword_spirit_prime",
-            "char_name": "青霄剑魄·本源",
+            "char_name": "碧水仙剑·灵漪",
             "img_type": "main",
-            "prompt": "A breathtaking masterpiece 3D concept art of the Primordial Sword Spirit (青霄剑魄·本源). An ethereal, transcendent humanoid female spirit avatar of the supreme celestial sword. She has flawless translucent crystalline pale skin, a glowing cyan sword rune on her forehead, and tranquil luminous cyan eyes filled with blade intent. Her crystalline silver-cyan hair floats weightlessly like shimmering sword light trails. She wears flowing semi-transparent gossamer robes with blade-sharp edges and floating ribbons of glowing sword energy, levitating weightlessly barefoot in the void. Behind her looms a colossal ancient primordial Azure God-Sword pulsing with azure celestial runes, while 8 translucent flying spirit blades form a revolving halo around her. Ethereal immortal sword domain with cosmic starlight and glowing sword qi ripples. 3D octane render, hyper-detailed, 8k, cinematic lighting, no Caucasian features."
+            "prompt": "A breathtaking masterpiece 3D concept art of the Jade Water Celestial Sword Spirit (碧水仙剑·灵漪). An ethereal, transcendent humanoid female spirit avatar of the supreme water celestial sword. She has flawless translucent pale jade-crystalline skin, a glowing emerald-aqua water-sword droplet rune on her forehead, and tranquil luminous aqua-teal eyes filled with pure liquid sword intent. Her liquid crystalline hair shifts from emerald jade-green to translucent aqua-cyan, floating weightlessly like clear waterfall trails. She wears flowing semi-transparent aquatic silk robes with water-ripple hemlines and floating ribbons of glowing aquatic sword qi, levitating weightlessly barefoot on glowing water lotus ripples. Behind her looms a colossal ancient primordial Jade-Water Celestial God-Sword pulsing with emerald-aqua runes, while 8 translucent liquid jade flying blades form a revolving halo around her. Ethereal immortal misty mountain lake domain with glowing water ripples and cosmic starlight. 3D octane render, hyper-detailed, 8k, cinematic lighting, no Caucasian features."
         }
     ]
-    sword_spirit_prime_plan = expand_character_plan(sword_spirit_prime_plan, 'char_0059_sword_spirit_prime', '青霄剑魄·本源')
+    sword_spirit_prime_plan = expand_character_plan(sword_spirit_prime_plan, 'char_0059_sword_spirit_prime', '碧水仙剑·灵漪')
 
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
