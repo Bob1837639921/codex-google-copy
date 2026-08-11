@@ -379,6 +379,17 @@ LOCKS = {
         "colors": "pitch black, spectral cyan blue, antique Miao silver, phantom purple, cinnabar red",
         "materials": "textured tribal embroidered fabric, antique silver, polished dragon bone, glowing spirit flame",
         "damage": "his embroidered robes are torn with dragon spirit fading into smoke, dragon horn slightly chipped, resting against a broken dragon totem with glowing spectral embers."
+    },
+    "char_0059_sword_spirit_prime": {
+        "name": "The Primordial Azure Sword Soul (青霄剑灵·真形化身)",
+        "features": "transcendent ethereal young female humanoid sword spirit avatar, crystalline translucent pale skin, glowing bright cyan sword sigil on forehead, luminous cyan sword pupils, floating weightlessly barefoot with spirit toes touching sword qi ripples, long crystalline silver-to-cyan hair floating like glowing sword light trails with carved frost-jade dagger hairpin, wearing gossamer spirit robes with blade-sharp translucent cyan edges and glowing silver sword-soul vambraces",
+        "prop": "a colossal ancient primordial Azure God-Sword floating behind her with glowing archaic seal runes, her hand pinching a Taoist sword hand seal commanding a revolving halo of 8 translucent cyan energy blades",
+        "prop_desc": "a colossal floating primordial Azure God-Sword and 8 revolving translucent energy blade daggers",
+        "scene": "celestial primordial sword sanctum atop floating immortal cloud peaks, with colossal ancient stone swords piercing the heavens and swirling river of luminous cyan sword qi",
+        "outfit_alt": "divine celestial sword-goddess feather gossamer dress with floating crystal blade wings and radiant azure halo",
+        "colors": "crystalline cyan, celestial silver white, translucent ice blue, pure diamond white, antique jade green",
+        "materials": "translucent crystalline sword energy, glowing spirit gossamer silk, pure frost jade, celestial silver metal",
+        "damage": "her gossamer spirit robes have battle-tested fraying with dissolving cyan light particles, standing steadfast with her colossal sword embedded into the cracked ground amidst glowing dissipating blade shards."
     }
 }
 
@@ -544,6 +555,16 @@ def expand_character_plan(plan, char_id, char_name):
         accessories_weapon = "carved ancient dragon-bone shaman staff topped with glowing soul orb, a coiling translucent ethereal black dragon spirit, and glowing spectral butterflies"
         fixed_traits = "black dragon horns on forehead, heterochromia eyes, silver dragon torc, dragon-bone staff, coiling ethereal dragon spirit, no Caucasian features"
         style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
+    elif char_id == 'char_0059_sword_spirit_prime':
+        gender_age = "transcendent ethereal young female humanoid sword spirit avatar, immortal and divine presence"
+        body_shape = "slender ethereal celestial silhouette, levitating weightlessly barefoot with spirit toes touching glowing sword-energy ripples"
+        face = "flawless crystalline translucent pale skin, glowing bright cyan sword sigil inscribed on forehead, luminous cyan sword pupils, tranquil divine countenance"
+        hair = "long waist-length crystalline hair fading from celestial silver-white to luminous translucent cyan-blue glass, floating weightlessly like glowing sword light trails, secured with carved frost-jade dagger hairpin"
+        eyes = "ethereal luminous cyan-blue sword pupils glowing with pure celestial blade intent"
+        outfit = "ethereal flowing gossamer spirit robes with blade-sharp crystalline translucent cyan edges, floating celestial ribbons woven from pure sword qi, delicate glowing silver dragon sword-soul vambraces and floating jade pendants"
+        accessories_weapon = "a colossal floating ancient primordial Azure God-Sword behind her with archaic seal engravings pulsing with cyan light, her right hand forming an elegant Taoist sword hand seal commanding a revolving halo of 8 translucent cyan energy blades"
+        fixed_traits = "floating barefoot levitation posture, glowing forehead sword rune, luminous cyan sword pupils, translucent blade-edge spirit robes, colossal floating primordial god-sword, hand forming sword seal, 8 revolving energy blades, no Caucasian features"
+        style_desc = "Eastern fantasy immortal concept art, 3D octane render, ethereal blade-soul aesthetic, crystalline translucency, hyper-detailed volumetric lighting, cinematic masterpiece, 8k"
     else:
         gender_age = "young appearance"
         body_shape = "slender build"
@@ -5670,6 +5691,16 @@ Solid clean dark gray background."""
     ]
     nether_dragon_shaman_plan = expand_character_plan(nether_dragon_shaman_plan, 'char_0058_nether_dragon_shaman', '九幽龙巫·刹夜')
 
+    sword_spirit_prime_plan = [
+        {
+            "char_id": "char_0059_sword_spirit_prime",
+            "char_name": "青霄剑魄·本源",
+            "img_type": "main",
+            "prompt": "A breathtaking masterpiece 3D concept art of the Primordial Sword Spirit (青霄剑魄·本源). An ethereal, transcendent humanoid female spirit avatar of the supreme celestial sword. She has flawless translucent crystalline pale skin, a glowing cyan sword rune on her forehead, and tranquil luminous cyan eyes filled with blade intent. Her crystalline silver-cyan hair floats weightlessly like shimmering sword light trails. She wears flowing semi-transparent gossamer robes with blade-sharp edges and floating ribbons of glowing sword energy, levitating weightlessly barefoot in the void. Behind her looms a colossal ancient primordial Azure God-Sword pulsing with azure celestial runes, while 8 translucent flying spirit blades form a revolving halo around her. Ethereal immortal sword domain with cosmic starlight and glowing sword qi ripples. 3D octane render, hyper-detailed, 8k, cinematic lighting, no Caucasian features."
+        }
+    ]
+    sword_spirit_prime_plan = expand_character_plan(sword_spirit_prime_plan, 'char_0059_sword_spirit_prime', '青霄剑魄·本源')
+
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
         rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan +
@@ -5683,7 +5714,7 @@ Solid clean dark gray background."""
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
         fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan + bone_pipa_wraith_plan + withered_daoist_plan
      + frostleaf_illusionist_plan + thorn_executioner_plan + moonphase_templar_plan + thunder_talismanist_plan + venom_assassin_plan + petal_dancer_plan
-     + vermilion_sovereign_plan + puppet_artificer_plan + azure_sword_spirit_plan + nether_dragon_shaman_plan)
+     + vermilion_sovereign_plan + puppet_artificer_plan + azure_sword_spirit_plan + nether_dragon_shaman_plan + sword_spirit_prime_plan)
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
