@@ -390,6 +390,28 @@ LOCKS = {
         "colors": "translucent emerald jade, luminous aqua teal, celestial crystal cyan, pure pearl white, shimmering aquatic gold",
         "materials": "translucent aquatic sword crystal, glowing water gossamer silk, ancient spirit jade, celestial silver metal",
         "damage": "her translucent gossamer robes have delicate battle-tested fraying with dissolving emerald water droplets and sparkling light particles, standing steadfast with her colossal jade-water sword embedded into cracked crystal ground amidst floating aquatic blade shards."
+    },
+    "char_0060_solar_warlord": {
+        "name": "The Solar Warlord (炽阳神将·天罡)",
+        "features": "majestic powerful young East Asian solar celestial general, handsome resolute facial features, glowing pure-gold sun flame sigil inscribed on forehead, blazing golden-amber eyes glowing with divine solar fire, long jet-black hair tied in an ornate golden crown with fiery red accents, wearing magnificent radiant golden-and-crimson dragon celestial plate armor with fiery silk battle mantle and floating solar light ribbons",
+        "prop": "a massive ancient solar celestial polearm halberd (九转炎阳破军戟) forged from celestial gold and sun-core meteorite dripping with swirling sacred golden flames, and a revolving divine solar halo of 9 radiant miniature suns floating behind his back",
+        "prop_desc": "a colossal glowing pure-gold solar halberd and a revolving halo of 9 miniature flaming suns",
+        "scene": "grand celestial golden palace platform above majestic sea of sunlit golden clouds, ancient monumental solar bronze pillars, and soaring fiery dragons of pure light",
+        "outfit_alt": "regal imperial solar warlord grand ceremonial armor with celestial gold dragon pauldrons and radiant sun-crest helmet",
+        "colors": "radiant celestial gold, blazing crimson red, celestial solar white, obsidian black, burning sun-amber",
+        "materials": "sun-forged celestial gold metal, radiant solar silk, ancient meteorite crystal, glowing golden flame energy",
+        "damage": "his celestial golden plate armor is battle-tested with scorched edge scratches and glowing golden sparks dissipating like embers, standing unyielding holding his cracked solar halberd driven into the ground amidst floating burning sun shards."
+    },
+    "char_0061_nether_moon_arbiter": {
+        "name": "The Nether Moon Arbiter (幽月司命·忘川)",
+        "features": "ethereal mysterious and breathtaking young East Asian nether goddess, pale translucent porcelain skin, glowing silver crescent moon rune on forehead, tranquil mesmerizing silver-cyan luminous eyes, floor-length flowing silvery-white moonlight hair adorned with carved white jade spider lily hairpins and silver bells, wearing layered flowing translucent gossamer robes of midnight black and frost-silver moonlight with floating ribbons of spectral water mist",
+        "prop": "holding a delicate antique 9-petaled pure white jade lotus soul lantern (九品忘川引魂灯) emitting cold celestial cyan ghost flames, surrounded by swirling ghostly water ripples and floating crimson red spider lily flower petals",
+        "prop_desc": "an intricate carved white jade lotus soul lantern glowing with cyan ghost flame and drifting crimson spider lilies",
+        "scene": "ethereal tranquil Netherworld River (忘川) reflection domain at midnight, glowing silver moon overhead, misty dark waters blooming with endless radiant red spider lilies",
+        "outfit_alt": "divine high priestess ceremonial moon-gossamer gown with embroidered silver constellations and floating midnight veil",
+        "colors": "frost moonlight silver, midnight ink black, ethereal cyan blue, vivid cinnabar spider-lily red, pale jade white",
+        "materials": "translucent moonlight gossamer silk, pure white nephrite jade, antique silver filigree, glowing cold spirit fire",
+        "damage": "her translucent midnight robes have delicate frayed hemlines with drifting cyan soul sparks, holding her weathered jade lotus lantern amidst scattered red spider lily petals and cracked crystal water ripples."
     }
 }
 
@@ -565,6 +587,26 @@ def expand_character_plan(plan, char_id, char_name):
         accessories_weapon = "a colossal floating ancient primordial Jade-Water Celestial God-Sword (碧水仙剑) behind her pulsing with luminous deep-sea jade runes, her right hand forming an elegant Taoist sword hand seal commanding a revolving halo of 8 translucent liquid jade flying sword blades"
         fixed_traits = "floating barefoot levitation with lotus water ripples, glowing forehead water-sword droplet rune, luminous aqua-teal eyes, translucent emerald-ripple spirit robes, colossal floating jade-water celestial god-sword, hand forming sword seal, 8 revolving aquatic flying blades, no Caucasian features"
         style_desc = "Eastern fantasy immortal concept art, 3D octane render, ethereal water-blade soul aesthetic, translucent jade-crystal fluid dynamics, hyper-detailed volumetric aquatic lighting, cinematic masterpiece, 8k"
+    elif char_id == 'char_0060_solar_warlord':
+        gender_age = "majestic powerful young East Asian solar celestial general, handsome and heroic divine presence"
+        body_shape = "tall athletic muscular warrior silhouette, imposing and stalwart posture"
+        face = "resolute handsome features, glowing pure-gold sun flame sigil inscribed on forehead, heroic and noble expression"
+        hair = "long jet-black hair tied in an ornate golden crown with fiery red accents and floating golden flame strands"
+        eyes = "blazing golden-amber eyes glowing with divine solar fire and righteous authority"
+        outfit = "magnificent radiant golden-and-crimson dragon celestial plate armor with fiery silk battle mantle and floating solar light ribbons"
+        accessories_weapon = "a massive ancient solar celestial polearm halberd forged from celestial gold dripping with swirling sacred golden flames, and a revolving divine solar halo of 9 radiant miniature suns floating behind his back"
+        fixed_traits = "forehead sun flame sigil, golden-amber eyes, golden celestial dragon armor, solar halberd, 9 miniature sun halo, no Caucasian features"
+        style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
+    elif char_id == 'char_0061_nether_moon_arbiter':
+        gender_age = "ethereal mysterious and breathtaking young East Asian nether goddess, immortal and serene presence"
+        body_shape = "slender graceful goddess silhouette, floating weightlessly with elegant ethereal posture"
+        face = "pale translucent porcelain skin, glowing silver crescent moon rune on forehead, tranquil mesmerizing expression"
+        hair = "floor-length flowing silvery-white moonlight hair adorned with carved white jade spider lily hairpins and silver bells"
+        eyes = "tranquil mesmerizing silver-cyan luminous eyes glowing with celestial nether wisdom"
+        outfit = "layered flowing translucent gossamer robes of midnight black and frost-silver moonlight with floating ribbons of spectral water mist"
+        accessories_weapon = "holding a delicate antique 9-petaled pure white jade lotus soul lantern emitting cold celestial cyan ghost flames, surrounded by swirling ghostly water ripples and floating crimson red spider lily petals"
+        fixed_traits = "forehead silver crescent moon rune, silver-cyan luminous eyes, silvery-white moonlight hair, jade lotus soul lantern, drifting red spider lilies, no Caucasian features"
+        style_desc = "Eastern fantasy character concept art, 3D octane render, photorealistic 3D character reference design, hyper-detailed material textures, cinematic lighting"
     else:
         gender_age = "young appearance"
         body_shape = "slender build"
@@ -5701,6 +5743,26 @@ Solid clean dark gray background."""
     ]
     sword_spirit_prime_plan = expand_character_plan(sword_spirit_prime_plan, 'char_0059_sword_spirit_prime', '碧水仙剑·灵漪')
 
+    solar_warlord_plan = [
+        {
+            "char_id": "char_0060_solar_warlord",
+            "char_name": "大日战神·烈阳",
+            "img_type": "main",
+            "prompt": "A breathtaking masterpiece 3D concept art of the Solar Warlord (大日战神·烈阳). A majestic, powerful young East Asian celestial warrior general with resolute handsome features, glowing pure-gold sun flame sigil on his forehead, and blazing golden-amber eyes glowing with divine solar fire. His long jet-black hair is tied in an ornate golden crown with fiery red accents and floating golden flame strands. He wears magnificent radiant golden-and-crimson dragon celestial plate armor with a fiery silk battle mantle and floating solar light ribbons. He holds a massive ancient solar celestial halberd forged from celestial gold dripping with swirling sacred golden flames, and a revolving divine solar halo of 9 radiant miniature suns floats behind his back. Golden celestial divine palace amidst blazing solar clouds and cosmic radiance. 3D octane render, hyper-detailed, 8k, cinematic lighting, no Caucasian features."
+        }
+    ]
+    solar_warlord_plan = expand_character_plan(solar_warlord_plan, 'char_0060_solar_warlord', '大日战神·烈阳')
+
+    nether_moon_arbiter_plan = [
+        {
+            "char_id": "char_0061_nether_moon_arbiter",
+            "char_name": "幽月神女·望舒",
+            "img_type": "main",
+            "prompt": "A breathtaking masterpiece 3D concept art of the Nether Moon Arbiter (幽月神女·望舒). An ethereal, mysterious and breathtaking young East Asian nether goddess with pale porcelain skin, glowing silver crescent moon rune on her forehead, and tranquil mesmerizing silver-cyan luminous eyes. Her floor-length flowing silvery-white moonlight hair is adorned with carved white jade spider lily hairpins and delicate silver bells. She wears layered flowing translucent gossamer robes of midnight black and frost-silver moonlight with floating ribbons of spectral water mist, holding a delicate antique 9-petaled pure white jade lotus soul lantern emitting cold celestial cyan ghost flames, surrounded by drifting crimson red spider lily petals and ethereal moonbeams. Desolate ancient moonlit nether lotus pond with glowing ethereal waters and celestial aurora. 3D octane render, hyper-detailed, 8k, cinematic lighting, no Caucasian features."
+        }
+    ]
+    nether_moon_arbiter_plan = expand_character_plan(nether_moon_arbiter_plan, 'char_0061_nether_moon_arbiter', '幽月神女·望舒')
+
     full_plan = (
         crimson_plan + midnight_plan + sandstorm_plan + neon_plan + astrolabe_plan +
         rust_mechanic_plan + rust_sniper_plan + rust_apprentice_plan + rust_nomad_plan +
@@ -5714,7 +5776,8 @@ Solid clean dark gray background."""
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
         fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan + bone_pipa_wraith_plan + withered_daoist_plan
      + frostleaf_illusionist_plan + thorn_executioner_plan + moonphase_templar_plan + thunder_talismanist_plan + venom_assassin_plan + petal_dancer_plan
-     + vermilion_sovereign_plan + puppet_artificer_plan + azure_sword_spirit_plan + nether_dragon_shaman_plan + sword_spirit_prime_plan)
+     + vermilion_sovereign_plan + puppet_artificer_plan + azure_sword_spirit_plan + nether_dragon_shaman_plan + sword_spirit_prime_plan
+     + solar_warlord_plan + nether_moon_arbiter_plan)
     
     # 动态为每一项注入其在对应角色子计划中的绝对位置 absolute_idx
     char_counters = {}
