@@ -1593,7 +1593,7 @@ async def generate_character_part(agent: BrowserAgent, char_id: str, char_name: 
     if os.path.exists(target_path) and os.path.getsize(target_path) > 1024:
         display_path = target_path.replace("\\", "/")
         logging.info(f"✨ [智能跳过] 资产文件已存在于: {display_path}，直接跳过生成进入下一项！")
-        return True
+        return "skipped"
 
     # 1. 载入历史专属会话 URL，如已经在该会话中则直接复用，不重新刷新加载
     sessions = load_sessions()
@@ -5834,11 +5834,9 @@ Solid clean dark gray background."""
                     logging.error(f"执行发生异常: {ex}", exc_info=True)
                     await asyncio.sleep(5)
             
-            if not success:
-                logging.error(f"任务 [{task['char_name']} - {task['img_type']}] 遭遇不可恢复失败，跳过。")
-            
-            # 留出 3 秒缓冲给用户/AI观察
-            await asyncio.sleep(3)
+            # 只有真正执行了生成的项才留出 3 秒缓冲给用户/AI观察
+            if res != "skipped":
+                await asyncio.sleep(3)
             
         logging.info("=" * 60)
         logging.info("🎉 恭喜！所选角色、部位维度的资产绘图任务已全部完成！")
