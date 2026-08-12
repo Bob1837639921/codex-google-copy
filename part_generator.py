@@ -1275,42 +1275,60 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pr
                 return mainEl ? mainEl.innerText : (document.body ? document.body.innerText : "");
             }})();
             
-            // 1. 检测 ChatGPT 官方生图额度/使用频率上限，秒级拦截 (Smarter fuzzy check)
-            const isLimit = (() => {{
-                const lowerText = bodyText.toLowerCase();
-                if (lowerText.includes("limit")) {{
-                    if (lowerText.includes("reset") || 
-                        lowerText.includes("hour") || 
-                        lowerText.includes("minute") || 
-                        lowerText.includes("try again") || 
-                        lowerText.includes("reached") || 
-                        lowerText.includes("hit") || 
-                        lowerText.includes("quota")) {{
-                        return true;
-                    }}
-                }}
-                if (lowerText.includes("quota") && (lowerText.includes("exceed") || lowerText.includes("limit") || lowerText.includes("reach"))) {{
-                    return true;
-                }}
-                if (bodyText.includes("额度已达上限") || 
-                    bodyText.includes("达到生图额度极限") || 
-                    bodyText.includes("生图额度") || 
-                    bodyText.includes("生图限制") || 
-                    bodyText.includes("使用上限")) {{
-                    return true;
-                }}
-                return false;
-            }})();
+            // 1. 检查是否有生图指示或停止按钮，代表生图已经在运行了
+            const stopBtn = document.querySelector('button[data-testid="stop-button"], #composer-submit-button[data-testid="stop-button"]');
+            const hasStopButton = stopBtn !== null && !stopBtn.disabled && (
+                stopBtn.getAttribute('aria-label')?.includes('停止') || 
+                stopBtn.getAttribute('aria-label')?.includes('Stop')
+            );
+            
+            const hasImageLoadingState = document.querySelector('[data-testid*="image-gen-loading"]') !== null ||
+                                         document.querySelector('[data-testid="image-gen-loading-state-dots"]') !== null;
+            
+            const latestAssistantTurn = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]')).pop();
+            let isThinkingCurrently = false;
+            let hasSpinOrLoader = false;
+            if (latestAssistantTurn) {{
+                const thinkBtn = Array.from(latestAssistantTurn.querySelectorAll('button')).find(b => 
+                    b.innerText.includes("Thinking") || 
+                    b.innerText.includes("思考中") ||
+                    b.innerText.includes("正在思考")
+                );
+                if (thinkBtn) isThinkingCurrently = true;
+                
+                const spin = latestAssistantTurn.querySelector('svg[class*="animate-spin"]') !== null;
+                const loader = latestAssistantTurn.querySelector('.streaming-loader') !== null;
+                const shimmer = latestAssistantTurn.querySelector('.loading-shimmer') !== null;
+                hasSpinOrLoader = spin || loader || shimmer;
+            }}
+            const hasThinking = isThinkingCurrently || hasSpinOrLoader;
+            const isGeneratingCurrently = hasStopButton || hasThinking || hasImageLoadingState;
 
-            if (isLimit) {{
-                return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达今日上限（Rate Limit / Quota Exceeded）" }};
+            // 2. 检测系统弹窗/Toast 是否有实时的生图额度上限
+            const modalAlertText = (() => {{
+                const alerts = Array.from(document.querySelectorAll('[role="alert"], [role="dialog"], [data-testid*="toast"]'));
+                return alerts.map(a => a.innerText.toLowerCase()).join(" ");
+            }})();
+            if (modalAlertText.includes("limit") && (modalAlertText.includes("reset") || modalAlertText.includes("quota") || modalAlertText.includes("rate"))) {{
+                return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 弹出额度限制提示" }};
             }}
 
+            // 3. 针对最新的 Assistant Turn 检测回复状态
             const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
             const lastTurn = assistantTurns.length > {pre_assistant_count} ? assistantTurns[assistantTurns.length - 1] : null;
-            if (lastTurn) {{
+            if (lastTurn && !isGeneratingCurrently) {{
                 const turnText = lastTurn.innerText;
-                // 2. 检测 DALL-E 临时服务错误
+                const lowerTurnText = turnText.toLowerCase();
+
+                // 检测生图额度上限（仅针对最新的一条回复）
+                if (lowerTurnText.includes("limit") && (lowerTurnText.includes("reset") || lowerTurnText.includes("hour") || lowerTurnText.includes("minute") || lowerTurnText.includes("quota") || lowerTurnText.includes("reached") || lowerTurnText.includes("hit"))) {{
+                    return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达上限（Rate Limit / Quota Exceeded）" }};
+                }}
+                if (lowerTurnText.includes("quota") && (lowerTurnText.includes("exceed") || lowerTurnText.includes("limit") || lowerTurnText.includes("reach"))) {{
+                    return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达上限" }};
+                }}
+
+                // 检测 DALL-E 临时服务错误
                 if (turnText.includes("wasn't able to generate") || 
                     turnText.includes("encountered an error") || 
                     turnText.includes("generation tool encountered") || 
@@ -1328,41 +1346,11 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pr
                     turnText.includes("content policy")) {{
                     return {{ "status": "policy_violation", "error": "检测到 ChatGPT 官方内容安全政策拦截" }};
                 }}
-            }}
 
-            // 3. 检查是否有生图指示或停止按钮，代表生图已经在运行了
-            const stopBtn = document.querySelector('button[data-testid="stop-button"], #composer-submit-button[data-testid="stop-button"]');
-            const hasStopButton = stopBtn !== null && !stopBtn.disabled && (
-                stopBtn.getAttribute('aria-label')?.includes('停止') || 
-                stopBtn.getAttribute('aria-label')?.includes('Stop')
-            );
-            
-            const hasImageLoadingState = document.querySelector('[data-testid*="image-gen-loading"]') !== null ||
-                                         document.querySelector('[data-testid="image-gen-loading-state-dots"]') !== null;
-            
-            const latestAssistantTurn = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]')).pop();
-            let isThinkingCurrently = false;
-            let hasSpinOrLoader = false;
-            if (latestAssistantTurn) {{
-                const thinkBtn = Array.from(latestAssistantTurn.querySelectorAll('button')).find(b => 
-                    b.innerText.includes("Thinking") || 
-                    b.innerText.includes("思考中")
-                );
-                if (thinkBtn) isThinkingCurrently = true;
-                
-                const spin = latestAssistantTurn.querySelector('svg[class*="animate-spin"]') !== null;
-                const loader = latestAssistantTurn.querySelector('.streaming-loader') !== null;
-                const shimmer = latestAssistantTurn.querySelector('.loading-shimmer') !== null;
-                hasSpinOrLoader = spin || loader || shimmer;
-            }}
-            const hasThinking = isThinkingCurrently || hasSpinOrLoader;
-            
-            const isGeneratingCurrently = hasStopButton || hasThinking || hasImageLoadingState;
-
-            if (assistantTurns.length > {pre_assistant_count} && !isGeneratingCurrently && lastTurn) {{
+                // 检测纯文本未绘图
                 const lastTurnImgs = Array.from(lastTurn.querySelectorAll('img[src*="files.oaiusercontent.com"], img[src*="/backend-api/files"], img[src*="/backend-api/estuary/content"]'));
                 if (lastTurnImgs.length === 0) {{
-                    return {{ "status": "no_image_in_reply", "text": lastTurn.innerText.slice(0, 100) }};
+                    return {{ "status": "no_image_in_reply", "text": turnText.slice(0, 100) }};
                 }}
             }}
 
