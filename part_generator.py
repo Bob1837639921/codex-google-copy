@@ -1321,8 +1321,12 @@ async def poll_until_image_ready(agent: BrowserAgent, pre_existing_srcs: set, pr
                 const lowerTurnText = turnText.toLowerCase();
 
                 // 检测生图额度上限（仅针对最新的一条回复）
-                if (lowerTurnText.includes("limit") && (lowerTurnText.includes("reset") || lowerTurnText.includes("hour") || lowerTurnText.includes("minute") || lowerTurnText.includes("quota") || lowerTurnText.includes("reached") || lowerTurnText.includes("hit"))) {{
-                    return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达上限（Rate Limit / Quota Exceeded）" }};
+                if (lowerTurnText.includes("hit the plus plan limit") || 
+                    lowerTurnText.includes("hit the") && lowerTurnText.includes("limit") ||
+                    lowerTurnText.includes("limit resets in") ||
+                    lowerTurnText.includes("unable to invoke the image generation tool") ||
+                    (lowerTurnText.includes("limit") && (lowerTurnText.includes("reset") || lowerTurnText.includes("hour") || lowerTurnText.includes("minute") || lowerTurnText.includes("quota") || lowerTurnText.includes("reached") || lowerTurnText.includes("hit")))) {{
+                    return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度已达上限（Plus Plan Limit Reached）: " + turnText.slice(0, 120) }};
                 }}
                 if (lowerTurnText.includes("quota") && (lowerTurnText.includes("exceed") || lowerTurnText.includes("limit") || lowerTurnText.includes("reach"))) {{
                     return {{ "status": "quota_limit", "error": "ChatGPT DALL-E 生图额度/频次已达上限" }};
