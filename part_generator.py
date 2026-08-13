@@ -204,6 +204,17 @@ LOCKS = {
         "damage": "her helmet casing is cracked with escaping neon light and small sparks, and her nylon jacket is torn. For the heavily damaged state, her tape helmet is partially broken revealing inner circuit boards, and the cassette tape is shattered on the floor, surrounded by flickering sparks."
     }
 ,
+        "char_0043_spectral_glitch": {
+        "name": "The Frequency Wraith (频段噬灵)",
+        "features": "glitching spectral demon without a face, whose head is a floating distorted analog TV screen displaying black-and-white static noise and red glowing 'ERROR' text, body composed of flashing neon-pink and cyan digital glitch lines",
+        "prop": "floating broken circuit boards and copper cables",
+        "prop_desc": "floating rusted copper cables wrapped around its arms, and several broken PCB motherboards floating in the air",
+        "scene": "a rainy, dark city alleyway at night with glowing wet pavement and neon reflections, digital noise and particles drifting in the air",
+        "outfit_alt": "a dark digital vortex of pixelated noise and glowing matrix code instead of cables",
+        "colors": "neon pink, neon cyan, static black and white, warning red, copper orange",
+        "materials": "glass CRT screen casing, pixelated neon glitch lines, rusted copper wire, broken green PCB plates",
+        "damage": "its analog screen is shattered with sparks flying, and its glitching body is fragmenting into loose pixel dust. For the heavily damaged state, its head is completely broken exposing inner glass shards, and it floats next to a sparking electricity transformer box, its cable limbs disconnected."
+    },
     "char_0043_blade_wraith": {
         "name": "The Soul-Devouring Blade-Wraith (噬魂刀魅)",
         "features": "shattered ancient bronze curved saber floating in the air, glowing with sinister blood-red veins of light, with a tall shadowy phantom of a general in dilapidated black iron armor emerging from the hilt, two chilling green flames glowing inside its helmet as eyes",
@@ -5618,6 +5629,8 @@ Solid clean dark gray background."""
     fungal_apothecary_plan = expand_character_plan(fungal_apothecary_plan, 'char_0040_fungal_apothecary', '蕈林秘医')
     book_wraith_plan = expand_character_plan(book_wraith_plan, 'char_0041_book_wraith', '禁忌书魂')
     radio_host_plan = expand_character_plan(radio_host_plan, 'char_0042_radio_host', '午夜电台主播')
+    spectral_glitch_plan = []
+    spectral_glitch_plan = expand_character_plan(spectral_glitch_plan, 'char_0043_spectral_glitch', '频段噬灵')
     blade_wraith_plan = expand_character_plan(blade_wraith_plan, 'char_0043_blade_wraith', '噬魂刀魅')
     abyssal_dread_plan = expand_character_plan(abyssal_dread_plan, 'char_0044_abyssal_dread', '深渊煞魔')
     thousand_faces_plan = expand_character_plan(thousand_faces_plan, 'char_0045_thousand_faces', '千面皮魔')
@@ -5766,7 +5779,7 @@ Solid clean dark gray background."""
         bioluminescent_spirit_plan + rule_weaver_plan + sand_sailor_plan +
         dome_botanist_plan + astral_mage_plan + moonshadow_ranger_plan +
         ancient_druid_plan + cyber_samurai_plan + cyber_corporate_plan + dragon_berserker_plan + brass_alchemist_plan + azure_dragon_maiden_plan + crane_celestial_plan + stag_priestess_plan + nine_tailed_fox_plan + red_umbrella_plan + stele_pathfinder_plan +
-        fungal_apothecary_plan + book_wraith_plan + radio_host_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan + bone_pipa_wraith_plan + withered_daoist_plan
+        fungal_apothecary_plan + book_wraith_plan + radio_host_plan + spectral_glitch_plan + blade_wraith_plan + abyssal_dread_plan + thousand_faces_plan + bone_spider_plan + bone_pipa_wraith_plan + withered_daoist_plan
      + frostleaf_illusionist_plan + thorn_executioner_plan + moonphase_templar_plan + thunder_talismanist_plan + venom_assassin_plan + petal_dancer_plan
      + vermilion_sovereign_plan + puppet_artificer_plan + azure_sword_spirit_plan + nether_dragon_shaman_plan + sword_spirit_prime_plan
      + solar_warlord_plan + nether_moon_arbiter_plan)
